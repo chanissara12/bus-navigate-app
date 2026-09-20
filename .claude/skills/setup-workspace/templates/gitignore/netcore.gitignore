@@ -1,0 +1,39 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+artifacts/
+
+# Visual Studio / Rider
+.vs/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Test and coverage
+[Tt]est[Rr]esult*/
+*.coverage
+*.coverolay
+coverage*.json
+coverage*.xml
+
+# Publish
+publish/
+*.publishsettings
+PublishProfiles/*.pubxml.user
+
+# NuGet — the lock file is committed on purpose; it is what makes restores reproducible
+*.nupkg
+*.snupkg
+packages/
+!packages.lock.json
+
+# Certificates with private keys. .gitattributes marks these binary so a deliberate,
+# force-added one is never mangled — but none should be committed by accident.
+*.pfx
+*.p12

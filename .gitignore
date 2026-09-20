@@ -1,0 +1,11 @@
+# ความลับ — jira-tracker เก็บ API token ไว้ในนี้
+.jira/config.local.json
+
+# ของชั่วคราว
+*.log
+.DS_Store
+Thumbs.db
+
+# ฟีด GTFS ไม่ commit (41.8 MB ต่อเวอร์ชัน โหลดใหม่ได้จาก namtang-api.otp.go.th)
+*.zip
+gtfs/

@@ -1,0 +1,24 @@
+# Dependencies — the lock file is committed on purpose
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+tmp/
+out-tsc/
+bazel-out/
+
+# Angular CLI cache
+.angular/
+
+# Test and coverage
+coverage/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

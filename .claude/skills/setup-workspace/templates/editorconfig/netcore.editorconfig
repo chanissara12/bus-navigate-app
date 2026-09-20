@@ -1,0 +1,3 @@
+# C# already matches the 4-space base default — only the XML project files differ
+[*.{csproj,props,targets}]
+indent_size = 2

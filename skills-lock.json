@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "skills": {
+    "bridge": {
+      "source": "modmastei2/skills",
+      "sourceType": "github",
+      "skillPath": "bridge/SKILL.md",
+      "computedHash": "120d6263a52e33b194936a535d9c68555dbbbc47fb2902fb6cc6101eedbe3440"
+    },
+    "code-review": {
+      "source": "modmastei2/skills",
+      "sourceType": "github",
+      "skillPath": "code-review/SKILL.md",
+      "computedHash": "b935a1f447538986c1ddd0f892d2b479648e52cec3d60f3a1da15dae6e754047"
+    },
+    "domain-modeling": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/domain-modeling/SKILL.md",
+      "computedHash": "336547f3ff285e822fc70b69b170dc58bceef9c8ed5fad18de0046287d6be837"
+    },
+    "grill-me": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/grill-me/SKILL.md",
+      "computedHash": "5e0c683385eafd83f106ac6c9d67dfbbfe5aa4b3fe65aad114eb1055a99c818f"
+    },
+    "grill-with-docs": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
+      "computedHash": "a610223c9796f755b603f15ec114849a4b38b9ba3006acfa9bdf3cc56dd44dad"
+    },
+    "grilling": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/grilling/SKILL.md",
+      "computedHash": "4fa026e5979770347b3357ff5139e1e41d21c3a9f7335e9cd2811cb5b8d32f2f"
+    },
+    "handoff": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/handoff/SKILL.md",
+      "computedHash": "9ea2a5de5ca2d717f913356de982fdc4fe27d28a300c16598cd43a4865491008"
+    },
+    "implement": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/implement/SKILL.md",
+      "computedHash": "130cac2d72bfde8cd526bf3b754211e2fe00e84bc4d9f9c56f749b9541a3afad"
+    },
+    "jira-tracker": {
+      "source": "modmastei2/skills",
+      "sourceType": "github",
+      "skillPath": "jira-tracker/SKILL.md",
+      "computedHash": "f6869bbf1b82b8aac9fe9aeb418250b2569402f47a14e4a4fb52ce794b5ac6f9"
+    },
+    "minecraft-structure-design": {
+      "source": "modmastei2/skills",
+      "sourceType": "github",
+      "skillPath": "minecraft-structure-design/SKILL.md",
+      "computedHash": "d6639551662d82cb2227934688ecfe19183994b91b6c3f9942053c93e65d6f79"
+    },
+    "prototype": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/prototype/SKILL.md",
+      "computedHash": "62979fe039ef64407b258f8824db41b9185f788638747df803032df4153c2aae"
+    },
+    "review-pr": {
+      "source": "modmastei2/skills",
+      "sourceType": "github",
+      "skillPath": "review-pr/SKILL.md",
+      "computedHash": "b3e6cb712916eeb85615f6525074bf8e1faef08e8d79037f011c259e9b1742f0"
+    },
+    "setup-workspace": {
+      "source": "modmastei2/skills",
+      "sourceType": "github",
+      "skillPath": "setup-workspace/SKILL.md",
+      "computedHash": "f66615d2b685b387cf6d89bb5c2ea50eb18bc93d69178d4016c333d7acd9de98"
+    },
+    "to-note": {
+      "source": "modmastei2/skills",
+      "sourceType": "github",
+      "skillPath": "to-note/SKILL.md",
+      "computedHash": "a7933b4824b290179a61f4835ab22f67a142a0c1b8e28dde061a9ee52adf7a9c"
+    },
+    "to-spec": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/to-spec/SKILL.md",
+      "computedHash": "0ee8caf20fc7df94db53e76f42588fb01eee88c6f8dc97e7a3a0565be8978e74"
+    },
+    "to-tickets": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/to-tickets/SKILL.md",
+      "computedHash": "4aba8639f46b55ede011866f83e9e87ae10482b72c14848389e5801eba0b37bf"
+    },
+    "wayfinder": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/wayfinder/SKILL.md",
+      "computedHash": "f53b17850d8d4d68e8b861cfc7de69580335851d7fe7bc3acdf37505f46c9940"
+    }
+  }
+}

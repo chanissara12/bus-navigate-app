@@ -1,0 +1,20 @@
+# Compiled binaries. `bin/` catches the conventional output folder; the extension rules
+# catch a `go build` run from the package directory.
+bin/
+*.exe
+*.exe~
+*.so
+*.dylib
+
+# Test binaries and coverage
+*.test
+*.out
+coverage.txt
+
+# Go workspace files — machine-local by nature
+go.work
+go.work.sum
+
+# Uncomment only if this project does NOT vendor its dependencies.
+# If it does vendor, vendor/ must stay tracked.
+# vendor/

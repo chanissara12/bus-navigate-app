@@ -1,0 +1,30 @@
+# Applies to every stack. Stack-specific build output lives in <stack>.gitignore.
+
+# Secrets and environment
+# .env.* covers .env.local, .env.production and friends. The example file is the
+# contract for what keys exist, so it must stay tracked — add a matching negation for
+# any other template file the project adopts (.env.sample, appsettings.example.json).
+.env
+.env.*
+!.env.example
+
+# Local-only overrides, any stack, any extension:
+# appsettings.local.json, vite.config.local.ts, docker-compose.local.yml
+*.local.*
+*.local
+
+# Editor and OS
+# .vscode holds this repo's shared formatting settings and is committed on purpose —
+# ignore the folder's personal contents, keep the two files the team relies on.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# Logs
+*.log

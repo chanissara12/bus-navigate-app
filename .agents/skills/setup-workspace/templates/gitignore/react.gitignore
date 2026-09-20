@@ -1,0 +1,21 @@
+# Dependencies — the lock file is committed on purpose
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+dist-ssr/
+build/
+.vite/
+
+# Test and coverage
+coverage/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

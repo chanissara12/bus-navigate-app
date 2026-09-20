@@ -1,0 +1,3 @@
+# gofmt enforces tabs, not spaces — indent_size is irrelevant once indent_style is tab
+[*.go]
+indent_style = tab

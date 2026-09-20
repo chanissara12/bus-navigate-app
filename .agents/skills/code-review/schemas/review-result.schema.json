@@ -1,0 +1,368 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/review-result.schema.json",
+  "title": "Code Review Result",
+  "description": "Provider-agnostic structured output of the code-review skill.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verdict",
+    "summary",
+    "reviewTarget",
+    "repositoryContext",
+    "checks",
+    "findings",
+    "limitations",
+    "reviewedAt"
+  ],
+  "properties": {
+    "reportLanguage": {
+      "enum": ["en", "th"],
+      "default": "en",
+      "description": "Language for prose fields and the Markdown report. Enum values elsewhere in this schema always stay English regardless of this setting."
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Present when fewer than all changed files were reviewed. Omit when coverage was complete.",
+      "required": ["reviewedFileCount", "changedFileCount"],
+      "properties": {
+        "reviewedFileCount": { "type": "integer", "minimum": 0 },
+        "changedFileCount": { "type": "integer", "minimum": 0 },
+        "exclusions": {
+          "type": "array",
+          "description": "Path globs excluded, with the reason, e.g. 'docs/** — excluded at requester's direction'.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "verdict": {
+      "description": "Derived from findings: any blocking -> changes_required; warnings only -> pass_with_warnings; none -> pass; review aborted -> unable_to_complete.",
+      "enum": ["pass", "pass_with_warnings", "changes_required", "unable_to_complete"]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One to three sentences stating what was reviewed and the outcome."
+    },
+    "reviewTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["git_diff", "commit_range", "working_tree", "staged", "files", "path"]
+        },
+        "base": {
+          "type": ["string", "null"],
+          "description": "Base ref or commit sha, when applicable."
+        },
+        "head": {
+          "type": ["string", "null"],
+          "description": "Head ref or commit sha, when applicable."
+        },
+        "files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Repository-relative paths, required for type=files."
+        },
+        "path": {
+          "type": ["string", "null"],
+          "description": "Repository-relative directory, required for type=path."
+        },
+        "inferred": {
+          "type": "boolean",
+          "description": "True when no explicit target was supplied and the target was inferred from repository state.",
+          "default": false
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "files" } }, "required": ["type"] },
+          "then": { "required": ["files"], "properties": { "files": { "minItems": 1 } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "path" } }, "required": ["type"] },
+          "then": { "required": ["path"], "properties": { "path": { "type": "string" } } }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["git_diff", "commit_range"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "required": ["base", "head"],
+            "properties": {
+              "base": { "type": "string", "minLength": 1 },
+              "head": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "repositoryContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instructionsRead", "detectedStacks"],
+      "properties": {
+        "instructionsRead": {
+          "type": "array",
+          "description": "Repository-relative paths of instruction files actually read. Do not list files that were skipped.",
+          "items": { "type": "string" }
+        },
+        "detectedStacks": {
+          "type": "array",
+          "description": "Free-form stack labels detected from repository files and changed paths, e.g. 'ASP.NET Core', 'Angular', 'Go', 'SQL', 'Docker'.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "description": "Deterministic checks considered. A status of 'passed' means the command was executed and exited successfully.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The command as invoked, e.g. 'dotnet test'."
+          },
+          "status": {
+            "enum": ["passed", "failed", "skipped", "not_available"]
+          },
+          "details": {
+            "type": ["string", "null"],
+            "description": "Relevant output excerpt or the reason for skipped/not_available."
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Ordered most severe first. Empty is a valid result.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "severity", "category", "title", "message", "impact", "suggestion"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^CR-[0-9]{3,}$",
+            "description": "Sequential identifier: CR-001, CR-002, ..."
+          },
+          "severity": {
+            "enum": ["blocking", "warning", "suggestion"]
+          },
+          "category": {
+            "enum": [
+              "correctness",
+              "security",
+              "data_integrity",
+              "breaking_change",
+              "architecture",
+              "error_handling",
+              "concurrency",
+              "testing",
+              "performance",
+              "maintainability",
+              "style"
+            ]
+          },
+          "file": {
+            "type": ["string", "null"],
+            "description": "Repository-relative path. Null only when the finding is not tied to a file."
+          },
+          "line": {
+            "type": ["integer", "null"],
+            "minimum": 1
+          },
+          "endLine": {
+            "type": ["integer", "null"],
+            "minimum": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Short noun phrase naming the concrete problem. One line."
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300,
+            "description": "What is wrong. At most two sentences. Never describes how the problem was found — that belongs in evidence."
+          },
+          "impact": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300,
+            "description": "The concrete consequence if this ships. At most two sentences."
+          },
+          "suggestion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400,
+            "description": "Practical remediation, specific enough to act on. At most three sentences."
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Optional proof of the claim: a non-obvious command, a byte-level check, a count across files. At most two sentences. Omit when the cited line speaks for itself."
+          },
+          "patch": {
+            "type": "array",
+            "maxItems": 5,
+            "description": "Concrete before/after for the fix, one entry per edit site. Deliberately exempt from the prose length caps — code is not prose, and truncating it would defeat the point. Include whenever the remediation is a specific code edit; omit when the fix is structural or a judgement call. Code is never translated: only the surrounding prose follows reportLanguage.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["file", "after"],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "description": "Repository-relative path of this edit site."
+                },
+                "line": {
+                  "type": ["integer", "null"],
+                  "minimum": 1,
+                  "description": "Line the edit applies to."
+                },
+                "before": {
+                  "type": "string",
+                  "maxLength": 800,
+                  "description": "Current code, verbatim from the file. Omit for a pure addition."
+                },
+                "after": {
+                  "type": "string",
+                  "maxLength": 800,
+                  "description": "Proposed replacement. Must be real code, not a description of code."
+                },
+                "note": {
+                  "type": "string",
+                  "maxLength": 200,
+                  "description": "Optional one-line caption when the edit is not self-explanatory."
+                }
+              }
+            }
+          },
+          "rule": {
+            "type": ["string", "null"],
+            "description": "Applicable repository rule, e.g. 'AGENTS.md#layering'. Null when only general policy applies."
+          },
+          "confidence": {
+            "enum": ["verified", "likely", "unverified"],
+            "description": "Optional. 'verified' means confirmed by reading the surrounding code or by a failing check."
+          },
+          "preExisting": {
+            "type": "boolean",
+            "default": false,
+            "description": "The problem is not introduced by this change. Only committed secrets qualify (see policies/security.md); a pre-existing finding may never be blocking."
+          },
+          "previouslyDismissed": {
+            "type": "string",
+            "description": "Required when re-reporting something an earlier review deliberately dismissed: what changed to justify reversing that judgement. review-pr refuses to render a silent reversal."
+          },
+          "fp": {
+            "type": "string",
+            "description": "Optional stable fingerprint for cross-round matching. Defaults to '<category>:<file>'."
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "description": "Anything that prevented full review: checks not run, files unreadable, missing infrastructure. Required to be non-empty when verdict is unable_to_complete.",
+      "items": { "type": "string" }
+    },
+    "dismissed": {
+      "type": "array",
+      "description": "Things examined and deliberately not reported, with the reason. Carried into the next review's state so a later round cannot silently reverse the judgement. Record anything a reader might otherwise expect to see flagged.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["why"],
+        "properties": {
+          "fp": {
+            "type": "string",
+            "description": "Fingerprint, '<category>:<file>'. Derived from category and file when omitted."
+          },
+          "category": { "type": "string" },
+          "file": { "type": "string" },
+          "title": { "type": "string" },
+          "why": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Why this is not a finding. A later round must address this reason to report it."
+          }
+        }
+      }
+    },
+    "reviewedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp."
+    },
+    "report": {
+      "type": "string",
+      "description": "Optional Markdown rendering of this result, for direct display to a developer."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "verdict": { "const": "unable_to_complete" } },
+        "required": ["verdict"]
+      },
+      "then": { "properties": { "limitations": { "minItems": 1 } } }
+    },
+    {
+      "if": {
+        "properties": { "verdict": { "const": "pass" } },
+        "required": ["verdict"]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "items": {
+              "properties": { "severity": { "const": "suggestion" } }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "verdict": { "const": "pass_with_warnings" } },
+        "required": ["verdict"]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "items": {
+              "properties": { "severity": { "enum": ["warning", "suggestion"] } }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "verdict": { "const": "changes_required" } },
+        "required": ["verdict"]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "contains": {
+              "properties": { "severity": { "const": "blocking" } },
+              "required": ["severity"]
+            }
+          }
+        }
+      }
+    }
+  ]
+}
