@@ -195,4 +195,6 @@ blocked-by: []
 
 ข้อมูล OSM เป็น ODbL คนละสัญญาอนุญาตกับฟีด Namtang ที่เป็น CC-BY → [WF-012](WF-012-osm-odbl-licence.md) ซึ่งตอนนี้กลายเป็นเรื่องที่ต้องรู้จริง เพราะการอบ OSM ลงไฟล์คือแนวทางที่เลือกแล้ว
 
-ต้นแบบ: `prototypes/wf-010-standing-at-the-stop/index.html` (501 KB ไฟล์เดียวจบ) — variant A, B, C ยังอยู่ให้เทียบ กดลูกศรที่แถบล่าง
+ต้นแบบอยู่บน branch ใช้แล้วทิ้ง **`prototype/wf-010-standing-at-the-stop`** ไม่ได้อยู่บน main ตามที่ skill กำหนด — ไฟล์เดียวจบ 501 KB ที่ `prototypes/wf-010-standing-at-the-stop/index.html` มี variant A, B, C ให้เทียบด้วย กดลูกศรที่แถบล่าง
+
+เปิดดูอีกครั้งได้ด้วย `git switch prototype/wf-010-standing-at-the-stop` หรือดึงมาดูโดยไม่เปลี่ยน branch ด้วย `git checkout prototype/wf-010-standing-at-the-stop -- prototypes`
