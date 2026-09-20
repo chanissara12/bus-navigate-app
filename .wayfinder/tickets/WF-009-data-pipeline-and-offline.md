@@ -4,7 +4,7 @@ title: ฟีด 42 MB จะลงไปอยู่ในมือถือไ
 label: wayfinder:prototype
 status: open
 assignee: null
-blocked-by: [WF-008]
+blocked-by: []
 ---
 
 ## Question
