@@ -1,4 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react'
+import { panView, zoomViewAt, type ViewBox } from '../lib/panZoom'
 import {
   bboxSizeMeters,
   boundingBoxWithMargin,
@@ -14,6 +16,9 @@ import { MapAttribution } from './MapAttribution'
 const BBOX_MARGIN_RATIO = 0.12
 const MAX_LABELS = 6
 const MAX_PLACES = 7
+const MIN_ZOOM = 1
+const MAX_ZOOM = 8
+const FIT_VIEW: ViewBox = { zoom: 1, panX: 0, panY: 0 }
 
 interface Props {
   data: BusData
@@ -54,6 +59,78 @@ export function RouteMap({ data, background, direction, fromPosition }: Props) {
     }
   }, [data, background, direction, fromPosition])
 
+  const [view, setView] = useState<ViewBox>(FIT_VIEW)
+  const svgRef = useRef<SVGSVGElement>(null)
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>())
+  const lastPinchDistanceRef = useRef<number | null>(null)
+
+  const toUserUnits = (clientX: number, clientY: number): { x: number; y: number } => {
+    const svg = svgRef.current
+    if (!svg) return { x: 0, y: 0 }
+    const rect = svg.getBoundingClientRect()
+    const viewW = width / view.zoom
+    const viewH = height / view.zoom
+    return {
+      x: view.panX + ((clientX - rect.left) / rect.width) * viewW,
+      y: view.panY + ((clientY - rect.top) / rect.height) * viewH,
+    }
+  }
+
+  const pixelsToUserUnits = (pixels: number): number => {
+    const svg = svgRef.current
+    if (!svg) return pixels
+    const rect = svg.getBoundingClientRect()
+    return (pixels / rect.width) * (width / view.zoom)
+  }
+
+  function handleWheel(e: ReactWheelEvent<SVGSVGElement>) {
+    e.preventDefault()
+    const point = toUserUnits(e.clientX, e.clientY)
+    const zoomFactor = e.deltaY < 0 ? 1.2 : 1 / 1.2
+    setView((v) => zoomViewAt(v, { width, height }, point, zoomFactor, MIN_ZOOM, MAX_ZOOM))
+  }
+
+  function handlePointerDown(e: ReactPointerEvent<SVGSVGElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    lastPinchDistanceRef.current = null
+  }
+
+  function handlePointerMove(e: ReactPointerEvent<SVGSVGElement>) {
+    if (!pointersRef.current.has(e.pointerId)) return
+    const previous = pointersRef.current.get(e.pointerId)!
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+    const active = [...pointersRef.current.values()]
+    if (active.length === 2) {
+      const [a, b] = active
+      const distance = Math.hypot(a.x - b.x, a.y - b.y)
+      const midpoint = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+      if (lastPinchDistanceRef.current !== null && lastPinchDistanceRef.current > 0) {
+        const zoomFactor = distance / lastPinchDistanceRef.current
+        const point = toUserUnits(midpoint.x, midpoint.y)
+        setView((v) => zoomViewAt(v, { width, height }, point, zoomFactor, MIN_ZOOM, MAX_ZOOM))
+      }
+      lastPinchDistanceRef.current = distance
+    } else if (active.length === 1) {
+      const dx = pixelsToUserUnits(e.clientX - previous.x)
+      const dy = pixelsToUserUnits(e.clientY - previous.y)
+      setView((v) => panView(v, { width, height }, dx, dy))
+    }
+  }
+
+  function handlePointerUp(e: ReactPointerEvent<SVGSVGElement>) {
+    pointersRef.current.delete(e.pointerId)
+    lastPinchDistanceRef.current = null
+  }
+
+  function zoomButton(factor: number) {
+    const center = { x: view.panX + width / view.zoom / 2, y: view.panY + height / view.zoom / 2 }
+    setView((v) => zoomViewAt(v, { width, height }, center, factor, MIN_ZOOM, MAX_ZOOM))
+  }
+
+  const viewW = width / view.zoom
+  const viewH = height / view.zoom
   const roadWidth = scale * 0.006
   const riverWidth = scale * 0.008
   const routeWidth = scale * 0.005
@@ -64,7 +141,19 @@ export function RouteMap({ data, background, direction, fromPosition }: Props) {
 
   return (
     <div className="route-map">
-      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="แผนที่เส้นทาง">
+      <svg
+        ref={svgRef}
+        viewBox={`${view.panX} ${view.panY} ${viewW} ${viewH}`}
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="แผนที่เส้นทาง"
+        onWheel={handleWheel}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        style={{ touchAction: 'none' }}
+      >
         {lines.map((line, i) => (
           <polyline
             key={i}
@@ -128,6 +217,21 @@ export function RouteMap({ data, background, direction, fromPosition }: Props) {
           )
         })}
       </svg>
+
+      <div className="map-zoom-controls">
+        <button type="button" aria-label="ขยาย" onClick={() => zoomButton(1.4)}>
+          +
+        </button>
+        <button type="button" aria-label="ย่อ" onClick={() => zoomButton(1 / 1.4)}>
+          −
+        </button>
+        {view.zoom > MIN_ZOOM && (
+          <button type="button" aria-label="รีเซ็ตการซูม" onClick={() => setView(FIT_VIEW)}>
+            ⟲
+          </button>
+        )}
+      </div>
+
       <MapAttribution />
     </div>
   )

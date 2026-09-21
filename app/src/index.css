@@ -271,6 +271,29 @@ select {
   display: block;
   width: 100%;
   height: 220px;
+  cursor: grab;
+  user-select: none;
+}
+
+.map-zoom-controls {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.map-zoom-controls button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .map-road {
