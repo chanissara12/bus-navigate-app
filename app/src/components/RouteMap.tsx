@@ -9,6 +9,7 @@ import {
   lineIntersectsBbox,
   projectPoint,
   sliceShapeFromNearestPoint,
+  sliceShapeToNearestPoint,
 } from '../lib/svgMap'
 import type { BusData, Direction, MapBackground } from '../lib/types'
 import { MapAttribution } from './MapAttribution'
@@ -25,17 +26,29 @@ interface Props {
   background: MapBackground
   direction: Direction
   fromPosition: number
+  /** Last stop to include (inclusive). Defaults to the end of the direction's route. */
+  toPosition?: number
 }
 
-export function RouteMap({ data, background, direction, fromPosition }: Props) {
+export function RouteMap({ data, background, direction, fromPosition, toPosition }: Props) {
   const { bbox, width, height, scale, routePoints, lines, labels, places, stopPoints } = useMemo(() => {
-    const upcomingStopIdxs = direction.stopIdxs.slice(fromPosition)
+    const lastPosition = toPosition ?? direction.stopIdxs.length - 1
+    const upcomingStopIdxs = direction.stopIdxs.slice(fromPosition, lastPosition + 1)
     const currentStop = data.stops[upcomingStopIdxs[0]]
-    const expectedFraction = fromPosition / Math.max(1, direction.stopIdxs.length - 1)
-    const slicedShape =
-      direction.shapeCoords.length > 0
-        ? sliceShapeFromNearestPoint(direction.shapeCoords, currentStop, expectedFraction)
-        : []
+    const lastStop = data.stops[upcomingStopIdxs[upcomingStopIdxs.length - 1]]
+    const totalPositions = Math.max(1, direction.stopIdxs.length - 1)
+    const fromFraction = fromPosition / totalPositions
+    const toFraction = lastPosition / totalPositions
+
+    let slicedShape: [number, number][] = []
+    if (direction.shapeCoords.length > 0) {
+      slicedShape = sliceShapeFromNearestPoint(direction.shapeCoords, currentStop, fromFraction)
+      if (toPosition !== undefined) {
+        // re-anchor the fraction to the already-clipped shape before cropping its tail
+        const remainingFraction = (toFraction - fromFraction) / Math.max(1e-6, 1 - fromFraction)
+        slicedShape = sliceShapeToNearestPoint(slicedShape, lastStop, remainingFraction)
+      }
+    }
 
     const stopLatLons = upcomingStopIdxs.map((idx) => data.stops[idx])
     const shapeLatLons = slicedShape.map(([lat, lon]) => ({ lat, lon }))
@@ -57,7 +70,7 @@ export function RouteMap({ data, background, direction, fromPosition }: Props) {
         point: projectPoint(data.stops[idx], box),
       })),
     }
-  }, [data, background, direction, fromPosition])
+  }, [data, background, direction, fromPosition, toPosition])
 
   const [view, setView] = useState<ViewBox>(FIT_VIEW)
   const svgRef = useRef<SVGSVGElement>(null)

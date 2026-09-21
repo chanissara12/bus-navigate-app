@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { findJourneys, groupByBoardNowDirection, type Journey } from '../lib/destinationLookup'
+import { findJourneys, groupByBoardNowDirection, type Journey, type Leg } from '../lib/destinationLookup'
 import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import { formatRouteCode } from '../lib/formatRoute'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData } from '../lib/types'
+import { LegMapOverlay } from './LegMapOverlay'
 import { LocationGate } from './LocationGate'
 
 interface Props {
@@ -15,12 +16,23 @@ function minutes(sec: number): number {
   return Math.round(sec / 60)
 }
 
-function JourneyLine({ data, journey }: { data: BusData; journey: Journey }) {
+function JourneyLine({
+  data,
+  journey,
+  onShowMap,
+}: {
+  data: BusData
+  journey: Journey
+  onShowMap: (leg: Leg) => void
+}) {
   if (journey.type === 'direct') {
     const alightName = data.stops[journey.leg.alightStopIdx].nameTh || data.stops[journey.leg.alightStopIdx].nameEn
     return (
       <li>
         ลงป้าย {alightName} — {minutes(journey.totalSec)} นาที
+        <button type="button" className="show-map" aria-label="ดูแผนที่" onClick={() => onShowMap(journey.leg)}>
+          🗺
+        </button>
       </li>
     )
   }
@@ -30,8 +42,24 @@ function JourneyLine({ data, journey }: { data: BusData; journey: Journey }) {
     data.stops[journey.secondLeg.alightStopIdx].nameTh || data.stops[journey.secondLeg.alightStopIdx].nameEn
   return (
     <li>
-      ต่อสาย {formatRouteCode(journey.secondLeg.route)} ที่ {transferName} แล้วลงป้าย {alightName} —{' '}
-      {minutes(journey.totalSec)} นาที
+      ต่อสาย {formatRouteCode(journey.secondLeg.route)} ที่ {transferName}
+      <button
+        type="button"
+        className="show-map"
+        aria-label="ดูแผนที่ช่วงแรก"
+        onClick={() => onShowMap(journey.firstLeg)}
+      >
+        🗺
+      </button>{' '}
+      แล้วลงป้าย {alightName} — {minutes(journey.totalSec)} นาที
+      <button
+        type="button"
+        className="show-map"
+        aria-label="ดูแผนที่ช่วงต่อ"
+        onClick={() => onShowMap(journey.secondLeg)}
+      >
+        🗺
+      </button>
     </li>
   )
 }
@@ -39,6 +67,7 @@ function JourneyLine({ data, journey }: { data: BusData; journey: Journey }) {
 export function DestinationScreen({ data, location }: Props) {
   const { status, coords, error, request } = location
   const [destinationName, setDestinationName] = useState(FAVORITE_DESTINATIONS[0].name)
+  const [mapLeg, setMapLeg] = useState<Leg | null>(null)
 
   const groups = useMemo(() => {
     if (!coords) return []
@@ -79,13 +108,15 @@ export function DestinationScreen({ data, location }: Props) {
               </div>
               <ul>
                 {group.options.map((option, i) => (
-                  <JourneyLine key={i} data={data} journey={option} />
+                  <JourneyLine key={i} data={data} journey={option} onShowMap={setMapLeg} />
                 ))}
               </ul>
             </div>
           ))}
         </div>
       </div>
+
+      {mapLeg && <LegMapOverlay data={data} leg={mapLeg} onClose={() => setMapLeg(null)} />}
     </LocationGate>
   )
 }

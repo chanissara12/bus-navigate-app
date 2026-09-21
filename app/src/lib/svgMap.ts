@@ -103,11 +103,7 @@ const SEARCH_WINDOW_FRACTION = 0.25
  * around where the shape should be at that point, falling back to the full shape when
  * that window turns up nothing.
  */
-export function sliceShapeFromNearestPoint(
-  shape: [number, number][],
-  point: LatLon,
-  expectedFraction?: number,
-): [number, number][] {
+function nearestPointIndex(shape: [number, number][], point: LatLon, expectedFraction?: number): number {
   let searchStart = 0
   let searchEnd = shape.length
 
@@ -128,8 +124,25 @@ export function sliceShapeFromNearestPoint(
       bestIndex = index
     }
   }
+  return bestIndex
+}
 
+export function sliceShapeFromNearestPoint(
+  shape: [number, number][],
+  point: LatLon,
+  expectedFraction?: number,
+): [number, number][] {
+  const bestIndex = nearestPointIndex(shape, point, expectedFraction)
   return bestIndex === -1 ? shape : shape.slice(bestIndex)
+}
+
+export function sliceShapeToNearestPoint(
+  shape: [number, number][],
+  point: LatLon,
+  expectedFraction?: number,
+): [number, number][] {
+  const bestIndex = nearestPointIndex(shape, point, expectedFraction)
+  return bestIndex === -1 ? shape : shape.slice(0, bestIndex + 1)
 }
 
 export function filterPlacesForDisplay(places: MapPlace[], bbox: BBox, maxCount: number): MapPlace[] {

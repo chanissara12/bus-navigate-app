@@ -7,7 +7,7 @@ export const DESTINATION_WALK_RADIUS_M = 800
 const TRANSFER_WALK_RADIUS_M = 400
 const DEFAULT_WAIT_SEC = 300
 
-interface Leg {
+export interface Leg {
   route: Route
   direction: Direction
   boardStopIdx: number

@@ -6,6 +6,7 @@ import {
   lineIntersectsBbox,
   projectPoint,
   sliceShapeFromNearestPoint,
+  sliceShapeToNearestPoint,
 } from './svgMap'
 import type { MapLabel, MapLine, MapPlace } from './types'
 
@@ -145,6 +146,44 @@ describe('sliceShapeFromNearestPoint', () => {
     // late in the trip -> should snap to index 8, not index 1
     const late = sliceShapeFromNearestPoint(shape, point, 0.9)
     expect(late[0]).toEqual(shape[8])
+  })
+})
+
+describe('sliceShapeToNearestPoint', () => {
+  it('drops the portion of the shape after the nearest point to the given stop', () => {
+    const shape: [number, number][] = [
+      [13.7, 100.5],
+      [13.71, 100.51],
+      [13.72, 100.52],
+      [13.73, 100.53],
+    ]
+    const result = sliceShapeToNearestPoint(shape, { lat: 13.712, lon: 100.511 })
+    expect(result).toEqual([
+      [13.7, 100.5],
+      [13.71, 100.51],
+    ])
+  })
+
+  it('picks the occurrence near the expected fraction on a loop that revisits the same spot', () => {
+    const shape: [number, number][] = [
+      [13.699, 100.499],
+      [13.7, 100.5], // near-duplicate #1, early in the loop
+      [13.72, 100.52],
+      [13.74, 100.54],
+      [13.76, 100.56],
+      [13.78, 100.58],
+      [13.76, 100.56],
+      [13.72, 100.52],
+      [13.7, 100.5], // near-duplicate #2, late in the loop
+      [13.699, 100.499],
+    ]
+    const point = { lat: 13.7, lon: 100.5 }
+
+    const early = sliceShapeToNearestPoint(shape, point, 0.1)
+    expect(early[early.length - 1]).toEqual(shape[1])
+
+    const late = sliceShapeToNearestPoint(shape, point, 0.9)
+    expect(late[late.length - 1]).toEqual(shape[8])
   })
 })
 
