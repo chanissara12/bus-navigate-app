@@ -108,19 +108,23 @@ export function DestinationPicker({ background, center, onConfirm, onClose }: Pr
           onPointerCancel={panZoom.handlePointerUp}
           style={{ touchAction: 'none' }}
         >
-          {visibleLines.map((line, i) => (
-            <polyline
-              key={i}
-              className={line.kind === 'river' ? 'map-river' : 'map-road'}
-              strokeWidth={(line.kind === 'river' ? 1.3 : 1) * scale * 0.004}
-              points={line.points
-                .map(([lat, lon]) => {
-                  const p = projectPoint({ lat, lon }, base)
-                  return `${p.x},${p.y}`
-                })
-                .join(' ')}
-            />
-          ))}
+          {visibleLines.map((line, i) => {
+            const isMinorRoad = line.kind === 'road' && line.priority >= 3
+            const widthFactor = line.kind === 'river' ? 1.3 : isMinorRoad ? 0.55 : 1
+            return (
+              <polyline
+                key={i}
+                className={line.kind === 'river' ? 'map-river' : isMinorRoad ? 'map-road map-road-minor' : 'map-road'}
+                strokeWidth={widthFactor * scale * 0.004}
+                points={line.points
+                  .map(([lat, lon]) => {
+                    const p = projectPoint({ lat, lon }, base)
+                    return `${p.x},${p.y}`
+                  })
+                  .join(' ')}
+              />
+            )
+          })}
 
           {visiblePlaces.map((place, i) => {
             const p = projectPoint(place, base)

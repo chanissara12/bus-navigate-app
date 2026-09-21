@@ -9,8 +9,8 @@
   --no-text: #a3221f;
   --accent: #aa3bff;
   --map-bg: #f4f3ec;
-  --map-road: #c9c6bd;
-  --map-river: #9fc7e8;
+  --map-road: #a39c8c;
+  --map-river: #7fb2dd;
   --map-label: #6b6560;
   --map-place-dot: #7a746c;
 
@@ -32,8 +32,8 @@
     --no-text: #ff8b87;
     --accent: #c084fc;
     --map-bg: #1c1d24;
-    --map-road: #3a3c47;
-    --map-river: #2c4f6e;
+    --map-road: #565a6b;
+    --map-river: #3f6f97;
     --map-label: #9a958e;
     --map-place-dot: #a19b92;
   }
@@ -437,6 +437,10 @@ select {
   stroke: var(--map-road);
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.map-road-minor {
+  opacity: 0.6;
 }
 
 .map-river {

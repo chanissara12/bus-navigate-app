@@ -12,7 +12,7 @@ const RIVER_TOLERANCE_M = 40
 const MIN_LINE_LENGTH_M = 250
 const PLACE_DEDUPE_RADIUS_M = 550
 
-const ROAD_PRIORITY = { river: 0, motorway: 1, trunk: 1, primary: 2 }
+const ROAD_PRIORITY = { river: 0, motorway: 1, trunk: 1, primary: 2, secondary: 3, tertiary: 4 }
 const PLACE_KIND_BY_TAG = {
   station: 'transit',
   subway: 'transit',
@@ -41,7 +41,7 @@ function buildLines(ways, kind, toleranceM) {
     if (lineLengthMeters(simplified) < MIN_LINE_LENGTH_M) continue
 
     const name = way.tags?.name ?? null
-    const priority = kind === 'river' ? ROAD_PRIORITY.river : (ROAD_PRIORITY[way.tags?.highway] ?? 3)
+    const priority = kind === 'river' ? ROAD_PRIORITY.river : (ROAD_PRIORITY[way.tags?.highway] ?? 5)
 
     lines.push({
       kind,
@@ -81,7 +81,7 @@ function dedupePlaces(nodes) {
 }
 
 function build() {
-  const roadWays = readOsm('roads.json')
+  const roadWays = [...readOsm('roads.json'), ...readOsm('roads-secondary.json')]
   const riverWays = readOsm('rivers.json')
   const placeNodes = readOsm('places.json')
 

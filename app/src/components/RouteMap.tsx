@@ -93,19 +93,22 @@ export function RouteMap({ data, background, direction, fromPosition, toPosition
         onPointerCancel={handlePointerUp}
         style={{ touchAction: 'none' }}
       >
-        {lines.map((line, i) => (
-          <polyline
-            key={i}
-            className={line.kind === 'river' ? 'map-river' : 'map-road'}
-            strokeWidth={line.kind === 'river' ? riverWidth : roadWidth}
-            points={line.points
-              .map(([lat, lon]) => {
-                const p = projectPoint({ lat, lon }, bbox)
-                return `${p.x},${p.y}`
-              })
-              .join(' ')}
-          />
-        ))}
+        {lines.map((line, i) => {
+          const isMinorRoad = line.kind === 'road' && line.priority >= 3
+          return (
+            <polyline
+              key={i}
+              className={line.kind === 'river' ? 'map-river' : isMinorRoad ? 'map-road map-road-minor' : 'map-road'}
+              strokeWidth={line.kind === 'river' ? riverWidth : isMinorRoad ? roadWidth * 0.55 : roadWidth}
+              points={line.points
+                .map(([lat, lon]) => {
+                  const p = projectPoint({ lat, lon }, bbox)
+                  return `${p.x},${p.y}`
+                })
+                .join(' ')}
+            />
+          )
+        })}
 
         {routePoints.length > 1 && (
           <polyline
