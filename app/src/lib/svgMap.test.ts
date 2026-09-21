@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
+  bboxAroundCenter,
+  bboxFromView,
   boundingBoxWithMargin,
+  bboxSizeMeters,
   filterLabelsForDisplay,
   filterPlacesForDisplay,
   lineIntersectsBbox,
   projectPoint,
   sliceShapeFromNearestPoint,
   sliceShapeToNearestPoint,
+  unprojectPoint,
 } from './svgMap'
 import type { MapLabel, MapLine, MapPlace } from './types'
 
@@ -196,5 +200,63 @@ describe('filterPlacesForDisplay', () => {
       { lat: 20, lon: 100, name: 'B', kind: 'mall' },
     ]
     expect(filterPlacesForDisplay(places, bbox, 7)).toEqual([places[0]])
+  })
+})
+
+describe('bboxAroundCenter', () => {
+  it('centers the box on the given point', () => {
+    const center = { lat: 13.75, lon: 100.5 }
+    const bbox = bboxAroundCenter(center, 1000)
+    expect((bbox.minLat + bbox.maxLat) / 2).toBeCloseTo(center.lat, 6)
+    expect((bbox.minLon + bbox.maxLon) / 2).toBeCloseTo(center.lon, 6)
+  })
+
+  it('produces a box roughly 2x the radius wide and tall in meters', () => {
+    const bbox = bboxAroundCenter({ lat: 13.75, lon: 100.5 }, 1000)
+    const { widthM, heightM } = bboxSizeMeters(bbox)
+    expect(widthM).toBeCloseTo(2000, -1)
+    expect(heightM).toBeCloseTo(2000, -1)
+  })
+})
+
+describe('unprojectPoint', () => {
+  it('inverts projectPoint for the north-west corner', () => {
+    const bbox = { minLat: 13.7, maxLat: 13.8, minLon: 100.5, maxLon: 100.6 }
+    const projected = projectPoint({ lat: 13.8, lon: 100.5 }, bbox)
+    const back = unprojectPoint(projected, bbox)
+    expect(back.lat).toBeCloseTo(13.8, 6)
+    expect(back.lon).toBeCloseTo(100.5, 6)
+  })
+
+  it('round-trips an arbitrary interior point', () => {
+    const bbox = { minLat: 13.7, maxLat: 13.8, minLon: 100.5, maxLon: 100.6 }
+    const original = { lat: 13.734, lon: 100.567 }
+    const back = unprojectPoint(projectPoint(original, bbox), bbox)
+    expect(back.lat).toBeCloseTo(original.lat, 6)
+    expect(back.lon).toBeCloseTo(original.lon, 6)
+  })
+})
+
+describe('bboxFromView', () => {
+  it('returns the base bbox unchanged at the fitted (zoom 1) view', () => {
+    const base = { minLat: 13.7, maxLat: 13.8, minLon: 100.5, maxLon: 100.6 }
+    const { widthM, heightM } = bboxSizeMeters(base)
+    const view = { zoom: 1, panX: 0, panY: 0 }
+    const result = bboxFromView(base, view, { width: widthM, height: heightM })
+    expect(result.minLat).toBeCloseTo(base.minLat, 4)
+    expect(result.maxLat).toBeCloseTo(base.maxLat, 4)
+    expect(result.minLon).toBeCloseTo(base.minLon, 4)
+    expect(result.maxLon).toBeCloseTo(base.maxLon, 4)
+  })
+
+  it('shrinks the box toward the north-west when zoomed and panned to (0,0)', () => {
+    const base = { minLat: 13.7, maxLat: 13.8, minLon: 100.5, maxLon: 100.6 }
+    const { widthM, heightM } = bboxSizeMeters(base)
+    const view = { zoom: 2, panX: 0, panY: 0 }
+    const result = bboxFromView(base, view, { width: widthM, height: heightM })
+    expect(result.maxLat).toBeCloseTo(base.maxLat, 4)
+    expect(result.minLon).toBeCloseTo(base.minLon, 4)
+    expect(result.minLat).toBeGreaterThan(base.minLat)
+    expect(result.maxLon).toBeLessThan(base.maxLon)
   })
 })

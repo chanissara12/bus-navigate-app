@@ -41,6 +41,19 @@ export function boundingBoxWithMargin(points: LatLon[], marginRatio: number): BB
   }
 }
 
+export function bboxAroundCenter(center: LatLon, radiusM: number): BBox {
+  const metersPerDegreeLon = 111320 * Math.cos((center.lat * Math.PI) / 180)
+  const metersPerDegreeLat = 110540
+  const latDelta = radiusM / metersPerDegreeLat
+  const lonDelta = radiusM / metersPerDegreeLon
+  return {
+    minLat: center.lat - latDelta,
+    maxLat: center.lat + latDelta,
+    minLon: center.lon - lonDelta,
+    maxLon: center.lon + lonDelta,
+  }
+}
+
 export function bboxSizeMeters(bbox: BBox): { widthM: number; heightM: number } {
   const centerLat = (bbox.minLat + bbox.maxLat) / 2
   const metersPerDegreeLon = 111320 * Math.cos((centerLat * Math.PI) / 180)
@@ -58,6 +71,39 @@ export function projectPoint(point: LatLon, bbox: BBox): { x: number; y: number 
   return {
     x: (point.lon - bbox.minLon) * metersPerDegreeLon,
     y: (bbox.maxLat - point.lat) * metersPerDegreeLat,
+  }
+}
+
+export function unprojectPoint(point: { x: number; y: number }, bbox: BBox): LatLon {
+  const centerLat = (bbox.minLat + bbox.maxLat) / 2
+  const metersPerDegreeLon = 111320 * Math.cos((centerLat * Math.PI) / 180)
+  const metersPerDegreeLat = 110540
+  return {
+    lon: bbox.minLon + point.x / metersPerDegreeLon,
+    lat: bbox.maxLat - point.y / metersPerDegreeLat,
+  }
+}
+
+/**
+ * Converts the current pan/zoom window (in the same meter-offset space `projectPoint`
+ * produces, relative to `base`) back into a lat/lon bbox, so content filtering
+ * (which labels/places/lines to show) can track what's actually visible as the user
+ * zooms and pans, instead of staying fixed to the box the map first fit to.
+ */
+export function bboxFromView(
+  base: BBox,
+  view: { zoom: number; panX: number; panY: number },
+  baseSize: { width: number; height: number },
+): BBox {
+  const viewW = baseSize.width / view.zoom
+  const viewH = baseSize.height / view.zoom
+  const topLeft = unprojectPoint({ x: view.panX, y: view.panY }, base)
+  const bottomRight = unprojectPoint({ x: view.panX + viewW, y: view.panY + viewH }, base)
+  return {
+    minLat: bottomRight.lat,
+    maxLat: topLeft.lat,
+    minLon: topLeft.lon,
+    maxLon: bottomRight.lon,
   }
 }
 
