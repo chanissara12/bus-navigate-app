@@ -1,3 +1,21 @@
+// Reads pre-fetched Overpass extracts from OSM_DIR (see below) — there is no
+// fetch step here, the JSON files are pulled manually and are gitignored
+// (scratch/osm/, ~40 MB, re-downloadable). places.json in particular must be
+// queried with `nwr[...]` and `out center;`, not `node[...]` — a mall mapped
+// as a building outline (a way) has no top-level lat/lon, only `.center`,
+// and `node`-only queries silently drop it. Query used for the current data:
+//
+// [out:json][timeout:180];
+// (
+//   nwr["railway"="station"](<south>,<west>,<north>,<east>);
+//   nwr["station"="subway"](<south>,<west>,<north>,<east>);
+//   nwr["shop"="mall"](<south>,<west>,<north>,<east>);
+//   nwr["amenity"="hospital"](<south>,<west>,<north>,<east>);
+//   nwr["amenity"="university"](<south>,<west>,<north>,<east>);
+//   nwr["amenity"="marketplace"](<south>,<west>,<north>,<east>);
+//   nwr["amenity"="ferry_terminal"](<south>,<west>,<north>,<east>);
+// );
+// out center;
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -69,13 +87,21 @@ function placeKind(tags) {
   return 'other'
 }
 
-function dedupePlaces(nodes) {
-  const named = nodes.filter((n) => n.tags?.name)
+// Overpass returns nodes with lat/lon at the top level, but ways/relations
+// (queried with `nwr` and `out center`) instead carry their centroid under
+// `.center` — a mall mapped as a building outline has no other coordinate.
+function elementCoords(element) {
+  return element.type === 'node' ? { lat: element.lat, lon: element.lon } : element.center
+}
+
+function dedupePlaces(elements) {
+  const named = elements.filter((e) => e.tags?.name && elementCoords(e))
   const kept = []
-  for (const node of named) {
-    const nearby = kept.find((k) => haversineMeters(k, node) <= PLACE_DEDUPE_RADIUS_M)
+  for (const element of named) {
+    const coords = elementCoords(element)
+    const nearby = kept.find((k) => haversineMeters(k, coords) <= PLACE_DEDUPE_RADIUS_M)
     if (nearby) continue
-    kept.push({ lat: node.lat, lon: node.lon, name: node.tags.name, kind: placeKind(node.tags) })
+    kept.push({ ...coords, name: element.tags.name, kind: placeKind(element.tags) })
   }
   return kept
 }
@@ -96,7 +122,7 @@ function build() {
 
   console.log(`lines: ${lines.length} (roads: ${roadLines.length}, rivers: ${riverLines.length})`)
   console.log(`labels: ${labels.length}`)
-  console.log(`places: ${places.length} (from ${placeNodes.length} raw nodes)`)
+  console.log(`places: ${places.length} (from ${placeNodes.length} raw elements)`)
   console.log(`output: ${OUT_FILE}`)
 }
 
