@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { boardableDirectionsAtStop, findNearestStop, type BoardableDirection } from '../lib/routeLookup'
 import { routeMatchesInput } from '../lib/numberMatch'
-import { useGeolocation } from '../lib/useGeolocation'
+import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData } from '../lib/types'
 import { LocationGate } from './LocationGate'
 
@@ -9,11 +9,12 @@ const NEAREST_STOP_RADIUS_M = 150
 
 interface Props {
   data: BusData
+  location: GeolocationState
   onOpenRoute: (boardable: BoardableDirection) => void
 }
 
-export function StopScreen({ data, onOpenRoute }: Props) {
-  const { status, coords, error, request } = useGeolocation()
+export function StopScreen({ data, location, onOpenRoute }: Props) {
+  const { status, coords, error, request } = location
   const [input, setInput] = useState('')
 
   const nearest = useMemo(() => {

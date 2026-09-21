@@ -4,7 +4,7 @@ import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import { recoverFromMisboarding } from '../lib/misboardRecovery'
 import { routeMatchesInput } from '../lib/numberMatch'
 import { findCurrentPositionOnDirection } from '../lib/routeLookup'
-import { useGeolocation } from '../lib/useGeolocation'
+import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData, Direction, Route } from '../lib/types'
 import { LocationGate } from './LocationGate'
 
@@ -12,10 +12,11 @@ const CURRENT_POSITION_RADIUS_M = 300
 
 interface Props {
   data: BusData
+  location: GeolocationState
 }
 
-export function MisboardScreen({ data }: Props) {
-  const { status, coords, error, request } = useGeolocation()
+export function MisboardScreen({ data, location }: Props) {
+  const { status, coords, error, request } = location
   const [routeInput, setRouteInput] = useState('')
   const [selected, setSelected] = useState<{ route: Route; direction: Direction } | null>(null)
   const [destinationName, setDestinationName] = useState(FAVORITE_DESTINATIONS[0].name)

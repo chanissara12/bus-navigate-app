@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { findJourneys, groupByBoardNowDirection, type Journey } from '../lib/destinationLookup'
 import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
-import { useGeolocation } from '../lib/useGeolocation'
+import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData } from '../lib/types'
 import { LocationGate } from './LocationGate'
 
 interface Props {
   data: BusData
+  location: GeolocationState
 }
 
 function minutes(sec: number): number {
@@ -34,8 +35,8 @@ function JourneyLine({ data, journey }: { data: BusData; journey: Journey }) {
   )
 }
 
-export function DestinationScreen({ data }: Props) {
-  const { status, coords, error, request } = useGeolocation()
+export function DestinationScreen({ data, location }: Props) {
+  const { status, coords, error, request } = location
   const [destinationName, setDestinationName] = useState(FAVORITE_DESTINATIONS[0].name)
 
   const groups = useMemo(() => {

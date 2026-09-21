@@ -3,7 +3,7 @@ import type { LatLon } from './geo'
 
 export type GeolocationStatus = 'idle' | 'loading' | 'granted' | 'error'
 
-interface GeolocationState {
+export interface GeolocationState {
   status: GeolocationStatus
   coords: LatLon | null
   error: string | null
