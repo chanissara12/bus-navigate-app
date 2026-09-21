@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeRouteNumber, routeMatchesInput } from './numberMatch'
+import { normalizeRouteNumber, routeCodeStartsWithInput, routeMatchesInput } from './numberMatch'
 import type { Route } from './types'
 
 function route(newCode: string, oldCode: string | null): Route {
@@ -55,5 +55,27 @@ describe('routeMatchesInput', () => {
     // "34" must not board you onto a different route just because a Thai suffix
     // got stripped away.
     expect(routeMatchesInput(route('1-3', '34เสริม'), '34')).toBe(false)
+  })
+})
+
+describe('routeCodeStartsWithInput', () => {
+  it('matches while only the first digit of a multi-digit new code has been typed', () => {
+    expect(routeCodeStartsWithInput(route('2-44', '54'), '2')).toBe(true)
+  })
+
+  it('matches while only the first digit of an old code has been typed', () => {
+    expect(routeCodeStartsWithInput(route('1-8', '59'), '5')).toBe(true)
+  })
+
+  it('does not match a digit that is not a prefix of either code', () => {
+    expect(routeCodeStartsWithInput(route('2-44', '54'), '8')).toBe(false)
+  })
+
+  it('still matches once the input is a full exact code', () => {
+    expect(routeCodeStartsWithInput(route('2-44', '54'), '244')).toBe(true)
+  })
+
+  it('treats an empty input as matching nothing', () => {
+    expect(routeCodeStartsWithInput(route('2-44', '54'), '')).toBe(false)
   })
 })

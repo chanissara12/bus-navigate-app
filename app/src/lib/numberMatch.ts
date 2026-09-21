@@ -11,3 +11,11 @@ export function routeMatchesInput(route: Route, input: string): boolean {
   if (route.oldCode && normalizeRouteNumber(route.oldCode) === normalizedInput) return true
   return false
 }
+
+export function routeCodeStartsWithInput(route: Route, input: string): boolean {
+  const normalizedInput = normalizeRouteNumber(input)
+  if (normalizedInput === '') return false
+  if (normalizeRouteNumber(route.newCode).startsWith(normalizedInput)) return true
+  if (route.oldCode && normalizeRouteNumber(route.oldCode).startsWith(normalizedInput)) return true
+  return false
+}

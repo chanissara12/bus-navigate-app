@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { boardableDirectionsAtStop, findNearestStop, type BoardableDirection } from '../lib/routeLookup'
-import { routeMatchesInput } from '../lib/numberMatch'
+import { routeCodeStartsWithInput, routeMatchesInput } from '../lib/numberMatch'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData } from '../lib/types'
 import { LocationGate } from './LocationGate'
@@ -27,10 +27,15 @@ export function StopScreen({ data, location, onOpenRoute }: Props) {
     return boardableDirectionsAtStop(data, nearest.stop.id)
   }, [data, nearest])
 
-  const matches = useMemo(() => {
+  const candidates = useMemo(() => {
     if (input === '') return null
-    return boardable.filter((b) => routeMatchesInput(b.route, input))
+    return boardable.filter((b) => routeCodeStartsWithInput(b.route, input))
   }, [boardable, input])
+
+  const hasExactMatch = useMemo(() => {
+    if (!candidates) return false
+    return candidates.some((b) => routeMatchesInput(b.route, input))
+  }, [candidates, input])
 
   return (
     <LocationGate
@@ -56,14 +61,13 @@ export function StopScreen({ data, location, onOpenRoute }: Props) {
             onChange={(e) => setInput(e.target.value)}
           />
 
-          {matches !== null && (
-            <div className={`verdict ${matches.length > 0 ? 'ok' : 'no'}`}>
-              {matches.length > 0 ? 'ขึ้นได้' : 'อย่าขึ้น — สายนี้ไม่ผ่านป้ายนี้ไปทางไหนเลย'}
-            </div>
+          {candidates !== null && candidates.length === 0 && (
+            <div className="verdict no">อย่าขึ้น — สายนี้ไม่ผ่านป้ายนี้ไปทางไหนเลย</div>
           )}
+          {candidates !== null && hasExactMatch && <div className="verdict ok">ขึ้นได้</div>}
 
           <ul className="route-list">
-            {(matches ?? boardable).map((b) => (
+            {(candidates ?? boardable).map((b) => (
               <li key={`${b.direction.routeIdx}-${b.direction.directionId}`}>
                 <button type="button" className="route-card" onClick={() => onOpenRoute(b)}>
                   <span className="route-code">{b.route.newCode}</span>
@@ -72,7 +76,7 @@ export function StopScreen({ data, location, onOpenRoute }: Props) {
               </li>
             ))}
           </ul>
-          {boardable.length === 0 && matches === null && <p className="status">ป้ายนี้ไม่มีสายผ่าน</p>}
+          {boardable.length === 0 && candidates === null && <p className="status">ป้ายนี้ไม่มีสายผ่าน</p>}
         </div>
       )}
     </LocationGate>
