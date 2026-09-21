@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:data": "node scripts/build-data.mjs"
+    "build:data": "node scripts/build-data.mjs",
+    "build:map-background": "node scripts/build-map-background.mjs"
   },
   "dependencies": {
     "react": "^19.2.8",

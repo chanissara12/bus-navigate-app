@@ -1,9 +1,31 @@
 // Reads pre-fetched Overpass extracts from OSM_DIR (see below) — there is no
-// fetch step here, the JSON files are pulled manually and are gitignored
-// (scratch/osm/, ~40 MB, re-downloadable). places.json in particular must be
-// queried with `nwr[...]` and `out center;`, not `node[...]` — a mall mapped
-// as a building outline (a way) has no top-level lat/lon, only `.center`,
-// and `node`-only queries silently drop it. Query used for the current data:
+// fetch step here except in .github/workflows/update-map-background.yml,
+// which runs monthly; a manual re-fetch uses the same queries below. Files
+// are gitignored (scratch/osm/, ~40 MB total, re-downloadable) and read from:
+// roads.json, roads-secondary.json, rivers.json, places.json.
+//
+// A generic User-Agent like "Mozilla/5.0" gets a bare 406 from
+// overpass-api.de's WAF on /api/interpreter specifically (its /api/status
+// still answers) — send a full browser UA string.
+//
+// roads.json — motorway/trunk/primary and their _link variants:
+// [out:json][timeout:180];
+// way["highway"~"^(motorway|motorway_link|trunk|trunk_link|primary|primary_link)$"](<south>,<west>,<north>,<east>);
+// out geom;
+//
+// roads-secondary.json — secondary/tertiary and their _link variants:
+// [out:json][timeout:180];
+// way["highway"~"^(secondary|secondary_link|tertiary|tertiary_link)$"](<south>,<west>,<north>,<east>);
+// out geom;
+//
+// rivers.json:
+// [out:json][timeout:180];
+// way["waterway"="river"](<south>,<west>,<north>,<east>);
+// out geom;
+//
+// places.json must be queried with `nwr[...]` and `out center;`, not
+// `node[...]` — a mall mapped as a building outline (a way) has no top-level
+// lat/lon, only `.center`, and a `node`-only query silently drops it:
 //
 // [out:json][timeout:180];
 // (
@@ -14,8 +36,22 @@
 //   nwr["amenity"="university"](<south>,<west>,<north>,<east>);
 //   nwr["amenity"="marketplace"](<south>,<west>,<north>,<east>);
 //   nwr["amenity"="ferry_terminal"](<south>,<west>,<north>,<east>);
+//   nwr["amenity"="place_of_worship"](<south>,<west>,<north>,<east>);
+//   nwr["amenity"="school"](<south>,<west>,<north>,<east>);
+//   nwr["leisure"="park"](<south>,<west>,<north>,<east>);
+//   nwr["office"="government"](<south>,<west>,<north>,<east>);
+//   nwr["amenity"="townhall"](<south>,<west>,<north>,<east>);
+//   node["highway"="bus_stop"]["name"](<south>,<west>,<north>,<east>);
 // );
 // out center;
+//
+// The last line is a deliberate exception: a bus stop is transit
+// infrastructure, not a landmark, but Thai OSM contributors sometimes name a
+// stop after the storefront next to it (e.g. a mall recorded nowhere else in
+// OSM) — see .wayfinder/research/ for the "ทรี ออน ธรี" case that prompted
+// this. Kept lowest display priority (see PLACE_KIND_PRIORITY in svgMap.ts)
+// so it never crowds out an actual amenity when a view has more than
+// maxCount candidates.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -31,15 +67,26 @@ const MIN_LINE_LENGTH_M = 250
 const PLACE_DEDUPE_RADIUS_M = 550
 
 const ROAD_PRIORITY = { river: 0, motorway: 1, trunk: 1, primary: 2, secondary: 3, tertiary: 4 }
-const PLACE_KIND_BY_TAG = {
-  station: 'transit',
-  subway: 'transit',
-  ferry_terminal: 'transit',
-  mall: 'mall',
-  hospital: 'hospital',
-  university: 'university',
-  marketplace: 'market',
-}
+
+// Each row is [osmKey, osmValue, ourKind]. A node/way can only be resolved to
+// one kind, so order matters when a place could match more than one row —
+// it doesn't currently, but keep more specific tags above 'other'-ish ones
+// if that changes.
+const PLACE_KIND_RULES = [
+  ['railway', 'station', 'transit'],
+  ['station', 'subway', 'transit'],
+  ['amenity', 'ferry_terminal', 'transit'],
+  ['shop', 'mall', 'mall'],
+  ['amenity', 'hospital', 'hospital'],
+  ['amenity', 'university', 'university'],
+  ['amenity', 'marketplace', 'market'],
+  ['amenity', 'place_of_worship', 'worship'],
+  ['amenity', 'school', 'school'],
+  ['leisure', 'park', 'park'],
+  ['office', 'government', 'government'],
+  ['amenity', 'townhall', 'government'],
+  ['highway', 'bus_stop', 'landmark'],
+]
 
 function readOsm(name) {
   return JSON.parse(readFileSync(join(OSM_DIR, name), 'utf-8')).elements
@@ -81,8 +128,8 @@ function buildLabels(lines) {
 }
 
 function placeKind(tags) {
-  for (const [tag, kind] of Object.entries(PLACE_KIND_BY_TAG)) {
-    if (tags.railway === tag || tags.station === tag || tags.shop === tag || tags.amenity === tag) return kind
+  for (const [key, value, kind] of PLACE_KIND_RULES) {
+    if (tags[key] === value) return kind
   }
   return 'other'
 }

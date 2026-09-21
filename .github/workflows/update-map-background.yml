@@ -1,0 +1,80 @@
+name: Update map background
+
+# Refreshes app/public/data/map-background.json from OpenStreetMap via
+# Overpass — roads, rivers, and the "nearby places" layer (WF-010/WF-012).
+# Runs monthly, not weekly like update-feed.yml: road/place data changes far
+# slower than the nightly bus feed, and Overpass discourages frequent large
+# extracts. Opens a PR with the diff; never deploys on its own.
+#
+# The exact queries live as comments at the top of
+# app/scripts/build-map-background.mjs — keep the two in sync.
+
+on:
+  schedule:
+    - cron: '0 20 1 * *' # 1st of the month, 20:00 UTC (03:00 Bangkok next day)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  # overpass-api.de's WAF 406s a generic "Mozilla/5.0" on /api/interpreter
+  # specifically — send a real browser UA.
+  OVERPASS_UA: >-
+    Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+  BBOX: '13.501030443240156,100.20733851995618,14.090088761595823,100.93380188807149'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fetch OSM extracts
+        run: |
+          set -euo pipefail
+          mkdir -p scratch/osm
+          fetch() {
+            local file="$1" query="$2"
+            echo "$query" > /tmp/query.txt
+            for attempt in 1 2 3; do
+              code=$(curl -s -A "$OVERPASS_UA" "https://overpass-api.de/api/interpreter" \
+                --data-urlencode "data@/tmp/query.txt" -o "scratch/osm/$file" \
+                -w "%{http_code}" --max-time 200)
+              if [ "$code" = "200" ] && head -c 20 "scratch/osm/$file" | grep -q '"version"'; then
+                echo "$file: ok"
+                return 0
+              fi
+              echo "$file: attempt $attempt failed (http $code), retrying in 60s"
+              sleep 60
+            done
+            echo "$file: failed after 3 attempts" >&2
+            return 1
+          }
+          fetch roads.json '[out:json][timeout:180];way["highway"~"^(motorway|motorway_link|trunk|trunk_link|primary|primary_link)$"]('"$BBOX"');out geom;'
+          fetch roads-secondary.json '[out:json][timeout:180];way["highway"~"^(secondary|secondary_link|tertiary|tertiary_link)$"]('"$BBOX"');out geom;'
+          fetch rivers.json '[out:json][timeout:180];way["waterway"="river"]('"$BBOX"');out geom;'
+          fetch places.json '[out:json][timeout:180];(nwr["railway"="station"]('"$BBOX"');nwr["station"="subway"]('"$BBOX"');nwr["shop"="mall"]('"$BBOX"');nwr["amenity"="hospital"]('"$BBOX"');nwr["amenity"="university"]('"$BBOX"');nwr["amenity"="marketplace"]('"$BBOX"');nwr["amenity"="ferry_terminal"]('"$BBOX"');nwr["amenity"="place_of_worship"]('"$BBOX"');nwr["amenity"="school"]('"$BBOX"');nwr["leisure"="park"]('"$BBOX"');nwr["office"="government"]('"$BBOX"');nwr["amenity"="townhall"]('"$BBOX"');node["highway"="bus_stop"]["name"]('"$BBOX"'););out center;'
+
+      - name: Build map-background.json
+        working-directory: app
+        run: |
+          npm ci
+          OSM_DIR="${{ github.workspace }}/scratch/osm" npm run build:map-background
+
+      - name: Open a PR with the rebuilt map background
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'Update map-background.json from OpenStreetMap'
+          title: 'Update map-background.json from OpenStreetMap'
+          body: |
+            Automated monthly rebuild from Overpass (roads, rivers, places).
+            Review the diff before merging — this workflow never deploys on its own.
+          branch: update-map-background
+          add-paths: app/public/data/map-background.json

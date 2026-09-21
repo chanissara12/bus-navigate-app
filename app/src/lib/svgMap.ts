@@ -14,6 +14,14 @@ const PLACE_KIND_PRIORITY: Record<string, number> = {
   market: 2,
   hospital: 3,
   university: 4,
+  worship: 5,
+  school: 5,
+  park: 5,
+  government: 5,
+  // A named bus stop is transit infrastructure, not a real amenity — it
+  // only exists in this list for the rare landmark OSM has no other record
+  // of (see build-map-background.mjs). Keep it below every real category.
+  landmark: 6,
 }
 
 export function boundingBoxWithMargin(points: LatLon[], marginRatio: number): BBox {
