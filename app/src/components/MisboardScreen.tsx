@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { findStopIdxsWithinRadius, DESTINATION_WALK_RADIUS_M } from '../lib/destinationLookup'
 import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import { recoverFromMisboarding } from '../lib/misboardRecovery'
-import { routeMatchesInput } from '../lib/numberMatch'
+import { routeCodeStartsWithInput } from '../lib/numberMatch'
 import { findCurrentPositionOnDirection } from '../lib/routeLookup'
 import { formatRouteCode } from '../lib/formatRoute'
 import type { GeolocationState } from '../lib/useGeolocation'
@@ -24,7 +24,7 @@ export function MisboardScreen({ data, location }: Props) {
 
   const matchingDirections = useMemo(() => {
     if (routeInput === '') return []
-    return data.directions.filter((d) => routeMatchesInput(data.routes[d.routeIdx], routeInput))
+    return data.directions.filter((d) => routeCodeStartsWithInput(data.routes[d.routeIdx], routeInput))
   }, [data, routeInput])
 
   const recovery = useMemo(() => {
