@@ -169,6 +169,8 @@ export function DestinationScreen({ data, location }: Props) {
           </button>
         )}
 
+        {mapLeg && <LegMapOverlay data={data} leg={mapLeg} onClose={() => setMapLeg(null)} />}
+
         {groups.length === 0 && <p className="status">ไม่พบสายที่ไปถึงในระยะที่เดินได้</p>}
 
         <div className="board-now-groups">
@@ -191,7 +193,6 @@ export function DestinationScreen({ data, location }: Props) {
         </div>
       </div>
 
-      {mapLeg && <LegMapOverlay data={data} leg={mapLeg} onClose={() => setMapLeg(null)} />}
       {pickingOnMap && background && coords && (
         <DestinationPicker
           background={background}
