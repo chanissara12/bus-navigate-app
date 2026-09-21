@@ -94,14 +94,25 @@ export function DestinationScreen({ data, location }: Props) {
     return groupByBoardNowDirection(journeys)
   }, [data, coords, destination])
 
+  function openBestLegMap(forDestination: Destination) {
+    if (!coords) return
+    const journeys = findJourneys(data, coords, forDestination)
+    const [bestGroup] = groupByBoardNowDirection(journeys)
+    if (!bestGroup) return
+    const bestOption = bestGroup.options[0]
+    setMapLeg(bestOption.type === 'direct' ? bestOption.leg : bestOption.firstLeg)
+  }
+
   function choosePlace(place: Destination) {
     setDestination(place)
     setSearchInput('')
+    openBestLegMap(place)
   }
 
   function handlePicked(picked: PickedDestination) {
     setDestination(picked)
     setPickingOnMap(false)
+    openBestLegMap(picked)
   }
 
   return (
