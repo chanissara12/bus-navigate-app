@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { parseCsv } from './csv.mjs'
+import { dedupeDirections } from './dedupeDirections.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const GTFS_DIR = process.env.GTFS_DIR ?? join(__dirname, '..', '..', 'scratch', 'gtfs')
@@ -140,19 +141,21 @@ function build() {
     })
   }
 
+  const dedupedDirections = dedupeDirections(routes, directions)
+
   const data = {
     generatedAt: new Date().toISOString(),
     feedVersion: feedInfo?.feed_version ?? null,
     stops,
     routes,
-    directions,
+    directions: dedupedDirections,
   }
 
   writeFileSync(OUT_FILE, JSON.stringify(data))
 
   console.log(`routes: ${routes.length}`)
   console.log(`stops: ${stops.length}`)
-  console.log(`directions: ${directions.length}`)
+  console.log(`directions: ${directions.length} (${directions.length - dedupedDirections.length} duplicate route_id records dropped)`)
   console.log(`output: ${OUT_FILE}`)
 }
 
