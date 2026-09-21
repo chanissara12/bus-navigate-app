@@ -4,6 +4,7 @@ import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import { recoverFromMisboarding } from '../lib/misboardRecovery'
 import { routeMatchesInput } from '../lib/numberMatch'
 import { findCurrentPositionOnDirection } from '../lib/routeLookup'
+import { formatRouteCode } from '../lib/formatRoute'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData, Direction, Route } from '../lib/types'
 import { LocationGate } from './LocationGate'
@@ -55,7 +56,7 @@ export function MisboardScreen({ data, location }: Props) {
                 className="route-card"
                 onClick={() => setSelected({ route: data.routes[direction.routeIdx], direction })}
               >
-                <span className="route-code">{data.routes[direction.routeIdx].newCode}</span>
+                <span className="route-code">{formatRouteCode(data.routes[direction.routeIdx])}</span>
                 <span className="route-headsign">ไป {direction.headsignTh || direction.headsignEn}</span>
               </button>
             </li>
@@ -77,7 +78,7 @@ export function MisboardScreen({ data, location }: Props) {
           ← กลับ
         </button>
         <h2>
-          {selected.route.newCode} ไป {selected.direction.headsignTh || selected.direction.headsignEn}
+          {formatRouteCode(selected.route)} ไป {selected.direction.headsignTh || selected.direction.headsignEn}
         </h2>
         <label>
           อยากไปที่

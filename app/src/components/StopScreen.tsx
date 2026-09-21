@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { boardableDirectionsAtStop, findNearestStop, type BoardableDirection } from '../lib/routeLookup'
 import { routeCodeStartsWithInput, routeMatchesInput } from '../lib/numberMatch'
+import { formatRouteCode } from '../lib/formatRoute'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData } from '../lib/types'
 import { LocationGate } from './LocationGate'
@@ -70,7 +71,7 @@ export function StopScreen({ data, location, onOpenRoute }: Props) {
             {(candidates ?? boardable).map((b) => (
               <li key={`${b.direction.routeIdx}-${b.direction.directionId}`}>
                 <button type="button" className="route-card" onClick={() => onOpenRoute(b)}>
-                  <span className="route-code">{b.route.newCode}</span>
+                  <span className="route-code">{formatRouteCode(b.route)}</span>
                   <span className="route-headsign">ไป {b.direction.headsignTh || b.direction.headsignEn}</span>
                 </button>
               </li>

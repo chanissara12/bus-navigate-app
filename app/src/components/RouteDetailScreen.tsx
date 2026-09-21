@@ -1,4 +1,5 @@
 import { stopSequenceFrom, type BoardableDirection } from '../lib/routeLookup'
+import { formatRouteCode } from '../lib/formatRoute'
 import type { BusData } from '../lib/types'
 
 interface Props {
@@ -16,7 +17,7 @@ export function RouteDetailScreen({ data, boardable, onBack }: Props) {
         ← กลับ
       </button>
       <h2>
-        {boardable.route.newCode} ไป {boardable.direction.headsignTh || boardable.direction.headsignEn}
+        {formatRouteCode(boardable.route)} ไป {boardable.direction.headsignTh || boardable.direction.headsignEn}
       </h2>
       <ol className="stop-sequence">
         {upcomingStopIdxs.map((stopIdx, i) => (

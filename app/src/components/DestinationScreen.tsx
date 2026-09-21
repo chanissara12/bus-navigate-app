@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { findJourneys, groupByBoardNowDirection, type Journey } from '../lib/destinationLookup'
 import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
+import { formatRouteCode } from '../lib/formatRoute'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData } from '../lib/types'
 import { LocationGate } from './LocationGate'
@@ -29,7 +30,7 @@ function JourneyLine({ data, journey }: { data: BusData; journey: Journey }) {
     data.stops[journey.secondLeg.alightStopIdx].nameTh || data.stops[journey.secondLeg.alightStopIdx].nameEn
   return (
     <li>
-      ต่อสาย {journey.secondLeg.route.newCode} ที่ {transferName} แล้วลงป้าย {alightName} —{' '}
+      ต่อสาย {formatRouteCode(journey.secondLeg.route)} ที่ {transferName} แล้วลงป้าย {alightName} —{' '}
       {minutes(journey.totalSec)} นาที
     </li>
   )
@@ -70,7 +71,7 @@ export function DestinationScreen({ data, location }: Props) {
           {groups.map((group) => (
             <div key={group.key} className="board-now-group">
               <div className="group-header">
-                <span className="route-code">{group.route.newCode}</span>
+                <span className="route-code">{formatRouteCode(group.route)}</span>
                 <span>ไป {group.direction.headsignTh || group.direction.headsignEn}</span>
                 <span className="board-stop">
                   ขึ้นที่ {data.stops[group.boardStopIdx].nameTh || data.stops[group.boardStopIdx].nameEn}
