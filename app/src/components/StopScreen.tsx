@@ -8,6 +8,8 @@ import { LocationGate } from './LocationGate'
 
 const NEAREST_STOP_RADIUS_M = 150
 
+const COVERAGE_NOTE = 'แอปนี้รู้จักเฉพาะรถเมล์ ขสมก. และ TSB — ไม่รวมรถตู้ รถสองแถว รถไฟฟ้า BTS/MRT หรือเรือ'
+
 interface Props {
   data: BusData
   location: GeolocationState
@@ -46,13 +48,17 @@ export function StopScreen({ data, location, onOpenRoute }: Props) {
       onRequest={request}
     >
       {!nearest ? (
-        <p className="status">ไม่พบป้ายรถเมล์ในระยะ {NEAREST_STOP_RADIUS_M} เมตร</p>
+        <>
+          <p className="status">ไม่พบป้ายรถเมล์ในระยะ {NEAREST_STOP_RADIUS_M} เมตร</p>
+          <p className="coverage-note">{COVERAGE_NOTE}</p>
+        </>
       ) : (
         <div className="screen">
           <div className="stop-header">
             <span className="stop-name">{nearest.stop.nameTh || nearest.stop.nameEn}</span>
             <span className="stop-distance">{Math.round(nearest.distanceM)} ม.</span>
           </div>
+          <p className="coverage-note">{COVERAGE_NOTE}</p>
 
           <input
             className="number-input"

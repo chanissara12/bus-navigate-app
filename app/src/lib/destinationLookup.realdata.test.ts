@@ -3,11 +3,13 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { findJourneys, groupByBoardNowDirection } from './destinationLookup'
-import type { BusData } from './types'
+import { decodePackedBusData } from './packedCodec'
+import type { BusData, PackedBusData } from './types'
 
 function loadRealData(): BusData {
   const path = join(process.cwd(), 'public', 'data', 'bus-data.json')
-  return JSON.parse(readFileSync(path, 'utf-8'))
+  const packed: PackedBusData = JSON.parse(readFileSync(path, 'utf-8'))
+  return decodePackedBusData(packed)
 }
 
 describe('findJourneys against the real Namtang extract', () => {

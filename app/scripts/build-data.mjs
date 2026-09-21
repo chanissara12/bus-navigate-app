@@ -1,9 +1,9 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { parseCsv } from './csv.mjs'
 import { dedupeDirections } from './dedupeDirections.mjs'
-import { douglasPeucker } from './simplify.mjs'
+import { douglasPeucker, haversineMeters } from './simplify.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const GTFS_DIR = process.env.GTFS_DIR ?? join(__dirname, '..', '..', 'scratch', 'gtfs')
@@ -78,6 +78,121 @@ function median(values) {
   const sorted = [...values].sort((a, b) => a - b)
   const mid = Math.floor(sorted.length / 2)
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
+}
+
+const COORD_SCALE = 1e6
+const OFFSET_UNIT_SEC = 5
+
+// Delta-encodes a column of coordinates (already scaled to integers): each
+// value becomes the difference from the previous one, so repeated runs of
+// small numbers compress far better than full-precision floats.
+function deltaEncodeColumn(values) {
+  const out = []
+  let prev = 0
+  for (const v of values) {
+    out.push(v - prev)
+    prev = v
+  }
+  return out
+}
+
+function packStops(stops) {
+  const latE6 = deltaEncodeColumn(stops.map((s) => Math.round(s.lat * COORD_SCALE)))
+  const lonE6 = deltaEncodeColumn(stops.map((s) => Math.round(s.lon * COORD_SCALE)))
+  return {
+    id: stops.map((s) => s.id),
+    nameTh: stops.map((s) => s.nameTh),
+    nameEn: stops.map((s) => s.nameEn),
+    latE6,
+    lonE6,
+  }
+}
+
+function packRoutes(routes) {
+  return {
+    id: routes.map((r) => r.id),
+    agency: routes.map((r) => r.agency),
+    newCode: routes.map((r) => r.newCode),
+    oldCode: routes.map((r) => r.oldCode),
+    longNameTh: routes.map((r) => r.longNameTh),
+    longNameEn: routes.map((r) => r.longNameEn),
+  }
+}
+
+function packShape(shapeCoords) {
+  const flat = []
+  let prevLat = 0
+  let prevLon = 0
+  for (const [lat, lon] of shapeCoords) {
+    const latE6 = Math.round(lat * COORD_SCALE)
+    const lonE6 = Math.round(lon * COORD_SCALE)
+    flat.push(latE6 - prevLat, lonE6 - prevLon)
+    prevLat = latE6
+    prevLon = lonE6
+  }
+  return flat
+}
+
+// WF-011: stop_id survives feed updates far more reliably than its meaning
+// does (renames, 50m+ moves). A surviving id with drifted coordinates/name
+// would silently point the app at the wrong place, so every rebuild checks
+// the previous output as a checksum before overwriting it.
+const STOP_DRIFT_METERS = 50
+
+function decodePackedStopsForDiff(packedStops) {
+  const byId = new Map()
+  let lat = 0
+  let lon = 0
+  for (let i = 0; i < packedStops.id.length; i += 1) {
+    lat += packedStops.latE6[i]
+    lon += packedStops.lonE6[i]
+    byId.set(packedStops.id[i], {
+      nameTh: packedStops.nameTh[i],
+      lat: lat / COORD_SCALE,
+      lon: lon / COORD_SCALE,
+    })
+  }
+  return byId
+}
+
+function warnOnStopIdDrift(newStops) {
+  if (!existsSync(OUT_FILE)) return
+  let previous
+  try {
+    previous = JSON.parse(readFileSync(OUT_FILE, 'utf-8'))
+  } catch {
+    return
+  }
+  if (!previous?.stops?.id) return
+
+  const previousById = decodePackedStopsForDiff(previous.stops)
+  let renamed = 0
+  let moved = 0
+  for (const stop of newStops) {
+    const before = previousById.get(stop.id)
+    if (!before) continue
+    if (before.nameTh !== stop.nameTh) renamed += 1
+    const movedMeters = haversineMeters({ lat: before.lat, lon: before.lon }, { lat: stop.lat, lon: stop.lon })
+    if (movedMeters > STOP_DRIFT_METERS) moved += 1
+  }
+  if (renamed > 0 || moved > 0) {
+    console.warn(
+      `stop_id drift vs previous build: ${renamed} renamed, ${moved} moved >${STOP_DRIFT_METERS}m (same id, changed meaning — verify before shipping)`,
+    )
+  }
+}
+
+function packDirections(directions) {
+  return {
+    routeIdx: directions.map((d) => d.routeIdx),
+    directionId: directions.map((d) => d.directionId),
+    headsignTh: directions.map((d) => d.headsignTh),
+    headsignEn: directions.map((d) => d.headsignEn),
+    headwaySec: directions.map((d) => d.headwaySec),
+    stopIdxs: directions.map((d) => d.stopIdxs),
+    offsets5s: directions.map((d) => d.offsetsSec.map((s) => Math.round(s / OFFSET_UNIT_SEC))),
+    shapeE6: directions.map((d) => packShape(d.shapeCoords)),
+  }
 }
 
 function build() {
@@ -194,12 +309,14 @@ function build() {
     delete direction.shapeId
   }
 
+  warnOnStopIdDrift(stops)
+
   const data = {
     generatedAt: new Date().toISOString(),
     feedVersion: feedInfo?.feed_version ?? null,
-    stops,
-    routes,
-    directions: dedupedDirections,
+    stops: packStops(stops),
+    routes: packRoutes(routes),
+    directions: packDirections(dedupedDirections),
   }
 
   writeFileSync(OUT_FILE, JSON.stringify(data))

@@ -1,0 +1,74 @@
+name: Update bus data
+
+# WF-009: the Namtang feed updates nightly with no version history of its own
+# (see .wayfinder/tickets/WF-009-data-pipeline-and-offline.md and WF-004). This
+# job re-downloads it weekly, rebuilds public/data/bus-data.json, and opens a
+# PR so a diff is visible before anything ships — it never deploys on its own.
+# It also archives the raw feed as a dated release asset (WF-004's "keep our
+# own copy" requirement) since the feed has no changelog or stable mirror.
+
+on:
+  schedule:
+    - cron: '0 18 * * 0' # Sunday 18:00 UTC (01:00 Bangkok Monday)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download feed
+        id: feed
+        run: |
+          set -euo pipefail
+          curl -sL -A "Mozilla/5.0" -D headers.txt \
+            -o namtang-gtfs.zip \
+            "https://namtang-api.otp.go.th/download/namtang-gtfs.zip"
+          echo "sha1=$(sha1sum namtang-gtfs.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "size=$(stat -c%s namtang-gtfs.zip)" >> "$GITHUB_OUTPUT"
+          mkdir -p scratch/gtfs
+          unzip -o -q namtang-gtfs.zip -d scratch/gtfs
+
+      - name: Build bus-data.json
+        working-directory: app
+        run: |
+          npm ci
+          GTFS_DIR="${{ github.workspace }}/scratch/gtfs" npm run build:data
+
+      - name: Archive the raw feed (WF-004 — no upstream mirror keeps history)
+        run: |
+          set -euo pipefail
+          version=$(grep -o '"feedVersion":"[^"]*"' app/public/data/bus-data.json | head -1 | cut -d'"' -f4)
+          tag="feed-${version:-$(date +%Y%m%d)}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "release $tag already archived, skipping"
+          else
+            gh release create "$tag" namtang-gtfs.zip headers.txt \
+              --title "Namtang feed $tag" \
+              --notes "Raw feed as downloaded on $(date -u +%Y-%m-%d). sha1=${{ steps.feed.outputs.sha1 }} size=${{ steps.feed.outputs.size }} bytes. Archived because the upstream feed has no changelog or stable version history (see WF-004)."
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Open a PR with the rebuilt data
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'Update bus-data.json from the latest Namtang feed'
+          title: 'Update bus-data.json from the latest Namtang feed'
+          body: |
+            Automated weekly rebuild from the Namtang feed. Review the diff before merging —
+            this workflow never deploys on its own (see WF-009).
+
+            Watch the job log for a `stop_id drift` warning: it means a stop_id survived this
+            update but its name or coordinates changed (see WF-011).
+          branch: update-bus-data
+          add-paths: app/public/data/bus-data.json
