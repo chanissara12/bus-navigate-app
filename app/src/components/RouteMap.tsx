@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { PointerEvent as ReactPointerEvent } from 'react'
 import { panView, zoomViewAt, type ViewBox } from '../lib/panZoom'
 import {
   bboxSizeMeters,
@@ -63,16 +63,18 @@ export function RouteMap({ data, background, direction, fromPosition }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const pointersRef = useRef(new Map<number, { x: number; y: number }>())
   const lastPinchDistanceRef = useRef<number | null>(null)
+  const viewRef = useRef(view)
+  viewRef.current = view
 
   const toUserUnits = (clientX: number, clientY: number): { x: number; y: number } => {
     const svg = svgRef.current
     if (!svg) return { x: 0, y: 0 }
     const rect = svg.getBoundingClientRect()
-    const viewW = width / view.zoom
-    const viewH = height / view.zoom
+    const viewW = width / viewRef.current.zoom
+    const viewH = height / viewRef.current.zoom
     return {
-      x: view.panX + ((clientX - rect.left) / rect.width) * viewW,
-      y: view.panY + ((clientY - rect.top) / rect.height) * viewH,
+      x: viewRef.current.panX + ((clientX - rect.left) / rect.width) * viewW,
+      y: viewRef.current.panY + ((clientY - rect.top) / rect.height) * viewH,
     }
   }
 
@@ -80,15 +82,26 @@ export function RouteMap({ data, background, direction, fromPosition }: Props) {
     const svg = svgRef.current
     if (!svg) return pixels
     const rect = svg.getBoundingClientRect()
-    return (pixels / rect.width) * (width / view.zoom)
+    return (pixels / rect.width) * (width / viewRef.current.zoom)
   }
 
-  function handleWheel(e: ReactWheelEvent<SVGSVGElement>) {
-    e.preventDefault()
-    const point = toUserUnits(e.clientX, e.clientY)
-    const zoomFactor = e.deltaY < 0 ? 1.2 : 1 / 1.2
-    setView((v) => zoomViewAt(v, { width, height }, point, zoomFactor, MIN_ZOOM, MAX_ZOOM))
-  }
+  // React attaches onWheel as a passive listener, so preventDefault() inside a JSX
+  // handler is silently ignored and the page scrolls underneath while zooming with a
+  // mouse wheel or trackpad. A native, non-passive listener is required to block it.
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+
+    function handleWheel(e: WheelEvent) {
+      e.preventDefault()
+      const point = toUserUnits(e.clientX, e.clientY)
+      const zoomFactor = e.deltaY < 0 ? 1.2 : 1 / 1.2
+      setView((v) => zoomViewAt(v, { width, height }, point, zoomFactor, MIN_ZOOM, MAX_ZOOM))
+    }
+
+    svg.addEventListener('wheel', handleWheel, { passive: false })
+    return () => svg.removeEventListener('wheel', handleWheel)
+  }, [width, height])
 
   function handlePointerDown(e: ReactPointerEvent<SVGSVGElement>) {
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -147,7 +160,6 @@ export function RouteMap({ data, background, direction, fromPosition }: Props) {
         preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label="แผนที่เส้นทาง"
-        onWheel={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
