@@ -5,8 +5,10 @@ import { recoverFromMisboarding } from '../lib/misboardRecovery'
 import { routeCodeStartsWithInput } from '../lib/numberMatch'
 import { findCurrentPositionOnDirection, hasNoReturnData } from '../lib/routeLookup'
 import { formatRouteCode } from '../lib/formatRoute'
+import { useMapBackground } from '../lib/useMapBackground'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData, Direction, Route } from '../lib/types'
+import { DestinationSelector, type Destination } from './DestinationSelector'
 import { LocationGate } from './LocationGate'
 
 const CURRENT_POSITION_RADIUS_M = 300
@@ -18,9 +20,10 @@ interface Props {
 
 export function MisboardScreen({ data, location }: Props) {
   const { status, coords, error, request } = location
+  const { background } = useMapBackground()
   const [routeInput, setRouteInput] = useState('')
   const [selected, setSelected] = useState<{ route: Route; direction: Direction } | null>(null)
-  const [destinationName, setDestinationName] = useState(FAVORITE_DESTINATIONS[0].name)
+  const [destination, setDestination] = useState<Destination>(FAVORITE_DESTINATIONS[0])
 
   const matchingDirections = useMemo(() => {
     if (routeInput === '') return []
@@ -31,11 +34,9 @@ export function MisboardScreen({ data, location }: Props) {
     if (!selected || !coords) return null
     const position = findCurrentPositionOnDirection(data, selected.direction, coords, CURRENT_POSITION_RADIUS_M)
     if (position === null) return { kind: 'no-gps-fix' as const }
-    const destination = FAVORITE_DESTINATIONS.find((d) => d.name === destinationName)
-    if (!destination) return null
     const destIdxs = findStopIdxsWithinRadius(data, destination, DESTINATION_WALK_RADIUS_M)
     return recoverFromMisboarding(selected.direction, position, destIdxs)
-  }, [data, selected, coords, destinationName])
+  }, [data, selected, coords, destination])
 
   if (!selected) {
     return (
@@ -83,16 +84,16 @@ export function MisboardScreen({ data, location }: Props) {
         <h2>
           {formatRouteCode(selected.route)} ไป {selected.direction.headsignTh || selected.direction.headsignEn}
         </h2>
-        <label>
-          อยากไปที่
-          <select value={destinationName} onChange={(e) => setDestinationName(e.target.value)}>
-            {FAVORITE_DESTINATIONS.map((d) => (
-              <option key={d.name} value={d.name}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <p className="current-destination">
+          อยากไปที่: <strong>{destination.name}</strong>
+        </p>
+        <DestinationSelector
+          background={background}
+          center={coords}
+          value={destination}
+          onSelectFavorite={setDestination}
+          onPick={setDestination}
+        />
 
         {recovery?.kind === 'no-gps-fix' && (
           <p className="status error">หาตำแหน่งบนสายนี้ไม่ได้ ลองใหม่ตอนรถวิ่งอยู่</p>

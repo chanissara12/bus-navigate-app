@@ -2,26 +2,17 @@ import { useMemo, useState } from 'react'
 import { findJourneys, groupByBoardNowDirection, type Journey, type Leg } from '../lib/destinationLookup'
 import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import { formatRouteCode } from '../lib/formatRoute'
-import { searchPlaces } from '../lib/placeSearch'
 import { hasNoReturnData } from '../lib/routeLookup'
 import { useMapBackground } from '../lib/useMapBackground'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData } from '../lib/types'
-import { DestinationPicker, type PickedDestination } from './DestinationPicker'
+import { DestinationSelector, type Destination } from './DestinationSelector'
 import { LegMapOverlay } from './LegMapOverlay'
 import { LocationGate } from './LocationGate'
-
-const MAX_SEARCH_RESULTS = 8
 
 interface Props {
   data: BusData
   location: GeolocationState
-}
-
-interface Destination {
-  name: string
-  lat: number
-  lon: number
 }
 
 function minutes(sec: number): number {
@@ -80,14 +71,7 @@ export function DestinationScreen({ data, location }: Props) {
   const { status, coords, error, request } = location
   const { background } = useMapBackground()
   const [destination, setDestination] = useState<Destination>(FAVORITE_DESTINATIONS[0])
-  const [searchInput, setSearchInput] = useState('')
   const [mapLeg, setMapLeg] = useState<Leg | null>(null)
-  const [pickingOnMap, setPickingOnMap] = useState(false)
-
-  const searchResults = useMemo(() => {
-    if (!background) return []
-    return searchPlaces(background, searchInput, MAX_SEARCH_RESULTS)
-  }, [background, searchInput])
 
   const groups = useMemo(() => {
     if (!coords) return []
@@ -104,15 +88,8 @@ export function DestinationScreen({ data, location }: Props) {
     setMapLeg(bestOption.type === 'direct' ? bestOption.leg : bestOption.firstLeg)
   }
 
-  function choosePlace(place: Destination) {
-    setDestination(place)
-    setSearchInput('')
-    openBestLegMap(place)
-  }
-
-  function handlePicked(picked: PickedDestination) {
+  function pickDestination(picked: Destination) {
     setDestination(picked)
-    setPickingOnMap(false)
     openBestLegMap(picked)
   }
 
@@ -129,46 +106,13 @@ export function DestinationScreen({ data, location }: Props) {
           ปลายทาง: <strong>{destination.name}</strong>
         </p>
 
-        <select
-          value={FAVORITE_DESTINATIONS.some((d) => d.name === destination.name) ? destination.name : ''}
-          onChange={(e) => {
-            const picked = FAVORITE_DESTINATIONS.find((d) => d.name === e.target.value)
-            if (picked) setDestination(picked)
-          }}
-        >
-          <option value="" disabled>
-            เลือกจากรายการที่บันทึกไว้
-          </option>
-          {FAVORITE_DESTINATIONS.map((d) => (
-            <option key={d.name} value={d.name}>
-              {d.name}
-            </option>
-          ))}
-        </select>
-
-        <input
-          className="number-input"
-          placeholder="พิมพ์ค้นหาสถานที่ เช่น ห้าง โรงพยาบาล สถานีรถไฟฟ้า"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+        <DestinationSelector
+          background={background}
+          center={coords}
+          value={destination}
+          onSelectFavorite={setDestination}
+          onPick={pickDestination}
         />
-        {searchResults.length > 0 && (
-          <ul className="destination-search-results">
-            {searchResults.map((place, i) => (
-              <li key={i}>
-                <button type="button" onClick={() => choosePlace(place)}>
-                  {place.name}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {background && (
-          <button type="button" className="pick-from-map-button" onClick={() => setPickingOnMap(true)}>
-            🗺 เลือกจากแผนที่
-          </button>
-        )}
 
         {mapLeg && <LegMapOverlay data={data} leg={mapLeg} onClose={() => setMapLeg(null)} />}
 
@@ -196,15 +140,6 @@ export function DestinationScreen({ data, location }: Props) {
           ))}
         </div>
       </div>
-
-      {pickingOnMap && background && coords && (
-        <DestinationPicker
-          background={background}
-          center={coords}
-          onConfirm={handlePicked}
-          onClose={() => setPickingOnMap(false)}
-        />
-      )}
     </LocationGate>
   )
 }
