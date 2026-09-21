@@ -96,6 +96,12 @@ h2 {
   text-align: center;
 }
 
+.no-return-warning {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--no-text);
+}
+
 .location-gate {
   display: flex;
   flex-direction: column;

@@ -1,4 +1,4 @@
-import { stopSequenceFrom, type BoardableDirection } from '../lib/routeLookup'
+import { hasNoReturnData, stopSequenceFrom, type BoardableDirection } from '../lib/routeLookup'
 import { formatRouteCode } from '../lib/formatRoute'
 import { useMapBackground } from '../lib/useMapBackground'
 import type { BusData } from '../lib/types'
@@ -22,6 +22,9 @@ export function RouteDetailScreen({ data, boardable, onBack }: Props) {
       <h2>
         {formatRouteCode(boardable.route)} ไป {boardable.direction.headsignTh || boardable.direction.headsignEn}
       </h2>
+      {hasNoReturnData(data, boardable.direction) && (
+        <p className="no-return-warning">ไม่มีข้อมูลขากลับในฟีด — อาจเป็นสายวนรอบจริง หรือข้อมูลขาด</p>
+      )}
 
       {background && (
         <RouteMap

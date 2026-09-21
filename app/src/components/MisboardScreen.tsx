@@ -3,7 +3,7 @@ import { findStopIdxsWithinRadius, DESTINATION_WALK_RADIUS_M } from '../lib/dest
 import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import { recoverFromMisboarding } from '../lib/misboardRecovery'
 import { routeCodeStartsWithInput } from '../lib/numberMatch'
-import { findCurrentPositionOnDirection } from '../lib/routeLookup'
+import { findCurrentPositionOnDirection, hasNoReturnData } from '../lib/routeLookup'
 import { formatRouteCode } from '../lib/formatRoute'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData, Direction, Route } from '../lib/types'
@@ -58,6 +58,9 @@ export function MisboardScreen({ data, location }: Props) {
               >
                 <span className="route-code">{formatRouteCode(data.routes[direction.routeIdx])}</span>
                 <span className="route-headsign">ไป {direction.headsignTh || direction.headsignEn}</span>
+                {hasNoReturnData(data, direction) && (
+                  <span className="no-return-warning">ไม่มีข้อมูลขากลับในฟีด</span>
+                )}
               </button>
             </li>
           ))}

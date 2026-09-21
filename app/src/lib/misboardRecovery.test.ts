@@ -31,6 +31,11 @@ describe('recoverFromMisboarding', () => {
     expect(result).toEqual({ kind: 'no-recovery' })
   })
 
+  it('says get off here when the current stop itself is already a destination', () => {
+    const result = recoverFromMisboarding(direction([10, 20, 30, 40]), 1, new Set([20]))
+    expect(result).toEqual({ kind: 'alight-next-stop', stopIdx: 20 })
+  })
+
   it('picks the nearest matching destination when several are on the route ahead', () => {
     const result = recoverFromMisboarding(direction([10, 20, 30, 40]), 0, new Set([30, 40]))
     expect(result).toEqual({ kind: 'alight-in-n-stops', stopsRemaining: 2, stopIdx: 30 })

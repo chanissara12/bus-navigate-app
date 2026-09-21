@@ -41,6 +41,20 @@ export function stopSequenceFrom(direction: Direction, fromPosition: number): nu
   return direction.stopIdxs.slice(fromPosition)
 }
 
+// WF-006: 15.6% of routes have feed data for only one direction, and a
+// handful of `M`-prefixed routes have suspiciously short trips (<5 stops) —
+// either could be a real loop route or missing data, and the ticket's
+// resolution is to show these anyway with an explicit warning rather than
+// hide them (the rider would wait for a route they don't know exists) or
+// show them silently (the rider would assume there's no way back).
+const SHORT_TRIP_STOP_COUNT = 5
+
+export function hasNoReturnData(data: BusData, direction: Direction): boolean {
+  if (direction.stopIdxs.length < SHORT_TRIP_STOP_COUNT) return true
+  const directionsForRoute = data.directions.filter((d) => d.routeIdx === direction.routeIdx)
+  return directionsForRoute.length < 2
+}
+
 export function findCurrentPositionOnDirection(
   data: BusData,
   direction: Direction,

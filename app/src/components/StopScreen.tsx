@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { boardableDirectionsAtStop, findNearestStop, type BoardableDirection } from '../lib/routeLookup'
+import { boardableDirectionsAtStop, findNearestStop, hasNoReturnData, type BoardableDirection } from '../lib/routeLookup'
 import { routeCodeStartsWithInput, routeMatchesInput } from '../lib/numberMatch'
 import { formatRouteCode } from '../lib/formatRoute'
 import type { GeolocationState } from '../lib/useGeolocation'
@@ -9,6 +9,7 @@ import { LocationGate } from './LocationGate'
 const NEAREST_STOP_RADIUS_M = 150
 
 const COVERAGE_NOTE = 'แอปนี้รู้จักเฉพาะรถเมล์ ขสมก. และ TSB — ไม่รวมรถตู้ รถสองแถว รถไฟฟ้า BTS/MRT หรือเรือ'
+const NO_RETURN_DATA_WARNING = 'ไม่มีข้อมูลขากลับในฟีด'
 
 interface Props {
   data: BusData
@@ -79,6 +80,9 @@ export function StopScreen({ data, location, onOpenRoute }: Props) {
                 <button type="button" className="route-card" onClick={() => onOpenRoute(b)}>
                   <span className="route-code">{formatRouteCode(b.route)}</span>
                   <span className="route-headsign">ไป {b.direction.headsignTh || b.direction.headsignEn}</span>
+                  {hasNoReturnData(data, b.direction) && (
+                    <span className="no-return-warning">{NO_RETURN_DATA_WARNING}</span>
+                  )}
                 </button>
               </li>
             ))}

@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { boardableDirectionsAtStop, findCurrentPositionOnDirection, findNearestStop } from './routeLookup'
-import type { BusData } from './types'
+import { boardableDirectionsAtStop, findCurrentPositionOnDirection, findNearestStop, hasNoReturnData } from './routeLookup'
+import type { BusData, Direction } from './types'
+
+function makeDirection(overrides: Partial<Direction>): Direction {
+  return {
+    routeIdx: 0,
+    directionId: 0,
+    headsignTh: '',
+    headsignEn: '',
+    stopIdxs: [0, 1, 2, 3, 4],
+    offsetsSec: [0, 60, 120, 180, 240],
+    headwaySec: 600,
+    shapeCoords: [],
+    ...overrides,
+  }
+}
 
 function makeData(): BusData {
   return {
@@ -69,6 +83,28 @@ describe('findNearestStop', () => {
   it('returns null when nothing is within the radius', () => {
     const data = makeData()
     expect(findNearestStop(data, { lat: 5, lon: 5 }, 200)).toBeNull()
+  })
+})
+
+describe('hasNoReturnData', () => {
+  it('is false when the route has a second direction with a normal-length trip', () => {
+    const outbound = makeDirection({ directionId: 0 })
+    const inbound = makeDirection({ directionId: 1 })
+    const data = { ...makeData(), directions: [outbound, inbound] }
+    expect(hasNoReturnData(data, outbound)).toBe(false)
+  })
+
+  it('is true when the feed has only one direction for the route', () => {
+    const onlyDirection = makeDirection({ directionId: 0 })
+    const data = { ...makeData(), directions: [onlyDirection] }
+    expect(hasNoReturnData(data, onlyDirection)).toBe(true)
+  })
+
+  it('is true for a short trip even when a return direction exists', () => {
+    const shortOutbound = makeDirection({ directionId: 0, stopIdxs: [0, 1, 2], offsetsSec: [0, 60, 120] })
+    const inbound = makeDirection({ directionId: 1 })
+    const data = { ...makeData(), directions: [shortOutbound, inbound] }
+    expect(hasNoReturnData(data, shortOutbound)).toBe(true)
   })
 })
 

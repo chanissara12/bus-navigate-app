@@ -3,6 +3,7 @@ import { findJourneys, groupByBoardNowDirection, type Journey, type Leg } from '
 import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import { formatRouteCode } from '../lib/formatRoute'
 import { searchPlaces } from '../lib/placeSearch'
+import { hasNoReturnData } from '../lib/routeLookup'
 import { useMapBackground } from '../lib/useMapBackground'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData } from '../lib/types'
@@ -182,6 +183,9 @@ export function DestinationScreen({ data, location }: Props) {
                 <span className="board-stop">
                   ขึ้นที่ {data.stops[group.boardStopIdx].nameTh || data.stops[group.boardStopIdx].nameEn}
                 </span>
+                {hasNoReturnData(data, group.direction) && (
+                  <span className="no-return-warning">ไม่มีข้อมูลขากลับในฟีด</span>
+                )}
               </div>
               <ul>
                 {group.options.map((option, i) => (
