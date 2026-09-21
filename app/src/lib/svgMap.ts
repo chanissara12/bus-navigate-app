@@ -141,36 +141,62 @@ export function filterLabelsForDisplay(labels: MapLabel[], bbox: BBox, maxCount:
 }
 
 const SEARCH_WINDOW_FRACTION = 0.25
+const METERS_PER_DEGREE_LAT = 110540
+
+function toLocalMeters(point: LatLon, origin: LatLon): { x: number; y: number } {
+  const metersPerDegreeLon = 111320 * Math.cos((origin.lat * Math.PI) / 180)
+  return { x: (point.lon - origin.lon) * metersPerDegreeLon, y: (point.lat - origin.lat) * METERS_PER_DEGREE_LAT }
+}
+
+interface SegmentProjection {
+  segmentIndex: number
+  point: [number, number]
+  distanceM: number
+}
 
 /**
- * Loop routes (วนซ้าย/วนขวา) can pass within meters of the same stop twice, so an
- * unconstrained nearest-point search can snap to the wrong occurrence. `expectedFraction`
- * (how far along the stop sequence we already are, 0..1) narrows the search to a window
- * around where the shape should be at that point, falling back to the full shape when
- * that window turns up nothing.
+ * After Douglas-Peucker simplification, a stop's true closest approach to the route
+ * is often *along a segment* between two kept vertices, not at either vertex — simplification
+ * only guarantees the removed points stay within tolerance of the simplified line, not that a
+ * stop lands near a surviving vertex. Projecting onto segments (not just comparing to
+ * vertices) is what keeps the rendered line from visibly detaching from the stop marker.
+ *
+ * Loop routes (วนซ้าย/วนขวา) can also pass within meters of the same stop twice, so an
+ * unconstrained search can snap to the wrong occurrence. `expectedFraction` (how far along
+ * the stop sequence we already are, 0..1) narrows the search to a window around where the
+ * shape should be at that point, falling back to the full shape when that window is empty.
  */
-function nearestPointIndex(shape: [number, number][], point: LatLon, expectedFraction?: number): number {
+function nearestSegmentProjection(
+  shape: [number, number][],
+  point: LatLon,
+  expectedFraction?: number,
+): SegmentProjection | null {
+  const segmentCount = shape.length - 1
+  if (segmentCount < 1) return null
+
   let searchStart = 0
-  let searchEnd = shape.length
+  let searchEnd = segmentCount
 
   if (expectedFraction !== undefined) {
-    const center = expectedFraction * (shape.length - 1)
-    const window = shape.length * SEARCH_WINDOW_FRACTION
+    const center = expectedFraction * (segmentCount - 1)
+    const window = segmentCount * SEARCH_WINDOW_FRACTION
     searchStart = Math.max(0, Math.floor(center - window))
-    searchEnd = Math.min(shape.length, Math.ceil(center + window))
+    searchEnd = Math.min(segmentCount, Math.ceil(center + window))
   }
 
-  let bestIndex = -1
-  let bestDistance = Infinity
-  for (let index = searchStart; index < searchEnd; index += 1) {
-    const [lat, lon] = shape[index]
-    const distance = haversineMeters(point, { lat, lon })
-    if (distance < bestDistance) {
-      bestDistance = distance
-      bestIndex = index
-    }
+  let best: SegmentProjection | null = null
+  for (let i = searchStart; i < searchEnd; i += 1) {
+    const a: LatLon = { lat: shape[i][0], lon: shape[i][1] }
+    const b: LatLon = { lat: shape[i + 1][0], lon: shape[i + 1][1] }
+    const pLocal = toLocalMeters(point, a)
+    const bLocal = toLocalMeters(b, a)
+    const lengthSq = bLocal.x * bLocal.x + bLocal.y * bLocal.y
+    const t = lengthSq === 0 ? 0 : Math.max(0, Math.min(1, (pLocal.x * bLocal.x + pLocal.y * bLocal.y) / lengthSq))
+    const projected: [number, number] = [a.lat + t * (b.lat - a.lat), a.lon + t * (b.lon - a.lon)]
+    const distanceM = haversineMeters(point, { lat: projected[0], lon: projected[1] })
+    if (!best || distanceM < best.distanceM) best = { segmentIndex: i, point: projected, distanceM }
   }
-  return bestIndex
+  return best
 }
 
 export function sliceShapeFromNearestPoint(
@@ -178,8 +204,8 @@ export function sliceShapeFromNearestPoint(
   point: LatLon,
   expectedFraction?: number,
 ): [number, number][] {
-  const bestIndex = nearestPointIndex(shape, point, expectedFraction)
-  return bestIndex === -1 ? shape : shape.slice(bestIndex)
+  const nearest = nearestSegmentProjection(shape, point, expectedFraction)
+  return nearest === null ? shape : [nearest.point, ...shape.slice(nearest.segmentIndex + 1)]
 }
 
 export function sliceShapeToNearestPoint(
@@ -187,8 +213,8 @@ export function sliceShapeToNearestPoint(
   point: LatLon,
   expectedFraction?: number,
 ): [number, number][] {
-  const bestIndex = nearestPointIndex(shape, point, expectedFraction)
-  return bestIndex === -1 ? shape : shape.slice(0, bestIndex + 1)
+  const nearest = nearestSegmentProjection(shape, point, expectedFraction)
+  return nearest === null ? shape : [...shape.slice(0, nearest.segmentIndex + 1), nearest.point]
 }
 
 export function filterPlacesForDisplay(places: MapPlace[], bbox: BBox, maxCount: number): MapPlace[] {

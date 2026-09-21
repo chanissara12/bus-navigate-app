@@ -111,11 +111,11 @@ describe('sliceShapeFromNearestPoint', () => {
       [13.73, 100.53],
     ]
     const result = sliceShapeFromNearestPoint(shape, { lat: 13.712, lon: 100.511 })
-    expect(result).toEqual([
-      [13.71, 100.51],
-      [13.72, 100.52],
-      [13.73, 100.53],
-    ])
+    expect(result).toHaveLength(3)
+    expect(result[0][0]).toBeCloseTo(13.712, 2)
+    expect(result[0][1]).toBeCloseTo(100.511, 2)
+    expect(result[1]).toEqual([13.72, 100.52])
+    expect(result[2]).toEqual([13.73, 100.53])
   })
 
   it('returns the whole shape when the nearest point is the first one', () => {
@@ -123,7 +123,11 @@ describe('sliceShapeFromNearestPoint', () => {
       [13.7, 100.5],
       [13.71, 100.51],
     ]
-    expect(sliceShapeFromNearestPoint(shape, { lat: 13.7, lon: 100.5 })).toEqual(shape)
+    const result = sliceShapeFromNearestPoint(shape, { lat: 13.7, lon: 100.5 })
+    expect(result).toHaveLength(2)
+    expect(result[0][0]).toBeCloseTo(13.7, 5)
+    expect(result[0][1]).toBeCloseTo(100.5, 5)
+    expect(result[1]).toEqual([13.71, 100.51])
   })
 
   it('picks the occurrence near the expected fraction on a loop that revisits the same spot', () => {
@@ -143,13 +147,32 @@ describe('sliceShapeFromNearestPoint', () => {
     ]
     const point = { lat: 13.7, lon: 100.5 }
 
-    // early in the trip -> should snap to index 1, not index 8
+    // early in the trip -> should snap near index 1, not index 8
     const early = sliceShapeFromNearestPoint(shape, point, 0.1)
-    expect(early[0]).toEqual(shape[1])
+    expect(early[0][0]).toBeCloseTo(13.7, 2)
+    expect(early).toHaveLength(10)
 
-    // late in the trip -> should snap to index 8, not index 1
+    // late in the trip -> should snap near index 8, not index 1
     const late = sliceShapeFromNearestPoint(shape, point, 0.9)
-    expect(late[0]).toEqual(shape[8])
+    expect(late[0][0]).toBeCloseTo(13.7, 2)
+    expect(late).toHaveLength(3)
+  })
+
+  it('snaps onto a segment even when neither endpoint is close (the real bug case)', () => {
+    // regression test: a stop 4.9m from the *segment* between two shape vertices that
+    // are themselves both >250m from the stop — simplification can leave exactly this
+    // shape, and a vertex-only nearest search used to report a ~273m gap.
+    const shape: [number, number][] = [
+      [13.7, 100.5],
+      [13.71, 100.52], // far from the stop
+      [13.7101, 100.5205], // also far from the stop, but the segment between here and the next point passes close by
+      [13.72, 100.54],
+    ]
+    // a point that sits almost exactly on the segment from index 1 to index 2, far from both vertices
+    const nearStop = { lat: 13.71005, lon: 100.52025 }
+    const result = sliceShapeFromNearestPoint(shape, nearStop)
+    expect(result[0][0]).toBeCloseTo(nearStop.lat, 3)
+    expect(result[0][1]).toBeCloseTo(nearStop.lon, 3)
   })
 })
 
@@ -162,10 +185,10 @@ describe('sliceShapeToNearestPoint', () => {
       [13.73, 100.53],
     ]
     const result = sliceShapeToNearestPoint(shape, { lat: 13.712, lon: 100.511 })
-    expect(result).toEqual([
-      [13.7, 100.5],
-      [13.71, 100.51],
-    ])
+    expect(result).toHaveLength(3)
+    expect(result[0]).toEqual([13.7, 100.5])
+    expect(result[1][0]).toBeCloseTo(13.712, 2)
+    expect(result[1][1]).toBeCloseTo(100.511, 2)
   })
 
   it('picks the occurrence near the expected fraction on a loop that revisits the same spot', () => {
@@ -184,10 +207,12 @@ describe('sliceShapeToNearestPoint', () => {
     const point = { lat: 13.7, lon: 100.5 }
 
     const early = sliceShapeToNearestPoint(shape, point, 0.1)
-    expect(early[early.length - 1]).toEqual(shape[1])
+    expect(early).toHaveLength(2)
+    expect(early[early.length - 1][0]).toBeCloseTo(13.7, 2)
 
     const late = sliceShapeToNearestPoint(shape, point, 0.9)
-    expect(late[late.length - 1]).toEqual(shape[8])
+    expect(late).toHaveLength(9)
+    expect(late[late.length - 1][0]).toBeCloseTo(13.7, 2)
   })
 })
 
