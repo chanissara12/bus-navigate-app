@@ -19,6 +19,10 @@ describe('normalizeRouteNumber', () => {
   it('strips parentheses and other punctuation', () => {
     expect(normalizeRouteNumber('3-38 (13)')).toBe('33813')
   })
+
+  it('keeps a Thai free-text suffix as a meaningful part of the code', () => {
+    expect(normalizeRouteNumber('34เสริม')).toBe('34เสริม')
+  })
 })
 
 describe('routeMatchesInput', () => {
@@ -44,5 +48,12 @@ describe('routeMatchesInput', () => {
 
   it('is case-insensitive for express suffixes', () => {
     expect(routeMatchesInput(route('1-12E', '107'), '112e')).toBe(true)
+  })
+
+  it('does not treat a Thai-suffixed old code as the same route as its bare number', () => {
+    // real feed data: route "1-3" carries old code "34เสริม" ("34 extra") — typing
+    // "34" must not board you onto a different route just because a Thai suffix
+    // got stripped away.
+    expect(routeMatchesInput(route('1-3', '34เสริม'), '34')).toBe(false)
   })
 })

@@ -1,7 +1,7 @@
 import type { Route } from './types'
 
 export function normalizeRouteNumber(raw: string): string {
-  return raw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+  return raw.replace(/[-\s()]/g, '').toUpperCase()
 }
 
 export function routeMatchesInput(route: Route, input: string): boolean {
