@@ -44,7 +44,19 @@ export function DestinationPicker({ background, center, onConfirm, onClose }: Pr
   const visiblePlacesRef = useRef<MapPlace[]>([])
   const [selected, setSelected] = useState<PickedDestination | null>(null)
 
-  const panZoom = useMapPanZoom(baseSize.widthM, baseSize.heightM, {
+  const {
+    view,
+    setView,
+    fitView,
+    minZoom,
+    svgRef,
+    viewW,
+    viewH,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    zoomButton,
+  } = useMapPanZoom(baseSize.widthM, baseSize.heightM, {
     onTap: (point) => {
       const tapped = unprojectPoint(point, base)
       let nearest: MapPlace | null = null
@@ -65,8 +77,8 @@ export function DestinationPicker({ background, center, onConfirm, onClose }: Pr
   })
 
   const currentBbox = useMemo(
-    () => bboxFromView(base, panZoom.view, { width: baseSize.widthM, height: baseSize.heightM }),
-    [base, baseSize, panZoom.view],
+    () => bboxFromView(base, view, { width: baseSize.widthM, height: baseSize.heightM }),
+    [base, baseSize, view],
   )
   const visibleLines = useMemo(
     () => background.lines.filter((line) => lineIntersectsBbox(line, currentBbox)),
@@ -80,9 +92,13 @@ export function DestinationPicker({ background, center, onConfirm, onClose }: Pr
     () => filterPlacesForDisplay(background.places, currentBbox, MAX_PLACES),
     [background, currentBbox],
   )
+  // Writing (never reading) a ref during render to hand its latest value to a
+  // later event handler is the documented-safe pattern — same as onTapRef in
+  // useMapPanZoom.ts. oxlint's react/refs rule can't tell writes from reads.
+  // eslint-disable-next-line react-hooks/refs
   visiblePlacesRef.current = visiblePlaces
 
-  const scale = Math.min(baseSize.widthM, baseSize.heightM) / panZoom.view.zoom
+  const scale = Math.min(baseSize.widthM, baseSize.heightM) / view.zoom
   const fontSize = scale * FONT_SIZE_RATIO
   const dotR = scale * DOT_RADIUS_RATIO
 
@@ -97,15 +113,15 @@ export function DestinationPicker({ background, center, onConfirm, onClose }: Pr
 
       <div className="route-map">
         <svg
-          ref={panZoom.svgRef}
-          viewBox={`${panZoom.view.panX} ${panZoom.view.panY} ${panZoom.viewW} ${panZoom.viewH}`}
+          ref={svgRef}
+          viewBox={`${view.panX} ${view.panY} ${viewW} ${viewH}`}
           preserveAspectRatio="xMidYMid meet"
           role="img"
           aria-label="แผนที่เลือกปลายทาง"
-          onPointerDown={panZoom.handlePointerDown}
-          onPointerMove={panZoom.handlePointerMove}
-          onPointerUp={panZoom.handlePointerUp}
-          onPointerCancel={panZoom.handlePointerUp}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           style={{ touchAction: 'none' }}
         >
           {visibleLines.map((line, i) => {
@@ -162,14 +178,14 @@ export function DestinationPicker({ background, center, onConfirm, onClose }: Pr
         </svg>
 
         <div className="map-zoom-controls">
-          <button type="button" aria-label="ขยาย" onClick={() => panZoom.zoomButton(1.4)}>
+          <button type="button" aria-label="ขยาย" onClick={() => zoomButton(1.4)}>
             +
           </button>
-          <button type="button" aria-label="ย่อ" onClick={() => panZoom.zoomButton(1 / 1.4)}>
+          <button type="button" aria-label="ย่อ" onClick={() => zoomButton(1 / 1.4)}>
             −
           </button>
-          {panZoom.view.zoom > panZoom.minZoom && (
-            <button type="button" aria-label="รีเซ็ตการซูม" onClick={() => panZoom.setView(panZoom.fitView)}>
+          {view.zoom > minZoom && (
+            <button type="button" aria-label="รีเซ็ตการซูม" onClick={() => setView(fitView)}>
               ⟲
             </button>
           )}
