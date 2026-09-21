@@ -22,6 +22,7 @@ function makeData(): BusData {
         stopIdxs: [0, 1],
         offsetsSec: [0, 60],
         headwaySec: 300,
+        shapeCoords: [],
       },
     ],
   }

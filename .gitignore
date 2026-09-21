@@ -9,3 +9,6 @@ Thumbs.db
 # ฟีด GTFS ไม่ commit (41.8 MB ต่อเวอร์ชัน โหลดใหม่ได้จาก namtang-api.otp.go.th)
 *.zip
 gtfs/
+
+# raw OSM extract จาก Overpass ไม่ commit — โหลดใหม่ได้ด้วย build-map-background.mjs
+osm/

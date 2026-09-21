@@ -34,6 +34,7 @@ function makeData(): BusData {
         stopIdxs: [0, 1, 2],
         offsetsSec: [0, 1200, 2400],
         headwaySec: 600,
+        shapeCoords: [],
       },
       {
         // leg A: origin -> transfer, 5 minutes
@@ -44,6 +45,7 @@ function makeData(): BusData {
         stopIdxs: [0, 3],
         offsetsSec: [0, 300],
         headwaySec: 300,
+        shapeCoords: [],
       },
       {
         // leg B: transfer -> dest-near, 5 minutes
@@ -54,6 +56,7 @@ function makeData(): BusData {
         stopIdxs: [3, 4],
         offsetsSec: [0, 300],
         headwaySec: 300,
+        shapeCoords: [],
       },
     ],
   }

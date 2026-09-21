@@ -8,6 +8,11 @@
   --no-bg: #fce8e8;
   --no-text: #a3221f;
   --accent: #aa3bff;
+  --map-bg: #f4f3ec;
+  --map-road: #c9c6bd;
+  --map-river: #9fc7e8;
+  --map-label: #6b6560;
+  --map-place-dot: #7a746c;
 
   font: 18px/145% system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
@@ -26,6 +31,11 @@
     --no-bg: #3a1414;
     --no-text: #ff8b87;
     --accent: #c084fc;
+    --map-bg: #1c1d24;
+    --map-road: #3a3c47;
+    --map-river: #2c4f6e;
+    --map-label: #9a958e;
+    --map-place-dot: #a19b92;
   }
 }
 
@@ -248,4 +258,113 @@ select {
 .tabs button.active {
   color: var(--accent);
   font-weight: 700;
+}
+
+.route-map {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--map-bg);
+}
+
+.route-map svg {
+  display: block;
+  width: 100%;
+  height: 220px;
+}
+
+.map-road {
+  fill: none;
+  stroke: var(--map-road);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-river {
+  fill: none;
+  stroke: var(--map-river);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-route {
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-street-label {
+  fill: var(--map-label);
+}
+
+.map-place circle {
+  fill: var(--map-place-dot);
+}
+
+.map-place text {
+  fill: var(--map-label);
+}
+
+.map-stop circle {
+  fill: var(--bg);
+  stroke: var(--text);
+}
+
+.map-stop.current circle {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.map-stop.last circle {
+  fill: var(--no-text);
+  stroke: var(--no-text);
+}
+
+.map-stop text {
+  fill: var(--text-h);
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.attribution-banner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.attribution-banner a {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.attribution-banner button {
+  border: none;
+  background: none;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.attribution-reopen {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
 }

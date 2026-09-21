@@ -11,6 +11,7 @@ function direction(stopIdxs: number[]): Direction {
     stopIdxs,
     offsetsSec: stopIdxs.map((_, i) => i * 60),
     headwaySec: 600,
+    shapeCoords: [],
   }
 }
 

@@ -23,6 +23,7 @@ export interface Direction {
   stopIdxs: number[]
   offsetsSec: number[]
   headwaySec: number | null
+  shapeCoords: [number, number][]
 }
 
 export interface BusData {
@@ -31,4 +32,32 @@ export interface BusData {
   stops: Stop[]
   routes: Route[]
   directions: Direction[]
+}
+
+export interface MapLine {
+  kind: 'road' | 'river'
+  points: [number, number][]
+  name: string | null
+  priority: number
+}
+
+export interface MapLabel {
+  lat: number
+  lon: number
+  name: string
+  priority: number
+}
+
+export interface MapPlace {
+  lat: number
+  lon: number
+  name: string
+  kind: string
+}
+
+export interface MapBackground {
+  generatedAt: string
+  lines: MapLine[]
+  labels: MapLabel[]
+  places: MapPlace[]
 }

@@ -3,11 +3,50 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { parseCsv } from './csv.mjs'
 import { dedupeDirections } from './dedupeDirections.mjs'
+import { douglasPeucker } from './simplify.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const GTFS_DIR = process.env.GTFS_DIR ?? join(__dirname, '..', '..', 'scratch', 'gtfs')
 const OUT_FILE = join(__dirname, '..', 'public', 'data', 'bus-data.json')
 const INCLUDED_AGENCIES = new Set(['BMTA', 'TSB'])
+const SHAPE_TOLERANCE_M = 15
+const MAX_SHAPE_POINTS = 140
+
+function readShapesForIds(neededIds) {
+  const text = readFileSync(join(GTFS_DIR, 'shapes.txt'), 'utf-8')
+  const lines = text.split('\n')
+  const byShapeId = new Map()
+
+  for (let i = 1; i < lines.length; i += 1) {
+    const line = lines[i]
+    if (!line) continue
+    const firstComma = line.indexOf(',')
+    const shapeId = line.slice(1, firstComma - 1)
+    if (!neededIds.has(shapeId)) continue
+
+    const rest = line.slice(firstComma + 1).split(',')
+    const lat = Number.parseFloat(rest[0].replace(/"/g, ''))
+    const lon = Number.parseFloat(rest[1].replace(/"/g, ''))
+    const seq = Number.parseInt(rest[2].replace(/"/g, ''), 10)
+
+    const list = byShapeId.get(shapeId) ?? []
+    list.push({ seq, lat, lon })
+    byShapeId.set(shapeId, list)
+  }
+
+  for (const list of byShapeId.values()) list.sort((a, b) => a.seq - b.seq)
+  return byShapeId
+}
+
+function simplifyShape(points) {
+  let tolerance = SHAPE_TOLERANCE_M
+  let simplified = douglasPeucker(points, tolerance)
+  while (simplified.length > MAX_SHAPE_POINTS && tolerance < 500) {
+    tolerance *= 1.5
+    simplified = douglasPeucker(points, tolerance)
+  }
+  return simplified
+}
 
 function readGtfs(name) {
   return parseCsv(readFileSync(join(GTFS_DIR, name), 'utf-8'))
@@ -138,10 +177,22 @@ function build() {
       stopIdxs,
       offsetsSec,
       headwaySec: median(allHeadways),
+      shapeId: bestTrip.shape_id || null,
     })
   }
 
   const dedupedDirections = dedupeDirections(routes, directions)
+
+  const neededShapeIds = new Set(dedupedDirections.map((d) => d.shapeId).filter(Boolean))
+  const shapesById = readShapesForIds(neededShapeIds)
+  for (const direction of dedupedDirections) {
+    const rawShape = shapesById.get(direction.shapeId)
+    direction.shapeCoords =
+      rawShape && rawShape.length >= 2
+        ? simplifyShape(rawShape.map((p) => ({ lat: p.lat, lon: p.lon }))).map((p) => [p.lat, p.lon])
+        : []
+    delete direction.shapeId
+  }
 
   const data = {
     generatedAt: new Date().toISOString(),
