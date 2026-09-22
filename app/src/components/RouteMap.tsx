@@ -25,63 +25,101 @@ export interface MapDestination {
   lon: number
 }
 
-interface Props {
-  data: BusData
-  background: MapBackground
+export interface RouteMapLeg {
   direction: Direction
   fromPosition: number
   /** ป้ายสุดท้ายที่จะรวมด้วย (รวมป้ายนี้เอง) ถ้าไม่ระบุจะใช้ป้ายสุดท้ายของทิศนี้ */
   toPosition?: number
-  /** จุดที่ผู้โดยสารตั้งใจจะไปจริงๆ — วาดต่อจากป้ายที่ลง พร้อมเส้นทางเดินไปให้ถึง */
+}
+
+interface Props {
+  data: BusData
+  background: MapBackground
+  /** ปกติมีช่วงเดียว — สองช่วงเมื่ออยากแสดงทั้งสองขาของการต่อรถในแผนที่เดียวกัน */
+  legs: RouteMapLeg[]
+  /** จุดที่ผู้โดยสารตั้งใจจะไปจริงๆ — วาดต่อจากป้ายที่ลงของช่วงสุดท้าย พร้อมเส้นทางเดินไปให้ถึง */
   destination?: MapDestination
 }
 
-export function RouteMap({ data, background, direction, fromPosition, toPosition, destination }: Props) {
-  // คำนวณทุกอย่างที่ต้องใช้วาดแผนที่ในรอบเดียว (ขอบเขตพื้นที่, เส้นทางที่ตัดมาแล้ว,
-  // ป้ายที่จะแสดง, เส้นทางเดินไปปลายทาง ฯลฯ) เพื่อไม่ต้องคำนวณ bbox ซ้ำหลายรอบต่อ render
-  const { bbox, width, height, scale, routePoints, lines, labels, places, stopPoints, walkPoints } = useMemo(() => {
-    const lastPosition = toPosition ?? direction.stopIdxs.length - 1
-    const upcomingStopIdxs = direction.stopIdxs.slice(fromPosition, lastPosition + 1)
-    const currentStop = data.stops[upcomingStopIdxs[0]]
-    const lastStop = data.stops[upcomingStopIdxs[upcomingStopIdxs.length - 1]]
-    const totalPositions = Math.max(1, direction.stopIdxs.length - 1)
-    const fromFraction = fromPosition / totalPositions
-    const toFraction = lastPosition / totalPositions
+export function RouteMap({ data, background, legs, destination }: Props) {
+  // คำนวณทุกอย่างที่ต้องใช้วาดแผนที่ในรอบเดียว (ขอบเขตพื้นที่, เส้นทางที่ตัดมาแล้วของทุกช่วง,
+  // ป้ายที่จะแสดง, เส้นทางเดินต่อรถและเดินไปปลายทาง ฯลฯ) เพื่อไม่ต้องคำนวณ bbox ซ้ำหลายรอบต่อ render
+  const { bbox, width, height, scale, legRoutePoints, lines, labels, places, stopPoints, transferWalkPoints, walkPoints } =
+    useMemo(() => {
+      const legStops = legs.map(({ direction, fromPosition, toPosition }) => {
+        const lastPosition = toPosition ?? direction.stopIdxs.length - 1
+        const upcomingStopIdxs = direction.stopIdxs.slice(fromPosition, lastPosition + 1)
+        const currentStop = data.stops[upcomingStopIdxs[0]]
+        const lastStop = data.stops[upcomingStopIdxs[upcomingStopIdxs.length - 1]]
+        const totalPositions = Math.max(1, direction.stopIdxs.length - 1)
+        const fromFraction = fromPosition / totalPositions
+        const toFraction = lastPosition / totalPositions
 
-    let slicedShape: [number, number][] = []
-    if (direction.shapeCoords.length > 0) {
-      slicedShape = sliceShapeFromNearestPoint(direction.shapeCoords, currentStop, fromFraction)
-      if (toPosition !== undefined) {
-        // ปรับสัดส่วน (fraction) ใหม่ให้อ้างอิงกับรูปทรงที่ถูกตัดหัวไปแล้ว ก่อนจะตัดท้ายต่อ
-        const remainingFraction = (toFraction - fromFraction) / Math.max(1e-6, 1 - fromFraction)
-        slicedShape = sliceShapeToNearestPoint(slicedShape, lastStop, remainingFraction)
+        let slicedShape: [number, number][] = []
+        if (direction.shapeCoords.length > 0) {
+          slicedShape = sliceShapeFromNearestPoint(direction.shapeCoords, currentStop, fromFraction)
+          if (toPosition !== undefined) {
+            // ปรับสัดส่วน (fraction) ใหม่ให้อ้างอิงกับรูปทรงที่ถูกตัดหัวไปแล้ว ก่อนจะตัดท้ายต่อ
+            const remainingFraction = (toFraction - fromFraction) / Math.max(1e-6, 1 - fromFraction)
+            slicedShape = sliceShapeToNearestPoint(slicedShape, lastStop, remainingFraction)
+          }
+        }
+
+        return { upcomingStopIdxs, currentStop, lastStop, slicedShape }
+      })
+
+      const lastLeg = legStops[legStops.length - 1]
+      const walk = destination ? findWalkingPath(lastLeg.lastStop, destination, background.lines) : null
+
+      // ช่วงต่อรถ (มีมากกว่า 1 leg) เดินจากป้ายที่ลงของช่วงแรกไปป้ายที่ขึ้นของช่วงถัดไป —
+      // วาดเป็นเส้นเดินแบบเดียวกับเส้นเดินไปปลายทาง เพื่อให้เห็นว่าเป็นการเดินทางเดียวกันต่อเนื่องกัน
+      const transferWalk =
+        legStops.length > 1
+          ? findWalkingPath(legStops[0].lastStop, legStops[1].currentStop, background.lines)
+          : null
+
+      const stopLatLons = legStops.flatMap((leg) => leg.upcomingStopIdxs.map((idx) => data.stops[idx]))
+      const shapeLatLons = legStops.flatMap((leg) => leg.slicedShape.map(([lat, lon]) => ({ lat, lon })))
+      const box = boundingBoxWithMargin(
+        [...stopLatLons, ...shapeLatLons, ...(transferWalk?.points ?? []), ...(walk?.points ?? [])],
+        BBOX_MARGIN_RATIO,
+      )
+      const { widthM, heightM } = bboxSizeMeters(box)
+
+      return {
+        bbox: box,
+        width: widthM,
+        height: heightM,
+        scale: Math.max(widthM, heightM),
+        legRoutePoints: legStops.map((leg) => leg.slicedShape.map(([lat, lon]) => projectPoint({ lat, lon }, box))),
+        lines: background.lines.filter((line) => lineIntersectsBbox(line, box)),
+        labels: filterLabelsForDisplay(background.labels, box, MAX_LABELS),
+        places: filterPlacesForDisplay(background.places, box, MAX_PLACES),
+        // จุดใหญ่ + ป้ายชื่อ เฉพาะป้ายแรกสุด (คุณอยู่ที่นี่), ป้ายสุดท้ายของแต่ละช่วง
+        // (จุดลง/จุดต่อรถ), และป้ายแรกของช่วงถัดไป (จุดขึ้นต่อ) — ป้ายระหว่างทางเป็นจุดเล็กเฉยๆ
+        // สีแดง (current=false, last=true) สงวนไว้เฉพาะจุดลงสุดท้ายจริงๆ ไม่ใช่ทุกจุดต่อรถ
+        // เพื่อไม่ให้จุดต่อรถกลางทางถูกเข้าใจผิดว่าเป็นจุดหมายปลายทาง
+        stopPoints: legStops.flatMap((leg, legIndex) =>
+          leg.upcomingStopIdxs.map((idx, posIndex) => {
+            const isCurrent = legIndex === 0 && posIndex === 0
+            const isOverallLast = legIndex === legStops.length - 1 && posIndex === leg.upcomingStopIdxs.length - 1
+            const isTransferPoint = posIndex === 0 || posIndex === leg.upcomingStopIdxs.length - 1
+            const big = isCurrent || isOverallLast || isTransferPoint
+            return {
+              key: `${legIndex}-${idx}-${posIndex}`,
+              stop: data.stops[idx],
+              point: projectPoint(data.stops[idx], box),
+              big,
+              current: isCurrent,
+              last: isOverallLast,
+              label: big ? (isCurrent ? 'คุณอยู่ที่นี่' : data.stops[idx].nameTh || data.stops[idx].nameEn) : null,
+            }
+          }),
+        ),
+        transferWalkPoints: transferWalk?.points.map((p) => projectPoint(p, box)) ?? null,
+        walkPoints: walk?.points.map((p) => projectPoint(p, box)) ?? null,
       }
-    }
-
-    const walk = destination ? findWalkingPath(lastStop, destination, background.lines) : null
-
-    const stopLatLons = upcomingStopIdxs.map((idx) => data.stops[idx])
-    const shapeLatLons = slicedShape.map(([lat, lon]) => ({ lat, lon }))
-    const box = boundingBoxWithMargin([...stopLatLons, ...shapeLatLons, ...(walk?.points ?? [])], BBOX_MARGIN_RATIO)
-    const { widthM, heightM } = bboxSizeMeters(box)
-
-    return {
-      bbox: box,
-      width: widthM,
-      height: heightM,
-      scale: Math.max(widthM, heightM),
-      routePoints: slicedShape.map(([lat, lon]) => projectPoint({ lat, lon }, box)),
-      lines: background.lines.filter((line) => lineIntersectsBbox(line, box)),
-      labels: filterLabelsForDisplay(background.labels, box, MAX_LABELS),
-      places: filterPlacesForDisplay(background.places, box, MAX_PLACES),
-      stopPoints: upcomingStopIdxs.map((idx) => ({
-        idx,
-        stop: data.stops[idx],
-        point: projectPoint(data.stops[idx], box),
-      })),
-      walkPoints: walk?.points.map((p) => projectPoint(p, box)) ?? null,
-    }
-  }, [data, background, direction, fromPosition, toPosition, destination])
+    }, [data, background, legs, destination])
 
   const { view, setView, fitView, minZoom, svgRef, viewW, viewH, handlePointerDown, handlePointerMove, handlePointerUp, zoomButton } =
     useMapPanZoom(width, height)
@@ -128,11 +166,23 @@ export function RouteMap({ data, background, direction, fromPosition, toPosition
           )
         })}
 
-        {routePoints.length > 1 && (
+        {legRoutePoints.map(
+          (points, legIndex) =>
+            points.length > 1 && (
+              <polyline
+                key={`route-${legIndex}`}
+                className={legIndex === 0 ? 'map-route' : 'map-route map-route-second'}
+                strokeWidth={routeWidth}
+                points={points.map((p) => `${p.x},${p.y}`).join(' ')}
+              />
+            ),
+        )}
+
+        {transferWalkPoints && (
           <polyline
-            className="map-route"
-            strokeWidth={routeWidth}
-            points={routePoints.map((p) => `${p.x},${p.y}`).join(' ')}
+            className="map-walk"
+            strokeWidth={footbridgeWidth}
+            points={transferWalkPoints.map((p) => `${p.x},${p.y}`).join(' ')}
           />
         )}
 
@@ -178,25 +228,16 @@ export function RouteMap({ data, background, direction, fromPosition, toPosition
           )
         })}
 
-        {stopPoints.map(({ idx, stop, point }, i) => {
-          const isCurrent = i === 0
-          const isLast = i === stopPoints.length - 1
-          return (
-            <g key={idx} className={`map-stop ${isCurrent ? 'current' : ''} ${isLast ? 'last' : ''}`}>
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r={isCurrent || isLast ? stopBigR : stopSmallR}
-                strokeWidth={stopSmallR * 0.5}
-              />
-              {(isCurrent || isLast) && (
-                <text x={point.x} y={point.y - stopBigR * 1.6} fontSize={fontSize * 1.1}>
-                  {isCurrent ? 'คุณอยู่ที่นี่' : stop.nameTh || stop.nameEn}
-                </text>
-              )}
-            </g>
-          )
-        })}
+        {stopPoints.map(({ key, point, big, current, last, label }) => (
+          <g key={key} className={`map-stop ${current ? 'current' : ''} ${last ? 'last' : ''}`}>
+            <circle cx={point.x} cy={point.y} r={big ? stopBigR : stopSmallR} strokeWidth={stopSmallR * 0.5} />
+            {label && (
+              <text x={point.x} y={point.y - stopBigR * 1.6} fontSize={fontSize * 1.1}>
+                {label}
+              </text>
+            )}
+          </g>
+        ))}
       </svg>
 
       <div className="map-zoom-controls">

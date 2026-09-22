@@ -14,6 +14,7 @@
   --map-footbridge: #b8863f;
   --map-label: #6b6560;
   --map-place-dot: #7a746c;
+  --map-route-second: #0a86c2;
 
   font: 18px/145% system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
@@ -38,6 +39,7 @@
     --map-footbridge: #d9a860;
     --map-label: #9a958e;
     --map-place-dot: #a19b92;
+    --map-route-second: #5ec2f0;
   }
 }
 
@@ -525,6 +527,12 @@ select {
   stroke: var(--accent);
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* สายที่สองของการต่อรถ ใช้สีต่างจากสายแรก (.map-route) เพื่อแยกสองเส้นทางออก
+   จากกันให้ชัดเมื่อแสดงพร้อมกันในแผนที่เดียว */
+.map-route-second {
+  stroke: var(--map-route-second);
 }
 
 .map-walk {

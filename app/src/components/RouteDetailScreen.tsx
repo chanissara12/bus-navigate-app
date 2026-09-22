@@ -30,8 +30,7 @@ export function RouteDetailScreen({ data, boardable, onBack }: Props) {
         <RouteMap
           data={data}
           background={background}
-          direction={boardable.direction}
-          fromPosition={boardable.positionInSequence}
+          legs={[{ direction: boardable.direction, fromPosition: boardable.positionInSequence }]}
         />
       )}
       {error && <p className="status error">โหลดแผนที่ไม่ได้: {error}</p>}

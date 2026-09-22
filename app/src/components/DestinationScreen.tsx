@@ -34,7 +34,7 @@ function JourneyLine({
 }: {
   data: BusData
   journey: Journey
-  onShowMap: (leg: Leg, isFinalLeg: boolean) => void
+  onShowMap: (legs: Leg[]) => void
 }) {
   if (journey.type === 'direct') {
     const alightName = data.stops[journey.leg.alightStopIdx].nameTh || data.stops[journey.leg.alightStopIdx].nameEn
@@ -47,7 +47,7 @@ function JourneyLine({
           type="button"
           className="show-map"
           aria-label="ดูแผนที่"
-          onClick={() => onShowMap(journey.leg, true)}
+          onClick={() => onShowMap([journey.leg])}
         >
           🗺
         </button>
@@ -60,23 +60,14 @@ function JourneyLine({
     data.stops[journey.secondLeg.alightStopIdx].nameTh || data.stops[journey.secondLeg.alightStopIdx].nameEn
   return (
     <li>
-      ต่อสาย {formatRouteCode(journey.secondLeg.route)} ที่ {transferName}
-      <button
-        type="button"
-        className="show-map"
-        aria-label="ดูแผนที่ช่วงแรก"
-        onClick={() => onShowMap(journey.firstLeg, false)}
-      >
-        🗺
-      </button>{' '}
-      แล้วลงป้าย {alightName} — {minutes(journey.totalSec)} นาที (เดินต่ออีก{' '}
-      {Math.round(journey.destinationWalkMeters)} ม.
+      ต่อสาย {formatRouteCode(journey.secondLeg.route)} ที่ {transferName} แล้วลงป้าย {alightName} —{' '}
+      {minutes(journey.totalSec)} นาที (เดินต่ออีก {Math.round(journey.destinationWalkMeters)} ม.
       {journey.destinationCrossesMajorRoad ? ' — ข้ามถนนใหญ่' : ''})
       <button
         type="button"
         className="show-map"
-        aria-label="ดูแผนที่ช่วงต่อ"
-        onClick={() => onShowMap(journey.secondLeg, true)}
+        aria-label="ดูแผนที่ทั้งเส้นทาง"
+        onClick={() => onShowMap([journey.firstLeg, journey.secondLeg])}
       >
         🗺
       </button>
@@ -91,7 +82,7 @@ function BoardNowGroupCard({
 }: {
   data: BusData
   group: BoardNowGroup
-  onShowMap: (leg: Leg, isFinalLeg: boolean) => void
+  onShowMap: (legs: Leg[]) => void
 }) {
   // ตัวเลือกที่ดีที่สุดของกลุ่มแสดงเสมอ ส่วนตัวเลือกที่เหลือซ่อนไว้ก่อนจนกว่าผู้ใช้จะกดดูเพิ่มเติม
   const [expanded, setExpanded] = useState(false)
@@ -127,9 +118,9 @@ export function DestinationScreen({ data, location }: Props) {
   const { status, coords, error, request } = location
   const { background } = useMapBackground()
   const [destination, setDestination] = useState<Destination>(FAVORITE_DESTINATIONS[0])
-  // isFinalLeg บอกว่าช่วงที่กำลังแสดงบนแผนที่คือช่วงสุดท้ายของการเดินทางหรือไม่ —
-  // ใช้ตัดสินใจว่าจะส่ง destination เข้าไปให้ LegMapOverlay วาดเส้นทางเดินต่อหรือไม่
-  const [mapLeg, setMapLeg] = useState<{ leg: Leg; isFinalLeg: boolean } | null>(null)
+  // 1 ช่วงสำหรับสายตรง หรือ 2 ช่วงสำหรับการต่อรถ — LegMapOverlay วาดทั้งหมดในแผนที่เดียว
+  // เสมอ จึงไม่ต้องแยกกรณี "ช่วงแรกยังไม่ถึงปลายทาง" เหมือนตอนที่เคยโชว์ทีละช่วงแล้ว
+  const [mapLegs, setMapLegs] = useState<Leg[] | null>(null)
 
   // หาทุกเส้นทางที่เป็นไปได้จากตำแหน่งปัจจุบันไปปลายทาง แล้วจัดกลุ่มตามสาย/ทิศ
   // ที่ขึ้นได้ตอนนี้ เพื่อโชว์เป็นการ์ดต่อกลุ่ม (ไม่ใช่ต่อเส้นทางเดี่ยวๆ)
@@ -152,16 +143,7 @@ export function DestinationScreen({ data, location }: Props) {
     const [bestGroup] = groupByBoardNowDirection(journeys)
     if (!bestGroup) return
     const bestOption = bestGroup.options[0]
-    // ช่วงแรกของการต่อรถพาไปถึงแค่จุดเปลี่ยนรถ ไม่ถึงปลายทางจริง
-    setMapLeg(
-      bestOption.type === 'direct'
-        ? { leg: bestOption.leg, isFinalLeg: true }
-        : { leg: bestOption.firstLeg, isFinalLeg: false },
-    )
-  }
-
-  function showLegMap(leg: Leg, isFinalLeg: boolean) {
-    setMapLeg({ leg, isFinalLeg })
+    setMapLegs(bestOption.type === 'direct' ? [bestOption.leg] : [bestOption.firstLeg, bestOption.secondLeg])
   }
 
   function pickDestination(picked: Destination) {
@@ -190,13 +172,8 @@ export function DestinationScreen({ data, location }: Props) {
           onPick={pickDestination}
         />
 
-        {mapLeg && (
-          <LegMapOverlay
-            data={data}
-            leg={mapLeg.leg}
-            destination={mapLeg.isFinalLeg ? destination : undefined}
-            onClose={() => setMapLeg(null)}
-          />
+        {mapLegs && (
+          <LegMapOverlay data={data} legs={mapLegs} destination={destination} onClose={() => setMapLegs(null)} />
         )}
 
         {groups.length === 0 && directWalk && (
@@ -214,7 +191,7 @@ export function DestinationScreen({ data, location }: Props) {
 
         <div className="board-now-groups">
           {groups.map((group) => (
-            <BoardNowGroupCard key={group.key} data={data} group={group} onShowMap={showLegMap} />
+            <BoardNowGroupCard key={group.key} data={data} group={group} onShowMap={setMapLegs} />
           ))}
         </div>
       </div>
