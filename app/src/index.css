@@ -478,6 +478,24 @@ select {
   stroke-linejoin: round;
 }
 
+.map-walk {
+  fill: none;
+  stroke: var(--ok-text);
+  stroke-linecap: round;
+  stroke-dasharray: 2 3;
+}
+
+.map-destination circle {
+  fill: var(--ok-text);
+  stroke: var(--ok-text);
+}
+
+.map-destination text {
+  fill: var(--text-h);
+  font-weight: 600;
+  text-anchor: middle;
+}
+
 .map-street-label {
   fill: var(--map-label);
 }

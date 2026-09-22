@@ -6,6 +6,7 @@ import {
   bboxSizeMeters,
   filterLabelsForDisplay,
   filterPlacesForDisplay,
+  findWalkingPath,
   lineClassName,
   lineIntersectsBbox,
   projectPoint,
@@ -282,6 +283,64 @@ describe('unprojectPoint', () => {
     const back = unprojectPoint(projectPoint(original, bbox), bbox)
     expect(back.lat).toBeCloseTo(original.lat, 6)
     expect(back.lon).toBeCloseTo(original.lon, 6)
+  })
+})
+
+describe('findWalkingPath', () => {
+  const METERS_PER_DEGREE = 111320
+  // Two points roughly 210m apart along the equator, so meter offsets are easy to reason about.
+  const from = { lat: 0, lon: 0 }
+  const to = { lat: 0, lon: 210 / METERS_PER_DEGREE }
+
+  it('walks straight there when no footbridge is nearby', () => {
+    const path = findWalkingPath(from, to, [])
+    expect(path.viaFootbridge).toBe(false)
+    expect(path.points).toEqual([from, to])
+  })
+
+  it('routes through a footbridge that sits on the way without much detour', () => {
+    const bridge: MapLine = {
+      kind: 'footbridge',
+      points: [
+        [0, 100 / METERS_PER_DEGREE],
+        [0, 110 / METERS_PER_DEGREE],
+      ],
+      name: null,
+      priority: 5,
+    }
+    const path = findWalkingPath(from, to, [bridge])
+    expect(path.viaFootbridge).toBe(true)
+    expect(path.points[0]).toEqual(from)
+    expect(path.points[path.points.length - 1]).toEqual(to)
+    expect(path.points).toHaveLength(4)
+  })
+
+  it('ignores a footbridge that would require a huge detour', () => {
+    const farBridge: MapLine = {
+      kind: 'footbridge',
+      points: [
+        [1, 1], // nowhere near the direct path
+        [1.001, 1.001],
+      ],
+      name: null,
+      priority: 5,
+    }
+    const path = findWalkingPath(from, to, [farBridge])
+    expect(path.viaFootbridge).toBe(false)
+  })
+
+  it('ignores lines that are not footbridges', () => {
+    const road: MapLine = {
+      kind: 'road',
+      points: [
+        [0, 100 / METERS_PER_DEGREE],
+        [0, 110 / METERS_PER_DEGREE],
+      ],
+      name: null,
+      priority: 1,
+    }
+    const path = findWalkingPath(from, to, [road])
+    expect(path.viaFootbridge).toBe(false)
   })
 })
 

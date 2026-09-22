@@ -2,15 +2,17 @@ import { formatRouteCode } from '../lib/formatRoute'
 import { useMapBackground } from '../lib/useMapBackground'
 import type { Leg } from '../lib/destinationLookup'
 import type { BusData } from '../lib/types'
-import { RouteMap } from './RouteMap'
+import { RouteMap, type MapDestination } from './RouteMap'
 
 interface Props {
   data: BusData
   leg: Leg
+  /** Only meaningful for the leg that actually ends the journey — shows the walk past the alight stop. */
+  destination?: MapDestination
   onClose: () => void
 }
 
-export function LegMapOverlay({ data, leg, onClose }: Props) {
+export function LegMapOverlay({ data, leg, destination, onClose }: Props) {
   const { background, error } = useMapBackground()
   const boardStop = data.stops[leg.boardStopIdx]
   const alightStop = data.stops[leg.alightStopIdx]
@@ -28,7 +30,14 @@ export function LegMapOverlay({ data, leg, onClose }: Props) {
       </div>
 
       {background && (
-        <RouteMap data={data} background={background} direction={leg.direction} fromPosition={leg.boardPosition} toPosition={leg.alightPosition} />
+        <RouteMap
+          data={data}
+          background={background}
+          direction={leg.direction}
+          fromPosition={leg.boardPosition}
+          toPosition={leg.alightPosition}
+          destination={destination}
+        />
       )}
       {error && <p className="status error">โหลดแผนที่ไม่ได้: {error}</p>}
     </div>

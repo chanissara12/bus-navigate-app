@@ -119,6 +119,44 @@ function pointInBbox(lat: number, lon: number, bbox: BBox): boolean {
   return lat >= bbox.minLat && lat <= bbox.maxLat && lon >= bbox.minLon && lon <= bbox.maxLon
 }
 
+export interface WalkPath {
+  points: LatLon[]
+  viaFootbridge: boolean
+}
+
+const FOOTBRIDGE_SEARCH_RADIUS_M = 500
+const FOOTBRIDGE_DETOUR_FACTOR = 1.6
+
+// A pragmatic heuristic, not real pedestrian routing: if a nearby footbridge's
+// endpoints let you reach the destination without much more walking than a
+// straight line would take, assume that's the sanctioned way to cross
+// whatever road sits between the alight stop and the destination. This never
+// guesses which side of a road anyone is standing on (WF-003) — both ends
+// here are fixed, known coordinates (an alight stop and a destination), not
+// a live rider position.
+export function findWalkingPath(from: LatLon, to: LatLon, lines: MapLine[]): WalkPath {
+  const directMeters = haversineMeters(from, to)
+  let best: { points: LatLon[]; totalMeters: number } | null = null
+
+  for (const line of lines) {
+    if (line.kind !== 'footbridge' || line.points.length < 2) continue
+    const start: LatLon = { lat: line.points[0][0], lon: line.points[0][1] }
+    const end: LatLon = { lat: line.points[line.points.length - 1][0], lon: line.points[line.points.length - 1][1] }
+
+    for (const [near, far] of [
+      [start, end],
+      [end, start],
+    ] as const) {
+      if (haversineMeters(from, near) > FOOTBRIDGE_SEARCH_RADIUS_M) continue
+      const totalMeters = haversineMeters(from, near) + haversineMeters(near, far) + haversineMeters(far, to)
+      if (totalMeters > directMeters * FOOTBRIDGE_DETOUR_FACTOR) continue
+      if (!best || totalMeters < best.totalMeters) best = { points: [from, near, far, to], totalMeters }
+    }
+  }
+
+  return best ? { points: best.points, viaFootbridge: true } : { points: [from, to], viaFootbridge: false }
+}
+
 export function lineClassName(line: MapLine): string {
   if (line.kind === 'river') return 'map-river'
   if (line.kind === 'footbridge') return 'map-footbridge'

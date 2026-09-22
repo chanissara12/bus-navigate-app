@@ -5,6 +5,7 @@ import {
   boundingBoxWithMargin,
   filterLabelsForDisplay,
   filterPlacesForDisplay,
+  findWalkingPath,
   lineClassName,
   lineIntersectsBbox,
   projectPoint,
@@ -18,6 +19,12 @@ const BBOX_MARGIN_RATIO = 0.12
 const MAX_LABELS = 6
 const MAX_PLACES = 7
 
+export interface MapDestination {
+  name: string
+  lat: number
+  lon: number
+}
+
 interface Props {
   data: BusData
   background: MapBackground
@@ -25,10 +32,12 @@ interface Props {
   fromPosition: number
   /** Last stop to include (inclusive). Defaults to the end of the direction's route. */
   toPosition?: number
+  /** Where the rider is actually headed — drawn past the alight stop, with the walk to reach it. */
+  destination?: MapDestination
 }
 
-export function RouteMap({ data, background, direction, fromPosition, toPosition }: Props) {
-  const { bbox, width, height, scale, routePoints, lines, labels, places, stopPoints } = useMemo(() => {
+export function RouteMap({ data, background, direction, fromPosition, toPosition, destination }: Props) {
+  const { bbox, width, height, scale, routePoints, lines, labels, places, stopPoints, walkPoints } = useMemo(() => {
     const lastPosition = toPosition ?? direction.stopIdxs.length - 1
     const upcomingStopIdxs = direction.stopIdxs.slice(fromPosition, lastPosition + 1)
     const currentStop = data.stops[upcomingStopIdxs[0]]
@@ -47,9 +56,11 @@ export function RouteMap({ data, background, direction, fromPosition, toPosition
       }
     }
 
+    const walk = destination ? findWalkingPath(lastStop, destination, background.lines) : null
+
     const stopLatLons = upcomingStopIdxs.map((idx) => data.stops[idx])
     const shapeLatLons = slicedShape.map(([lat, lon]) => ({ lat, lon }))
-    const box = boundingBoxWithMargin([...stopLatLons, ...shapeLatLons], BBOX_MARGIN_RATIO)
+    const box = boundingBoxWithMargin([...stopLatLons, ...shapeLatLons, ...(walk?.points ?? [])], BBOX_MARGIN_RATIO)
     const { widthM, heightM } = bboxSizeMeters(box)
 
     return {
@@ -66,8 +77,9 @@ export function RouteMap({ data, background, direction, fromPosition, toPosition
         stop: data.stops[idx],
         point: projectPoint(data.stops[idx], box),
       })),
+      walkPoints: walk?.points.map((p) => projectPoint(p, box)) ?? null,
     }
-  }, [data, background, direction, fromPosition, toPosition])
+  }, [data, background, direction, fromPosition, toPosition, destination])
 
   const { view, setView, fitView, minZoom, svgRef, viewW, viewH, handlePointerDown, handlePointerMove, handlePointerUp, zoomButton } =
     useMapPanZoom(width, height)
@@ -120,6 +132,27 @@ export function RouteMap({ data, background, direction, fromPosition, toPosition
             strokeWidth={routeWidth}
             points={routePoints.map((p) => `${p.x},${p.y}`).join(' ')}
           />
+        )}
+
+        {walkPoints && (
+          <polyline
+            className="map-walk"
+            strokeWidth={footbridgeWidth}
+            points={walkPoints.map((p) => `${p.x},${p.y}`).join(' ')}
+          />
+        )}
+
+        {destination && walkPoints && (
+          <g className="map-destination">
+            <circle cx={walkPoints[walkPoints.length - 1].x} cy={walkPoints[walkPoints.length - 1].y} r={stopBigR} />
+            <text
+              x={walkPoints[walkPoints.length - 1].x}
+              y={walkPoints[walkPoints.length - 1].y - stopBigR * 1.6}
+              fontSize={fontSize * 1.1}
+            >
+              {destination.name}
+            </text>
+          </g>
         )}
 
         {places.map((place, i) => {

@@ -26,7 +26,7 @@ function JourneyLine({
 }: {
   data: BusData
   journey: Journey
-  onShowMap: (leg: Leg) => void
+  onShowMap: (leg: Leg, isFinalLeg: boolean) => void
 }) {
   if (journey.type === 'direct') {
     const alightName = data.stops[journey.leg.alightStopIdx].nameTh || data.stops[journey.leg.alightStopIdx].nameEn
@@ -34,7 +34,12 @@ function JourneyLine({
       <li>
         ลงป้าย {alightName} — {minutes(journey.totalSec)} นาที (เดินต่ออีก{' '}
         {Math.round(journey.destinationWalkMeters)} ม.)
-        <button type="button" className="show-map" aria-label="ดูแผนที่" onClick={() => onShowMap(journey.leg)}>
+        <button
+          type="button"
+          className="show-map"
+          aria-label="ดูแผนที่"
+          onClick={() => onShowMap(journey.leg, true)}
+        >
           🗺
         </button>
       </li>
@@ -51,7 +56,7 @@ function JourneyLine({
         type="button"
         className="show-map"
         aria-label="ดูแผนที่ช่วงแรก"
-        onClick={() => onShowMap(journey.firstLeg)}
+        onClick={() => onShowMap(journey.firstLeg, false)}
       >
         🗺
       </button>{' '}
@@ -61,7 +66,7 @@ function JourneyLine({
         type="button"
         className="show-map"
         aria-label="ดูแผนที่ช่วงต่อ"
-        onClick={() => onShowMap(journey.secondLeg)}
+        onClick={() => onShowMap(journey.secondLeg, true)}
       >
         🗺
       </button>
@@ -73,7 +78,7 @@ export function DestinationScreen({ data, location }: Props) {
   const { status, coords, error, request } = location
   const { background } = useMapBackground()
   const [destination, setDestination] = useState<Destination>(FAVORITE_DESTINATIONS[0])
-  const [mapLeg, setMapLeg] = useState<Leg | null>(null)
+  const [mapLeg, setMapLeg] = useState<{ leg: Leg; isFinalLeg: boolean } | null>(null)
 
   const groups = useMemo(() => {
     if (!coords) return []
@@ -87,7 +92,16 @@ export function DestinationScreen({ data, location }: Props) {
     const [bestGroup] = groupByBoardNowDirection(journeys)
     if (!bestGroup) return
     const bestOption = bestGroup.options[0]
-    setMapLeg(bestOption.type === 'direct' ? bestOption.leg : bestOption.firstLeg)
+    // A transfer's first leg only reaches the transfer point, not the destination.
+    setMapLeg(
+      bestOption.type === 'direct'
+        ? { leg: bestOption.leg, isFinalLeg: true }
+        : { leg: bestOption.firstLeg, isFinalLeg: false },
+    )
+  }
+
+  function showLegMap(leg: Leg, isFinalLeg: boolean) {
+    setMapLeg({ leg, isFinalLeg })
   }
 
   function pickDestination(picked: Destination) {
@@ -116,7 +130,14 @@ export function DestinationScreen({ data, location }: Props) {
           onPick={pickDestination}
         />
 
-        {mapLeg && <LegMapOverlay data={data} leg={mapLeg} onClose={() => setMapLeg(null)} />}
+        {mapLeg && (
+          <LegMapOverlay
+            data={data}
+            leg={mapLeg.leg}
+            destination={mapLeg.isFinalLeg ? destination : undefined}
+            onClose={() => setMapLeg(null)}
+          />
+        )}
 
         {groups.length === 0 && <p className="status">ไม่พบสายที่ไปถึงในระยะที่เดินได้</p>}
 
@@ -137,7 +158,7 @@ export function DestinationScreen({ data, location }: Props) {
               </div>
               <ul>
                 {group.options.map((option, i) => (
-                  <JourneyLine key={i} data={data} journey={option} onShowMap={setMapLeg} />
+                  <JourneyLine key={i} data={data} journey={option} onShowMap={showLegMap} />
                 ))}
               </ul>
             </div>
