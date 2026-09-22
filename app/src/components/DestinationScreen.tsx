@@ -193,6 +193,12 @@ export function DestinationScreen({ data, location }: Props) {
         )}
 
         {groups.length === 0 && directWalk && (
+          // Note: groups can come back empty for two different reasons —
+          // findJourneys already suppressed every bus option because walking
+          // beats them (see DIRECT_WALK_MAX_M there), or nothing was in
+          // range at all. DESTINATION_WALK_RADIUS_M (looser than that
+          // internal cutoff) is reused here only to decide which message
+          // reads as true, not to redo the suppression.
           <p className="status">
             {directWalk.meters <= DESTINATION_WALK_RADIUS_M
               ? `จุดหมายอยู่ใกล้แค่ ${Math.round(directWalk.meters)} ม. เดินไปเลยดีกว่านั่งรถ (ประมาณ ${minutes(directWalk.sec)} นาที${directWalk.crossesMajorRoad ? ' — ข้ามถนนใหญ่' : ''})`
