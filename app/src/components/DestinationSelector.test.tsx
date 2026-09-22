@@ -40,7 +40,7 @@ describe('DestinationSelector', () => {
     expect(onPick).toHaveBeenCalledWith({ lat: 13.75, lon: 100.5, name: 'เซ็นทรัลลาดพร้าว', kind: 'mall' })
   })
 
-  it('calls onSelectFavorite, not onPick, when a saved destination is chosen from the dropdown', () => {
+  it('calls onSelectFavorite, not onPick, when a saved destination is chosen from the favorite buttons', () => {
     const onSelectFavorite = vi.fn()
     const onPick = vi.fn()
     render(
@@ -53,7 +53,7 @@ describe('DestinationSelector', () => {
       />,
     )
 
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: FAVORITE_DESTINATIONS[1].name } })
+    fireEvent.click(screen.getByRole('button', { name: FAVORITE_DESTINATIONS[1].name }))
 
     expect(onSelectFavorite).toHaveBeenCalledWith(FAVORITE_DESTINATIONS[1])
     expect(onPick).not.toHaveBeenCalled()

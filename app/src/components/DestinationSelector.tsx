@@ -40,22 +40,20 @@ export function DestinationSelector({ background, center, value, onSelectFavorit
 
   return (
     <>
-      <select
-        value={FAVORITE_DESTINATIONS.some((d) => d.name === value.name) ? value.name : ''}
-        onChange={(e) => {
-          const picked = FAVORITE_DESTINATIONS.find((d) => d.name === e.target.value)
-          if (picked) onSelectFavorite(picked)
-        }}
-      >
-        <option value="" disabled>
-          เลือกจากรายการที่บันทึกไว้
-        </option>
+      {/* ปุ่มกดครั้งเดียวแทน dropdown มาตรฐาน — ปลายทางโปรดมีแค่ไม่กี่รายการ
+          การกดเลือกตรงๆ เร็วกว่าต้องเปิด dropdown แล้วเลื่อนหาทุกครั้ง */}
+      <div className="favorite-destinations">
         {FAVORITE_DESTINATIONS.map((d) => (
-          <option key={d.name} value={d.name}>
+          <button
+            key={d.name}
+            type="button"
+            className={d.name === value.name ? 'favorite-destination active' : 'favorite-destination'}
+            onClick={() => onSelectFavorite(d)}
+          >
             {d.name}
-          </option>
+          </button>
         ))}
-      </select>
+      </div>
 
       <input
         className="number-input"

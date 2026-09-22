@@ -70,7 +70,7 @@ describe('MisboardScreen', () => {
     render(<MisboardScreen data={makeData([0, 1, 2])} location={grantedAtOrigin()} />)
     selectTheRoute()
     // switch to a destination nowhere near any stop on this direction
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'หมอชิต' } })
+    fireEvent.click(screen.getByRole('button', { name: 'หมอชิต' }))
     expect(screen.getByText('คันนี้ไม่พาไปที่นั่น ไม่มีทางกู้ได้จากคันนี้')).toBeInTheDocument()
   })
 
