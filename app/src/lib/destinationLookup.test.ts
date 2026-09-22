@@ -171,6 +171,44 @@ describe('findJourneys — destination walk time', () => {
       expect(direct.totalSec).toBeCloseTo(rideOnly + walkSeconds(200), 0)
     }
   })
+
+  it('considers every stop within the destination radius, not just the first one reached', () => {
+    // A route passing two stops within the destination's 800m radius: the
+    // first one reached (idx 1) is a long walk from the actual destination,
+    // the next one (idx 2) is right next to it — the fix in the "ทรี ออน
+    // ธรี" case was exactly this: the app used to stop at the first match.
+    const data: BusData = {
+      generatedAt: '',
+      feedVersion: null,
+      stops: [
+        stopAt('origin', 0),
+        stopAt('far-from-dest', 1000),
+        stopAt('near-dest', 1200),
+      ],
+      routes: [{ id: 'r1', agency: 'BMTA', newCode: '1-1', oldCode: null, longNameTh: '', longNameEn: '' }],
+      directions: [
+        {
+          routeIdx: 0,
+          directionId: 0,
+          headsignTh: '',
+          headsignEn: '',
+          stopIdxs: [0, 1, 2],
+          offsetsSec: [0, 600, 660],
+          headwaySec: 600,
+          shapeCoords: [],
+        },
+      ],
+    }
+    // 14m past 'near-dest' (idx 2), 214m past 'far-from-dest' (idx 1) — both within the 800m radius
+    const destination = { lat: 0, lon: 1214 / METERS_PER_DEGREE }
+    const journeys = findJourneys(data, { lat: 0, lon: 0 }, destination)
+
+    const byAlightStop = new Map(journeys.filter((j) => j.type === 'direct').map((j) => [j.leg.alightStopIdx, j]))
+    expect(byAlightStop.size).toBe(2) // both alight stops were explored, not just the first
+
+    expect(journeys[0].type).toBe('direct')
+    if (journeys[0].type === 'direct') expect(journeys[0].leg.alightStopIdx).toBe(2) // 'near-dest' wins overall
+  })
 })
 
 describe('groupByBoardNowDirection', () => {

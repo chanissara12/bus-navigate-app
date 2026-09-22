@@ -91,6 +91,12 @@ function findDirectJourneys(
       const boardStopIdx = direction.stopIdxs[boardPosition]
       if (!originIdxs.has(boardStopIdx)) continue
       const originWalkMeters = originWalkMetersByStopIdx.get(boardStopIdx) ?? 0
+      // Explore every stop the destination radius reaches on this ride, not
+      // just the first — the closest-by-route-position stop isn't always the
+      // closest-to-walk one (e.g. "เทอร์มินอล 21 พระราม 3" sits past
+      // "สำนักงานเขตบางคอแหลม" but 100m closer to a nearby destination).
+      // dedupeByOutcome + MAX_OPTIONS_PER_GROUP keep only the best few by
+      // totalSec, so this doesn't flood the results.
       for (let alightPosition = boardPosition + 1; alightPosition < direction.stopIdxs.length; alightPosition += 1) {
         const alightStopIdx = direction.stopIdxs[alightPosition]
         if (!destIdxs.has(alightStopIdx)) continue
@@ -103,7 +109,6 @@ function findDirectJourneys(
           destinationWalkMeters,
           totalSec: walkSeconds(originWalkMeters) + leg.waitSec + leg.rideSec + walkSeconds(destinationWalkMeters),
         })
-        break
       }
     }
   }
@@ -140,12 +145,15 @@ function findTransferJourneys(
             if (secondDirection === firstDirection) continue
             if (transferBPos >= secondDirection.stopIdxs.length - 1) continue
 
+            // Same reasoning as findDirectJourneys: don't stop at the first
+            // stop the destination radius reaches on the second leg, since
+            // it isn't always the one with the shortest final walk.
             for (let alightPosition = transferBPos + 1; alightPosition < secondDirection.stopIdxs.length; alightPosition += 1) {
               const alightStopIdx = secondDirection.stopIdxs[alightPosition]
               if (!destIdxs.has(alightStopIdx)) continue
 
               const dedupeKey = `${firstDirection.routeIdx}:${firstDirection.directionId}:${boardPosition}:${transferAPos}:${secondDirection.routeIdx}:${secondDirection.directionId}:${transferBPos}:${alightPosition}`
-              if (seen.has(dedupeKey)) break
+              if (seen.has(dedupeKey)) continue
               seen.add(dedupeKey)
 
               const destinationWalkMeters = destWalkMetersByStopIdx.get(alightStopIdx) ?? 0
@@ -168,7 +176,6 @@ function findTransferJourneys(
                   secondLeg.rideSec +
                   walkSeconds(destinationWalkMeters),
               })
-              break
             }
           }
         }
