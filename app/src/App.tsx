@@ -18,6 +18,13 @@ function App() {
   if (error) return <p className="status error">โหลดข้อมูลรถเมล์ไม่ได้: {error}</p>
   if (!data) return <p className="status">กำลังโหลดข้อมูลรถเมล์...</p>
 
+  // สลับแท็บจากหน้ารายละเอียดสายต้องปิดหน้านั้นไปด้วย ไม่งั้นจะค้างแสดง
+  // RouteDetailScreen ต่อ (เพราะ ternary ด้านล่างเช็ค openRoute ก่อนเช็ค tab)
+  function selectTab(next: Tab) {
+    setOpenRoute(null)
+    setTab(next)
+  }
+
   return (
     <div className="app">
       <main>
@@ -31,23 +38,25 @@ function App() {
           </>
         )}
       </main>
-      {!openRoute && (
-        <nav className="tabs">
-          <button type="button" className={tab === 'stop' ? 'active' : ''} onClick={() => setTab('stop')}>
-            ที่ป้าย
-          </button>
-          <button
-            type="button"
-            className={tab === 'destination' ? 'active' : ''}
-            onClick={() => setTab('destination')}
-          >
-            ไปไหน
-          </button>
-          <button type="button" className={tab === 'misboard' ? 'active' : ''} onClick={() => setTab('misboard')}>
-            ขึ้นผิดคัน
-          </button>
-        </nav>
-      )}
+      <nav className="tabs">
+        <button type="button" className={!openRoute && tab === 'stop' ? 'active' : ''} onClick={() => selectTab('stop')}>
+          ที่ป้าย
+        </button>
+        <button
+          type="button"
+          className={!openRoute && tab === 'destination' ? 'active' : ''}
+          onClick={() => selectTab('destination')}
+        >
+          ไปไหน
+        </button>
+        <button
+          type="button"
+          className={!openRoute && tab === 'misboard' ? 'active' : ''}
+          onClick={() => selectTab('misboard')}
+        >
+          ขึ้นผิดคัน
+        </button>
+      </nav>
     </div>
   )
 }
