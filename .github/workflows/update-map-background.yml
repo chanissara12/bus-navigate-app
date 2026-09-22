@@ -60,6 +60,7 @@ jobs:
           fetch roads.json '[out:json][timeout:180];way["highway"~"^(motorway|motorway_link|trunk|trunk_link|primary|primary_link)$"]('"$BBOX"');out geom;'
           fetch roads-secondary.json '[out:json][timeout:180];way["highway"~"^(secondary|secondary_link|tertiary|tertiary_link)$"]('"$BBOX"');out geom;'
           fetch rivers.json '[out:json][timeout:180];way["waterway"="river"]('"$BBOX"');out geom;'
+          fetch footbridges.json '[out:json][timeout:120];way["highway"="footway"]["bridge"="yes"]('"$BBOX"');out geom;'
           fetch places.json '[out:json][timeout:180];(nwr["railway"="station"]('"$BBOX"');nwr["station"="subway"]('"$BBOX"');nwr["shop"="mall"]('"$BBOX"');nwr["amenity"="hospital"]('"$BBOX"');nwr["amenity"="university"]('"$BBOX"');nwr["amenity"="marketplace"]('"$BBOX"');nwr["amenity"="ferry_terminal"]('"$BBOX"');nwr["amenity"="place_of_worship"]('"$BBOX"');nwr["amenity"="school"]('"$BBOX"');nwr["leisure"="park"]('"$BBOX"');nwr["office"="government"]('"$BBOX"');nwr["amenity"="townhall"]('"$BBOX"');node["highway"="bus_stop"]["name"]('"$BBOX"'););out center;'
 
       - name: Build map-background.json

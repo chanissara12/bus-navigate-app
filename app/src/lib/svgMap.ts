@@ -119,6 +119,13 @@ function pointInBbox(lat: number, lon: number, bbox: BBox): boolean {
   return lat >= bbox.minLat && lat <= bbox.maxLat && lon >= bbox.minLon && lon <= bbox.maxLon
 }
 
+export function lineClassName(line: MapLine): string {
+  if (line.kind === 'river') return 'map-river'
+  if (line.kind === 'footbridge') return 'map-footbridge'
+  const isMinorRoad = line.kind === 'road' && line.priority >= 3
+  return isMinorRoad ? 'map-road map-road-minor' : 'map-road'
+}
+
 export function lineIntersectsBbox(line: MapLine, bbox: BBox): boolean {
   let minLat = Infinity
   let maxLat = -Infinity

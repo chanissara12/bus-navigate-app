@@ -6,6 +6,7 @@ import {
   bboxSizeMeters,
   filterLabelsForDisplay,
   filterPlacesForDisplay,
+  lineClassName,
   lineIntersectsBbox,
   projectPoint,
   sliceShapeFromNearestPoint,
@@ -73,6 +74,28 @@ describe('lineIntersectsBbox', () => {
   it('is false when a line is entirely outside the box', () => {
     const line: MapLine = { kind: 'road', points: [[14.0, 100.9], [14.1, 100.95]], name: null, priority: 3 }
     expect(lineIntersectsBbox(line, bbox)).toBe(false)
+  })
+})
+
+describe('lineClassName', () => {
+  it('gives a river its own class', () => {
+    const line: MapLine = { kind: 'river', points: [], name: null, priority: 0 }
+    expect(lineClassName(line)).toBe('map-river')
+  })
+
+  it('gives a footbridge its own class, distinct from roads', () => {
+    const line: MapLine = { kind: 'footbridge', points: [], name: null, priority: 5 }
+    expect(lineClassName(line)).toBe('map-footbridge')
+  })
+
+  it('marks a low-priority road (secondary/tertiary) as minor', () => {
+    const line: MapLine = { kind: 'road', points: [], name: null, priority: 3 }
+    expect(lineClassName(line)).toBe('map-road map-road-minor')
+  })
+
+  it('does not mark a major road as minor', () => {
+    const line: MapLine = { kind: 'road', points: [], name: null, priority: 1 }
+    expect(lineClassName(line)).toBe('map-road')
   })
 })
 

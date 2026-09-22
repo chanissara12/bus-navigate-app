@@ -5,6 +5,7 @@ import {
   boundingBoxWithMargin,
   filterLabelsForDisplay,
   filterPlacesForDisplay,
+  lineClassName,
   lineIntersectsBbox,
   projectPoint,
   sliceShapeFromNearestPoint,
@@ -73,6 +74,7 @@ export function RouteMap({ data, background, direction, fromPosition, toPosition
 
   const roadWidth = scale * 0.006
   const riverWidth = scale * 0.008
+  const footbridgeWidth = scale * 0.003
   const routeWidth = scale * 0.005
   const fontSize = scale * 0.024
   const placeDotR = scale * 0.006
@@ -95,11 +97,13 @@ export function RouteMap({ data, background, direction, fromPosition, toPosition
       >
         {lines.map((line, i) => {
           const isMinorRoad = line.kind === 'road' && line.priority >= 3
+          const strokeWidth =
+            line.kind === 'river' ? riverWidth : line.kind === 'footbridge' ? footbridgeWidth : isMinorRoad ? roadWidth * 0.55 : roadWidth
           return (
             <polyline
               key={i}
-              className={line.kind === 'river' ? 'map-river' : isMinorRoad ? 'map-road map-road-minor' : 'map-road'}
-              strokeWidth={line.kind === 'river' ? riverWidth : isMinorRoad ? roadWidth * 0.55 : roadWidth}
+              className={lineClassName(line)}
+              strokeWidth={strokeWidth}
               points={line.points
                 .map(([lat, lon]) => {
                   const p = projectPoint({ lat, lon }, bbox)

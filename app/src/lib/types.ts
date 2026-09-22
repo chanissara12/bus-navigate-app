@@ -75,7 +75,7 @@ export interface PackedBusData {
 }
 
 export interface MapLine {
-  kind: 'road' | 'river'
+  kind: 'road' | 'river' | 'footbridge'
   points: [number, number][]
   name: string | null
   priority: number

@@ -28,6 +28,13 @@
 // way["waterway"="river"](<south>,<west>,<north>,<east>);
 // out geom;
 //
+// footbridges.json — pedestrian overpasses, shown as a plain visual layer so
+// a rider can see where a crossing exists near a stop; the app never infers
+// which side of the road anyone is standing on to recommend one (WF-003):
+// [out:json][timeout:120];
+// way["highway"="footway"]["bridge"="yes"](<south>,<west>,<north>,<east>);
+// out geom;
+//
 // places.json must be queried with `nwr[...]` and `out center;`, not
 // `node[...]` — a mall mapped as a building outline (a way) has no top-level
 // lat/lon, only `.center`, and a `node`-only query silently drops it:
@@ -69,6 +76,12 @@ const OUT_FILE = join(__dirname, '..', 'public', 'data', 'map-background.json')
 const ROAD_TOLERANCE_M = 30
 const RIVER_TOLERANCE_M = 40
 const MIN_LINE_LENGTH_M = 250
+// Footbridges are short by nature (median ~25m in the current extract — a
+// single crossing over one road), so the road/river minimum would discard
+// almost all of them (only 73 of 3,216 clear 250m). Barely simplify either:
+// a few-point line is already as simple as these get.
+const FOOTBRIDGE_TOLERANCE_M = 5
+const MIN_FOOTBRIDGE_LENGTH_M = 3
 // Was 550m back when places.json only covered 5-6 sparse categories
 // (stations, malls, hospitals, universities, markets). Once
 // worship/school/park/government/landmark-bus-stop were added, real, distinct
@@ -111,14 +124,14 @@ function toPointArray(geometry) {
   return geometry.map((g) => ({ lat: g.lat, lon: g.lon }))
 }
 
-function buildLines(ways, kind, toleranceM) {
+function buildLines(ways, kind, toleranceM, minLengthM) {
   const lines = []
   for (const way of ways) {
     if (!way.geometry || way.geometry.length < 2) continue
     const raw = toPointArray(way.geometry)
     const simplified = douglasPeucker(raw, toleranceM)
     if (simplified.length < 2) continue
-    if (lineLengthMeters(simplified) < MIN_LINE_LENGTH_M) continue
+    if (lineLengthMeters(simplified) < minLengthM) continue
 
     const name = way.tags?.name ?? null
     const priority = kind === 'river' ? ROAD_PRIORITY.river : (ROAD_PRIORITY[way.tags?.highway] ?? 5)
@@ -171,18 +184,20 @@ function dedupePlaces(elements) {
 function build() {
   const roadWays = [...readOsm('roads.json'), ...readOsm('roads-secondary.json')]
   const riverWays = readOsm('rivers.json')
+  const footbridgeWays = readOsm('footbridges.json')
   const placeNodes = readOsm('places.json')
 
-  const roadLines = buildLines(roadWays, 'road', ROAD_TOLERANCE_M)
-  const riverLines = buildLines(riverWays, 'river', RIVER_TOLERANCE_M)
-  const lines = [...riverLines, ...roadLines]
+  const roadLines = buildLines(roadWays, 'road', ROAD_TOLERANCE_M, MIN_LINE_LENGTH_M)
+  const riverLines = buildLines(riverWays, 'river', RIVER_TOLERANCE_M, MIN_LINE_LENGTH_M)
+  const footbridgeLines = buildLines(footbridgeWays, 'footbridge', FOOTBRIDGE_TOLERANCE_M, MIN_FOOTBRIDGE_LENGTH_M)
+  const lines = [...riverLines, ...roadLines, ...footbridgeLines]
   const labels = buildLabels(lines)
   const places = dedupePlaces(placeNodes)
 
   const data = { generatedAt: new Date().toISOString(), lines, labels, places }
   writeFileSync(OUT_FILE, JSON.stringify(data))
 
-  console.log(`lines: ${lines.length} (roads: ${roadLines.length}, rivers: ${riverLines.length})`)
+  console.log(`lines: ${lines.length} (roads: ${roadLines.length}, rivers: ${riverLines.length}, footbridges: ${footbridgeLines.length})`)
   console.log(`labels: ${labels.length}`)
   console.log(`places: ${places.length} (from ${placeNodes.length} raw elements)`)
   console.log(`output: ${OUT_FILE}`)

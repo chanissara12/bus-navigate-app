@@ -11,6 +11,7 @@
   --map-bg: #f4f3ec;
   --map-road: #a39c8c;
   --map-river: #7fb2dd;
+  --map-footbridge: #b8863f;
   --map-label: #6b6560;
   --map-place-dot: #7a746c;
 
@@ -34,6 +35,7 @@
     --map-bg: #1c1d24;
     --map-road: #565a6b;
     --map-river: #3f6f97;
+    --map-footbridge: #d9a860;
     --map-label: #9a958e;
     --map-place-dot: #a19b92;
   }
@@ -460,6 +462,13 @@ select {
   stroke: var(--map-river);
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.map-footbridge {
+  fill: none;
+  stroke: var(--map-footbridge);
+  stroke-linecap: round;
+  stroke-dasharray: 4 3;
 }
 
 .map-route {

@@ -6,6 +6,7 @@ import {
   bboxSizeMeters,
   filterLabelsForDisplay,
   filterPlacesForDisplay,
+  lineClassName,
   lineIntersectsBbox,
   projectPoint,
   unprojectPoint,
@@ -126,11 +127,11 @@ export function DestinationPicker({ background, center, onConfirm, onClose }: Pr
         >
           {visibleLines.map((line, i) => {
             const isMinorRoad = line.kind === 'road' && line.priority >= 3
-            const widthFactor = line.kind === 'river' ? 1.3 : isMinorRoad ? 0.55 : 1
+            const widthFactor = line.kind === 'river' ? 1.3 : line.kind === 'footbridge' ? 0.4 : isMinorRoad ? 0.55 : 1
             return (
               <polyline
                 key={i}
-                className={line.kind === 'river' ? 'map-river' : isMinorRoad ? 'map-road map-road-minor' : 'map-road'}
+                className={lineClassName(line)}
                 strokeWidth={widthFactor * scale * 0.004}
                 points={line.points
                   .map(([lat, lon]) => {
