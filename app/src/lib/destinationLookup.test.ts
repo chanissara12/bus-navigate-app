@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { findJourneys, groupByBoardNowDirection, ORIGIN_WALK_RADIUS_M, DESTINATION_WALK_RADIUS_M } from './destinationLookup'
+import {
+  findDirectWalk,
+  findJourneys,
+  groupByBoardNowDirection,
+  ORIGIN_WALK_RADIUS_M,
+  DESTINATION_WALK_RADIUS_M,
+} from './destinationLookup'
 import { walkSeconds } from './geo'
 import type { BusData, MapLine } from './types'
 
@@ -268,6 +274,80 @@ describe('findJourneys — map-aware walking distance', () => {
     const journeys = findJourneys(makeData(), { lat: 0, lon: 0 }, destination, [bentRoad])
     expect(journeys[0].type).toBe('direct')
     if (journeys[0].type === 'direct') expect(journeys[0].leg.alightStopIdx).toBe(2) // fartherByAir wins for real
+  })
+})
+
+describe('findJourneys — direct walk beats a slower bus', () => {
+  // Origin and destination sit 190m apart — close enough that walking
+  // straight there is clearly faster than any bus. A stop that happens to
+  // sit within both the origin's and destination's walk radius can still
+  // produce a technically-valid "journey" that boards near the destination,
+  // rides away, and alights back near the origin (confirmed real case:
+  // "ตรงข้ามทรี ออน ธรี" to "เทอร์มินอล 21 พระราม 3", ~190m apart) — that
+  // should never outrank just walking.
+  function makeLoopableData(): BusData {
+    return {
+      generatedAt: '',
+      feedVersion: null,
+      stops: [
+        stopAt('origin', 0),
+        stopAt('near-destination', 190), // within both radii, at the destination's own doorstep
+      ],
+      routes: [{ id: 'r1', agency: 'BMTA', newCode: '1-1', oldCode: null, longNameTh: '', longNameEn: '' }],
+      directions: [
+        {
+          // boards right next to the destination, rides away and back —
+          // technically reaches a stop near the origin, but is far slower
+          // than the 190m walk it's supposedly an alternative to.
+          routeIdx: 0,
+          directionId: 0,
+          headsignTh: '',
+          headsignEn: '',
+          stopIdxs: [1, 0],
+          offsetsSec: [0, 600],
+          headwaySec: 600,
+          shapeCoords: [],
+        },
+      ],
+    }
+  }
+
+  it('reports the direct walk time and distance between origin and destination', () => {
+    const walk = findDirectWalk({ lat: 0, lon: 0 }, { lat: 0, lon: 190 / METERS_PER_DEGREE })
+    expect(walk.meters).toBeCloseTo(190, 0)
+    expect(walk.sec).toBeCloseTo(walkSeconds(190), 0)
+    expect(walk.crossesMajorRoad).toBe(false)
+  })
+
+  it('filters out a bus journey that is slower than walking straight to the destination', () => {
+    const data = makeLoopableData()
+    const journeys = findJourneys(data, { lat: 0, lon: 0 }, { lat: 0, lon: 190 / METERS_PER_DEGREE })
+    expect(journeys).toHaveLength(0)
+  })
+
+  it('still surfaces a bus journey that genuinely beats walking', () => {
+    // boards and alights right at origin/destination, with almost no wait —
+    // even a 190m walk can't compete with that.
+    const data: BusData = {
+      generatedAt: '',
+      feedVersion: null,
+      stops: [stopAt('origin', 0), stopAt('destination', 190)],
+      routes: [{ id: 'r1', agency: 'BMTA', newCode: '1-1', oldCode: null, longNameTh: '', longNameEn: '' }],
+      directions: [
+        {
+          routeIdx: 0,
+          directionId: 0,
+          headsignTh: '',
+          headsignEn: '',
+          stopIdxs: [0, 1],
+          offsetsSec: [0, 10],
+          headwaySec: 0,
+          shapeCoords: [],
+        },
+      ],
+    }
+    const journeys = findJourneys(data, { lat: 0, lon: 0 }, { lat: 0, lon: 190 / METERS_PER_DEGREE })
+    expect(journeys.length).toBeGreaterThan(0)
   })
 })
 

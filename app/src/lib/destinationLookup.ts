@@ -232,6 +232,43 @@ function findTransferJourneys(
   return journeys
 }
 
+export interface DirectWalk {
+  meters: number
+  crossesMajorRoad: boolean
+  sec: number
+}
+
+// Only worth comparing bus options against a direct walk when the
+// destination is within the same distance a rider would already accept
+// walking to catch a bus in the first place — reusing ORIGIN_WALK_RADIUS_M
+// keeps this from ever suppressing a genuinely useful longer ride,
+// where the crude constant-speed walk model can look faster on paper
+// (compared to the wait for a bus with a long headway) even though no one
+// would actually walk a kilometer-plus instead of riding.
+const DIRECT_WALK_MAX_M = ORIGIN_WALK_RADIUS_M
+
+// The baseline every bus itinerary is measured against: if origin and
+// destination are close enough that walking straight there beats the wait,
+// ride and connecting walks of any bus option, no bus option should outrank
+// it. Without this, a stop that merely happens to sit within both the
+// origin's and destination's walk radius (an origin/destination pair close
+// enough together, e.g. ~190m apart) can produce a "journey" that boards
+// near the destination, rides away, and alights back near the origin —
+// technically valid by the data, but strictly slower than just walking.
+export function findDirectWalk(
+  origin: LatLon,
+  destination: LatLon,
+  mapLines?: MapLine[] | null,
+): DirectWalk {
+  const meters = mapLines ? walkPathMeters(origin, destination, mapLines) : haversineMeters(origin, destination)
+  const crosses = mapLines ? crossesMajorRoad(origin, destination, mapLines) : false
+  return {
+    meters,
+    crossesMajorRoad: crosses,
+    sec: walkSeconds(meters) + (crosses ? MAJOR_ROAD_CROSSING_PENALTY_SEC : 0),
+  }
+}
+
 export function findJourneys(
   data: BusData,
   origin: LatLon,
@@ -241,6 +278,8 @@ export function findJourneys(
   const index = getIndex(data)
   const walkMeters = (a: LatLon, b: LatLon) => (mapLines ? walkPathMeters(a, b, mapLines) : haversineMeters(a, b))
   const crosses = (a: LatLon, b: LatLon) => (mapLines ? crossesMajorRoad(a, b, mapLines) : false)
+  const directWalk = findDirectWalk(origin, destination, mapLines)
+  const directWalkSec = directWalk.meters <= DIRECT_WALK_MAX_M ? directWalk.sec : Infinity
 
   const originStopIdxs = index.stopsNear(origin, ORIGIN_WALK_RADIUS_M)
   const originIdxs = new Set(originStopIdxs)
@@ -275,7 +314,7 @@ export function findJourneys(
     ),
   ]
 
-  return journeys.sort((a, b) => a.totalSec - b.totalSec)
+  return journeys.filter((j) => j.totalSec < directWalkSec).sort((a, b) => a.totalSec - b.totalSec)
 }
 
 function boardNowLeg(journey: Journey): Leg {

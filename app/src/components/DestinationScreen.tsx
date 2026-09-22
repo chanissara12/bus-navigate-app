@@ -1,5 +1,13 @@
 import { useMemo, useState } from 'react'
-import { findJourneys, groupByBoardNowDirection, type BoardNowGroup, type Journey, type Leg } from '../lib/destinationLookup'
+import {
+  DESTINATION_WALK_RADIUS_M,
+  findDirectWalk,
+  findJourneys,
+  groupByBoardNowDirection,
+  type BoardNowGroup,
+  type Journey,
+  type Leg,
+} from '../lib/destinationLookup'
 import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import { formatRouteCode } from '../lib/formatRoute'
 import { hasNoReturnData } from '../lib/routeLookup'
@@ -126,6 +134,11 @@ export function DestinationScreen({ data, location }: Props) {
     return groupByBoardNowDirection(journeys)
   }, [data, coords, destination, background])
 
+  const directWalk = useMemo(() => {
+    if (!coords) return null
+    return findDirectWalk(coords, destination, background?.lines)
+  }, [coords, destination, background])
+
   function openBestLegMap(forDestination: Destination) {
     if (!coords) return
     const journeys = findJourneys(data, coords, forDestination, background?.lines)
@@ -179,7 +192,13 @@ export function DestinationScreen({ data, location }: Props) {
           />
         )}
 
-        {groups.length === 0 && <p className="status">ไม่พบสายที่ไปถึงในระยะที่เดินได้</p>}
+        {groups.length === 0 && directWalk && (
+          <p className="status">
+            {directWalk.meters <= DESTINATION_WALK_RADIUS_M
+              ? `จุดหมายอยู่ใกล้แค่ ${Math.round(directWalk.meters)} ม. เดินไปเลยดีกว่านั่งรถ (ประมาณ ${minutes(directWalk.sec)} นาที${directWalk.crossesMajorRoad ? ' — ข้ามถนนใหญ่' : ''})`
+              : 'ไม่พบสายที่ไปถึงในระยะที่เดินได้'}
+          </p>
+        )}
 
         <div className="board-now-groups">
           {groups.map((group) => (
