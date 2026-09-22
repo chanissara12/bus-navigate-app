@@ -10,6 +10,10 @@ import type {
 const COORD_SCALE = 1e6
 const OFFSET_UNIT_SEC = 5
 
+// Note: ถอดรหัสคอลัมน์ที่เข้ารหัสแบบ delta (เก็บผลต่างจากค่าก่อนหน้า แทนค่าจริง)
+// กลับเป็นค่าจริงด้วยการบวกสะสม (running sum) — ใช้กับทั้งพิกัดป้าย (lat/lon)
+// และรูปร่างเส้นทาง (shape) เพราะพิกัดที่เรียงติดกันมักใกล้เคียงกัน ทำให้ผลต่าง
+// เป็นตัวเลขน้อย ๆ ที่บีบอัดเป็น JSON ได้เล็กกว่าค่าพิกัดเต็มมาก (ดู WF-009)
 function decodeDeltaColumn(deltas: number[]): number[] {
   const out: number[] = []
   let running = 0
@@ -43,6 +47,9 @@ function decodeRoutes(packed: PackedBusData['routes']): Route[] {
   }))
 }
 
+// Note: รูปร่างเส้นทาง (shape) เก็บเป็นอาเรย์แบนราบสลับ lat/lon แบบ delta-encoded
+// (ต่างจาก decodeDeltaColumn ที่ทำทีละคอลัมน์ ฟังก์ชันนี้ถอดรหัสทั้งคู่ lat/lon
+// ไปพร้อมกันในลูปเดียว) แล้วหารด้วย COORD_SCALE กลับเป็นองศาจริง
 function decodeShape(flat: number[]): [number, number][] {
   const points: [number, number][] = []
   let lat = 0
@@ -62,6 +69,8 @@ function decodeDirections(packed: PackedDirections): Direction[] {
     headsignTh: packed.headsignTh[i],
     headsignEn: packed.headsignEn[i],
     stopIdxs: packed.stopIdxs[i],
+    // Note: offsets5s เก็บเป็นหน่วยละ 5 วินาที (ไม่ใช่วินาทีตรง ๆ) เพื่อให้ตัวเลข
+    // มีค่าเล็กลงและบีบอัดเป็น JSON ได้ดีขึ้น คูณกลับด้วย OFFSET_UNIT_SEC ตรงนี้
     offsetsSec: packed.offsets5s[i].map((u) => u * OFFSET_UNIT_SEC),
     headwaySec: packed.headwaySec[i],
     shapeCoords: decodeShape(packed.shapeE6[i]),

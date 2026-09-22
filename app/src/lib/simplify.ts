@@ -10,6 +10,9 @@ function toLocalMeters(point: LatLon, origin: LatLon): { x: number; y: number } 
   }
 }
 
+// ระยะตั้งฉากจากจุดหนึ่งไปยังเส้นตรง lineStart-lineEnd โดยแปลงพิกัด lat/lon
+// เป็นเมตรในพิกัดท้องถิ่นก่อน (toLocalMeters) แล้วใช้ cross product หารด้วยความยาว
+// เส้นฐาน ซึ่งเป็นสูตรมาตรฐานสำหรับระยะจากจุดถึงเส้นตรงในระนาบ 2 มิติ
 function perpendicularDistanceMeters(point: LatLon, lineStart: LatLon, lineEnd: LatLon): number {
   const p = toLocalMeters(point, lineStart)
   const b = toLocalMeters(lineEnd, lineStart)
@@ -19,6 +22,12 @@ function perpendicularDistanceMeters(point: LatLon, lineStart: LatLon, lineEnd: 
   return Math.abs(cross) / Math.sqrt(lineLengthSq)
 }
 
+// อัลกอริทึม Douglas-Peucker: ลดจำนวนจุดของเส้นทาง (เช่น shapeCoords ของแต่ละทิศ)
+// โดยยังคงรูปทรงของเส้นไว้ใกล้เคียงเดิม ใช้เพื่อให้ JSON ที่ส่งออกไม่ใหญ่เกินไป
+// หลักการ: หาจุดที่ห่างจากเส้นตรงระหว่างจุดต้น-จุดปลายมากที่สุด ถ้าห่างเกิน
+// ค่าเผื่อ (toleranceMeters) ให้เก็บจุดนั้นไว้เป็นจุดหักมุม แล้วแบ่งปัญหาออกเป็นสองช่วง
+// ทำซ้ำแบบ recursive ทั้งสองฝั่ง — ถ้าไม่มีจุดไหนห่างเกินค่าเผื่อเลย ก็ตัดจุดกลางทั้งหมดทิ้ง
+// เหลือแค่จุดต้นกับจุดปลาย
 export function douglasPeucker(points: LatLon[], toleranceMeters: number): LatLon[] {
   if (points.length < 3) return points
 
@@ -37,6 +46,8 @@ export function douglasPeucker(points: LatLon[], toleranceMeters: number): LatLo
 
   if (maxDistance <= toleranceMeters) return [first, last]
 
+  // แบ่งที่จุดห่างที่สุดแล้วเรียกซ้ำทั้งสองฝั่ง จากนั้นตัดจุดปลายของฝั่งซ้าย
+  // ทิ้งหนึ่งจุด (slice(0, -1)) เพราะเป็นจุดเดียวกับจุดเริ่มของฝั่งขวา ป้องกันจุดซ้ำ
   const left = douglasPeucker(points.slice(0, maxIndex + 1), toleranceMeters)
   const right = douglasPeucker(points.slice(maxIndex), toleranceMeters)
   return [...left.slice(0, -1), ...right]

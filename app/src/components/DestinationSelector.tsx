@@ -13,9 +13,9 @@ interface Props {
   background: MapBackground | null
   center: LatLon | null
   value: Destination
-  /** Picking from the saved-favorites dropdown — a quick override, not a new discovery. */
+  /** เลือกจากรายการปลายทางที่บันทึกไว้ — เป็นแค่การสลับค่าอย่างรวดเร็ว ไม่ใช่การค้นพบปลายทางใหม่ */
   onSelectFavorite: (destination: Destination) => void
-  /** Picking via search or tapping the map — a new destination worth acting on immediately. */
+  /** เลือกผ่านการค้นหาหรือแตะบนแผนที่ — เป็นปลายทางใหม่ที่ควรดำเนินการต่อทันที */
   onPick: (destination: Destination) => void
 }
 

@@ -36,9 +36,9 @@ interface Props {
 }
 
 export function DestinationPicker({ background, center, onConfirm, onClose }: Props) {
-  // useGeolocation emits a fresh {lat, lon} object on every watchPosition update, so
-  // capture the center once at open time — otherwise the view re-centers under the
-  // user's fingers on every GPS tick while they're trying to pan or tap a destination.
+  // useGeolocation จะสร้างอ็อบเจ็กต์ {lat, lon} ใหม่ทุกครั้งที่ watchPosition อัปเดต
+  // จึงต้องจับค่า center ไว้แค่ครั้งเดียวตอนเปิดหน้านี้ — ไม่งั้นแผนที่จะเลื่อนกลับไปกึ่งกลาง
+  // ใต้นิ้วผู้ใช้ทุกครั้งที่ GPS อัปเดต ขณะที่ผู้ใช้กำลังจะเลื่อนหรือแตะเลือกปลายทางอยู่พอดี
   const [frozenCenter] = useState(center)
   const base = useMemo(() => bboxAroundCenter(frozenCenter, INITIAL_RADIUS_M), [frozenCenter])
   const baseSize = useMemo(() => bboxSizeMeters(base), [base])
@@ -59,6 +59,9 @@ export function DestinationPicker({ background, center, onConfirm, onClose }: Pr
     zoomButton,
   } = useMapPanZoom(baseSize.widthM, baseSize.heightM, {
     onTap: (point) => {
+      // Note: หาสถานที่ (place) ที่ใกล้จุดที่แตะที่สุด ถ้าอยู่ในระยะ PLACE_HIT_RADIUS_M
+      // ให้ใช้ชื่อสถานที่นั้นเป็นปลายทาง แต่ถ้าไม่มีสถานที่ไหนอยู่ใกล้พอ ให้ใช้พิกัดที่แตะ
+      // ตรงๆ พร้อมชื่อทั่วไปแทน (ผู้ใช้แตะจุดว่างบนแผนที่ที่ไม่มีชื่อสถานที่)
       const tapped = unprojectPoint(point, base)
       let nearest: MapPlace | null = null
       let nearestDistanceM = Infinity
@@ -93,9 +96,9 @@ export function DestinationPicker({ background, center, onConfirm, onClose }: Pr
     () => filterPlacesForDisplay(background.places, currentBbox, MAX_PLACES),
     [background, currentBbox],
   )
-  // Writing (never reading) a ref during render to hand its latest value to a
-  // later event handler is the documented-safe pattern — same as onTapRef in
-  // useMapPanZoom.ts. oxlint's react/refs rule can't tell writes from reads.
+  // การเขียน (ไม่ใช่อ่าน) ref ระหว่าง render เพื่อส่งค่าล่าสุดให้ event handler
+  // ที่จะทำงานทีหลัง เป็นแพทเทิร์นที่ปลอดภัยตามเอกสาร — เหมือนกับ onTapRef ใน
+  // useMapPanZoom.ts กฎ react-hooks/refs ของ oxlint แยกไม่ออกว่าเป็นการเขียนหรืออ่าน
   // eslint-disable-next-line react-hooks/refs
   visiblePlacesRef.current = visiblePlaces
 

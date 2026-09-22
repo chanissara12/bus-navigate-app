@@ -5,6 +5,9 @@ export interface LatLon {
   lon: number
 }
 
+// Note: สูตร haversine คำนวณระยะทางตรงบนผิวโลก (great-circle distance) จาก
+// พิกัดละติจูด/ลองจิจูด สมมติโลกเป็นทรงกลม ซึ่งแม่นยำพอสำหรับระยะทางระดับ
+// เมือง/ตำบลอย่างการหาป้ายรถเมล์ใกล้เคียง
 export function haversineMeters(a: LatLon, b: LatLon): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180
   const dLat = toRad(b.lat - a.lat)
@@ -17,6 +20,9 @@ export function haversineMeters(a: LatLon, b: LatLon): number {
   return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h))
 }
 
+// Note: ความเร็วเดินเท้าโดยประมาณ 1.2 m/s (~4.3 กม./ชม.) ซึ่งช้ากว่าความเร็ว
+// เดินปกติของคนทั่วไปเล็กน้อย เผื่อไว้สำหรับการเดินจริงที่ต้องรอไฟแดง
+// ข้ามถนน หรือเดินอ้อมสิ่งกีดขวาง
 export function walkSeconds(meters: number): number {
   const WALK_SPEED_M_PER_S = 1.2
   return meters / WALK_SPEED_M_PER_S

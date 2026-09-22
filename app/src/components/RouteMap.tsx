@@ -30,13 +30,15 @@ interface Props {
   background: MapBackground
   direction: Direction
   fromPosition: number
-  /** Last stop to include (inclusive). Defaults to the end of the direction's route. */
+  /** ป้ายสุดท้ายที่จะรวมด้วย (รวมป้ายนี้เอง) ถ้าไม่ระบุจะใช้ป้ายสุดท้ายของทิศนี้ */
   toPosition?: number
-  /** Where the rider is actually headed — drawn past the alight stop, with the walk to reach it. */
+  /** จุดที่ผู้โดยสารตั้งใจจะไปจริงๆ — วาดต่อจากป้ายที่ลง พร้อมเส้นทางเดินไปให้ถึง */
   destination?: MapDestination
 }
 
 export function RouteMap({ data, background, direction, fromPosition, toPosition, destination }: Props) {
+  // คำนวณทุกอย่างที่ต้องใช้วาดแผนที่ในรอบเดียว (ขอบเขตพื้นที่, เส้นทางที่ตัดมาแล้ว,
+  // ป้ายที่จะแสดง, เส้นทางเดินไปปลายทาง ฯลฯ) เพื่อไม่ต้องคำนวณ bbox ซ้ำหลายรอบต่อ render
   const { bbox, width, height, scale, routePoints, lines, labels, places, stopPoints, walkPoints } = useMemo(() => {
     const lastPosition = toPosition ?? direction.stopIdxs.length - 1
     const upcomingStopIdxs = direction.stopIdxs.slice(fromPosition, lastPosition + 1)
@@ -50,7 +52,7 @@ export function RouteMap({ data, background, direction, fromPosition, toPosition
     if (direction.shapeCoords.length > 0) {
       slicedShape = sliceShapeFromNearestPoint(direction.shapeCoords, currentStop, fromFraction)
       if (toPosition !== undefined) {
-        // re-anchor the fraction to the already-clipped shape before cropping its tail
+        // ปรับสัดส่วน (fraction) ใหม่ให้อ้างอิงกับรูปทรงที่ถูกตัดหัวไปแล้ว ก่อนจะตัดท้ายต่อ
         const remainingFraction = (toFraction - fromFraction) / Math.max(1e-6, 1 - fromFraction)
         slicedShape = sliceShapeToNearestPoint(slicedShape, lastStop, remainingFraction)
       }

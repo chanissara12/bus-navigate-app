@@ -7,7 +7,7 @@ import { RouteMap, type MapDestination } from './RouteMap'
 interface Props {
   data: BusData
   leg: Leg
-  /** Only meaningful for the leg that actually ends the journey — shows the walk past the alight stop. */
+  /** มีความหมายเฉพาะกับช่วงที่เป็นตอนจบของการเดินทางจริงๆ — ใช้แสดงเส้นทางเดินต่อจากป้ายที่ลง */
   destination?: MapDestination
   onClose: () => void
 }

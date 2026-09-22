@@ -1,5 +1,7 @@
 import type { MapBackground } from './types'
 
+// Note: cache แบบเดียวกับ loadBusData — เก็บที่ระดับโมดูลเพื่อ fetch แค่ครั้งเดียว
+// และกันการยิงซ้ำเมื่อถูกเรียกพร้อมกันหลายจุดก่อน fetch แรกจะเสร็จ
 let cached: Promise<MapBackground> | null = null
 
 export function loadMapBackground(): Promise<MapBackground> {

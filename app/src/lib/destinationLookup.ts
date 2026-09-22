@@ -3,11 +3,11 @@ import { buildSpatialIndex, type SpatialIndex } from './spatialIndex'
 import { crossesMajorRoad, findWalkingPath } from './svgMap'
 import type { BusData, Direction, MapLine, Route } from './types'
 
-// Crossing a busy arterial road (no signal, multiple fast lanes) is real
-// friction a rider weighs even when it's technically the faster option by
-// the clock — this makes the ranking reflect that instead of only ever
-// minimizing raw seconds. Expressed as a time penalty (not a distance one)
-// so it stacks cleanly with walkSeconds() in totalSec.
+// การข้ามถนนสายหลัก (ไม่มีสัญญาณไฟ หลายเลนรถวิ่งเร็ว) คือความยากลำบากจริง
+// ที่ผู้โดยสารต้องชั่งใจ แม้ตัวเลือกนั้นจะเร็วกว่าตามนาฬิกาก็ตาม — โค้ดนี้
+// ทำให้การจัดอันดับสะท้อนเรื่องนี้ด้วย แทนที่จะลดวินาทีดิบให้น้อยที่สุดอย่างเดียว
+// คิดเป็นบทลงโทษด้านเวลา (ไม่ใช่ระยะทาง) เพื่อให้รวมเข้ากับ walkSeconds()
+// ใน totalSec ได้อย่างกลมกลืน
 const MAJOR_ROAD_CROSSING_PENALTY_SEC = 300
 
 export const ORIGIN_WALK_RADIUS_M = 400
@@ -60,6 +60,8 @@ export interface BoardNowGroup {
   options: Journey[]
 }
 
+// Note: เวลารอโดยเฉลี่ยของผู้โดยสารที่มาถึงป้ายแบบสุ่มคือครึ่งหนึ่งของ headway
+// (ความถี่รถ) ถ้าไม่มีข้อมูล headway ให้ใช้ค่าคงที่สำรอง (DEFAULT_WAIT_SEC) แทน
 function waitSecondsFor(direction: Direction): number {
   return direction.headwaySec != null ? direction.headwaySec / 2 : DEFAULT_WAIT_SEC
 }
@@ -78,15 +80,14 @@ export function findStopIdxsWithinRadius(data: BusData, center: LatLon, radiusM:
   return new Set(getIndex(data).stopsNear(center, radiusM))
 }
 
-// A straight line from a stop to a destination can cut across a road that
-// isn't actually crossable there — real distance is what findWalkingPath
-// (which knows about roads and footbridges) would have you walk instead.
-// Confirmed case: "ตรงข้ามโรงแรมมณเฑียร ริเวอร์ไซด์" reads as the closest
-// stop to "เทอร์มินอล 21 พระราม 3" by straight line (149m) and used to win
-// the ranking on that basis, but it's on the opposite side of ถนนพระราม 3
-// from the destination (confirmed by a perpendicular side test against the
-// road line) — the real walk is longer, and a same-side stop should win
-// instead when one exists.
+// เส้นตรงจากป้ายไปยังจุดหมายอาจตัดผ่านถนนที่จริง ๆ แล้วข้ามตรงนั้นไม่ได้ —
+// ระยะทางที่แท้จริงคือระยะที่ findWalkingPath (ซึ่งรู้จักถนนและสะพานลอย)
+// จะให้เดินแทน
+// เคสที่ยืนยันแล้ว: "ตรงข้ามโรงแรมมณเฑียร ริเวอร์ไซด์" อ่านค่าเป็นป้ายที่ใกล้
+// "เทอร์มินอล 21 พระราม 3" ที่สุดตามเส้นตรง (149m) และเคยชนะการจัดอันดับ
+// ด้วยเหตุนี้ แต่จริง ๆ แล้วมันอยู่คนละฝั่งถนนพระราม 3 กับจุดหมาย (ยืนยันด้วย
+// การทดสอบฝั่งแนวตั้งฉากกับเส้นถนน) — ระยะเดินจริงไกลกว่า และป้ายที่อยู่ฝั่ง
+// เดียวกับจุดหมายควรชนะแทน ถ้ามีป้ายแบบนั้นอยู่
 function walkPathMeters(from: LatLon, to: LatLon, lines: MapLine[]): number {
   return findWalkingPath(from, to, lines).meters
 }
@@ -120,12 +121,12 @@ function findDirectJourneys(
       if (!originIdxs.has(boardStopIdx)) continue
       const originWalkMeters = originWalkMetersByStopIdx.get(boardStopIdx) ?? 0
       const originCrossesMajorRoad = originCrossesByStopIdx.get(boardStopIdx) ?? false
-      // Explore every stop the destination radius reaches on this ride, not
-      // just the first — the closest-by-route-position stop isn't always the
-      // closest-to-walk one (e.g. "เทอร์มินอล 21 พระราม 3" sits past
-      // "สำนักงานเขตบางคอแหลม" but 100m closer to a nearby destination).
-      // dedupeByOutcome + MAX_OPTIONS_PER_GROUP keep only the best few by
-      // totalSec, so this doesn't flood the results.
+      // สำรวจทุกป้ายที่อยู่ในรัศมีของจุดหมายตลอดสายนี้ ไม่ใช่แค่ป้ายแรกที่เจอ —
+      // ป้ายที่ใกล้ที่สุดตามลำดับตำแหน่งบนสายไม่ได้แปลว่าเป็นป้ายที่เดินใกล้ที่สุดเสมอไป
+      // (เช่น "เทอร์มินอล 21 พระราม 3" อยู่ถัดจาก "สำนักงานเขตบางคอแหลม"
+      // แต่ใกล้จุดหมายบางแห่งกว่าถึง 100m)
+      // dedupeByOutcome + MAX_OPTIONS_PER_GROUP จะเก็บไว้แค่ตัวเลือกที่ดีที่สุด
+      // ไม่กี่ตัวตาม totalSec ทำให้ผลลัพธ์ไม่ท่วมท้นจนเกินไป
       for (let alightPosition = boardPosition + 1; alightPosition < direction.stopIdxs.length; alightPosition += 1) {
         const alightStopIdx = direction.stopIdxs[alightPosition]
         if (!destIdxs.has(alightStopIdx)) continue
@@ -186,13 +187,15 @@ function findTransferJourneys(
             if (secondDirection === firstDirection) continue
             if (transferBPos >= secondDirection.stopIdxs.length - 1) continue
 
-            // Same reasoning as findDirectJourneys: don't stop at the first
-            // stop the destination radius reaches on the second leg, since
-            // it isn't always the one with the shortest final walk.
+            // เหตุผลเดียวกับ findDirectJourneys: อย่าหยุดที่ป้ายแรกที่รัศมี
+            // ของจุดหมายไปถึงบนช่วงที่สอง เพราะมันไม่ได้เป็นป้ายที่เดินสั้นที่สุดเสมอไป
             for (let alightPosition = transferBPos + 1; alightPosition < secondDirection.stopIdxs.length; alightPosition += 1) {
               const alightStopIdx = secondDirection.stopIdxs[alightPosition]
               if (!destIdxs.has(alightStopIdx)) continue
 
+              // Note: กันไม่ให้คู่ป้ายเปลี่ยนรถ (transferStopA/B) ที่ต่างกันแต่ให้
+              // ผลลัพธ์การเดินทางเหมือนกันทุกช่วง (ขึ้น/เปลี่ยน/ลง จุดเดียวกัน)
+              // ถูกนับซ้ำเป็นสองรายการ
               const dedupeKey = `${firstDirection.routeIdx}:${firstDirection.directionId}:${boardPosition}:${transferAPos}:${secondDirection.routeIdx}:${secondDirection.directionId}:${transferBPos}:${alightPosition}`
               if (seen.has(dedupeKey)) continue
               seen.add(dedupeKey)
@@ -238,23 +241,20 @@ export interface DirectWalk {
   sec: number
 }
 
-// Only worth comparing bus options against a direct walk when the
-// destination is within the same distance a rider would already accept
-// walking to catch a bus in the first place — reusing ORIGIN_WALK_RADIUS_M
-// keeps this from ever suppressing a genuinely useful longer ride,
-// where the crude constant-speed walk model can look faster on paper
-// (compared to the wait for a bus with a long headway) even though no one
-// would actually walk a kilometer-plus instead of riding.
+// คุ้มที่จะเปรียบเทียบตัวเลือกรถเมล์กับการเดินตรงไปเลย ก็ต่อเมื่อจุดหมายอยู่
+// ในระยะเดียวกับที่ผู้โดยสารยอมเดินไปขึ้นรถอยู่แล้ว — การใช้ ORIGIN_WALK_RADIUS_M
+// ซ้ำแบบนี้ช่วยไม่ให้มันไปกลบการโดยสารระยะไกลที่ยังมีประโยชน์จริง
+// ซึ่งโมเดลเดินความเร็วคงที่แบบหยาบ ๆ อาจดูเร็วกว่าในทางทฤษฎี
+// (เทียบกับการรอรถที่มี headway ยาว) ทั้งที่ในความเป็นจริงไม่มีใครเดินไกล
+// เป็นกิโลกว่าแทนการนั่งรถ
 const DIRECT_WALK_MAX_M = ORIGIN_WALK_RADIUS_M
 
-// The baseline every bus itinerary is measured against: if origin and
-// destination are close enough that walking straight there beats the wait,
-// ride and connecting walks of any bus option, no bus option should outrank
-// it. Without this, a stop that merely happens to sit within both the
-// origin's and destination's walk radius (an origin/destination pair close
-// enough together, e.g. ~190m apart) can produce a "journey" that boards
-// near the destination, rides away, and alights back near the origin —
-// technically valid by the data, but strictly slower than just walking.
+// เส้นฐานที่ทุกเส้นทางรถเมล์ต้องถูกวัดเทียบด้วย: ถ้าต้นทางกับจุดหมายอยู่ใกล้กัน
+// พอที่เดินตรงไปเลยจะเร็วกว่าการรอ การนั่ง และการเดินต่อรถของตัวเลือกรถเมล์ใด ๆ
+// ก็ไม่ควรมีตัวเลือกรถเมล์ใดชนะการเดินตรงนี้ได้ ถ้าไม่มีเส้นฐานนี้ ป้ายที่บังเอิญ
+// อยู่ในรัศมีเดินได้ทั้งของต้นทางและจุดหมาย (กรณีต้นทาง/จุดหมายอยู่ใกล้กันมาก
+// เช่น ห่างกันแค่ ~190m) อาจสร้าง "เส้นทาง" ที่ขึ้นรถใกล้จุดหมาย นั่งออกไป
+// แล้ววนกลับมาลงใกล้ต้นทาง — ซึ่งถูกต้องตามข้อมูลก็จริง แต่ช้ากว่าการเดินตรง ๆ อย่างแน่นอน
 export function findDirectWalk(
   origin: LatLon,
   destination: LatLon,
@@ -321,6 +321,9 @@ function boardNowLeg(journey: Journey): Leg {
   return journey.type === 'direct' ? journey.leg : journey.firstLeg
 }
 
+// Note: ระบุ "ผลลัพธ์" ของเส้นทางด้วยป้ายลงสุดท้าย (และสาย/ทิศของช่วงที่สอง
+// ถ้าเป็นการต่อรถ) โดยไม่สนใจว่าขึ้นจากป้ายไหน — ใช้เป็นกุญแจให้ dedupeByOutcome
+// เลือกเก็บไว้แค่ตัวเลือกที่เร็วที่สุดต่อหนึ่งผลลัพธ์ปลายทาง
 function outcomeKey(journey: Journey): string {
   if (journey.type === 'direct') return `direct:${journey.leg.alightStopIdx}`
   return `transfer:${journey.secondLeg.direction.routeIdx}:${journey.secondLeg.direction.directionId}:${journey.secondLeg.alightStopIdx}`

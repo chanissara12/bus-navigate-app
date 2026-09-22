@@ -18,9 +18,9 @@ const PLACE_KIND_PRIORITY: Record<string, number> = {
   school: 5,
   park: 5,
   government: 5,
-  // A named bus stop is transit infrastructure, not a real amenity — it
-  // only exists in this list for the rare landmark OSM has no other record
-  // of (see build-map-background.mjs). Keep it below every real category.
+  // ป้ายรถเมล์ที่มีชื่อคือโครงสร้างพื้นฐานขนส่ง ไม่ใช่สถานที่จริงๆ — มันอยู่ในลิสต์นี้
+  // เพราะบางครั้งเป็นจุดสังเกต (landmark) เดียวที่ OSM มีข้อมูลอยู่เท่านั้น
+  // (ดู build-map-background.mjs) จึงให้ความสำคัญต่ำกว่าทุกหมวดที่เป็นสถานที่จริง
   landmark: 6,
 }
 
@@ -93,10 +93,10 @@ export function unprojectPoint(point: { x: number; y: number }, bbox: BBox): Lat
 }
 
 /**
- * Converts the current pan/zoom window (in the same meter-offset space `projectPoint`
- * produces, relative to `base`) back into a lat/lon bbox, so content filtering
- * (which labels/places/lines to show) can track what's actually visible as the user
- * zooms and pans, instead of staying fixed to the box the map first fit to.
+ * แปลงหน้าต่างมุมมองปัจจุบัน (pan/zoom) ซึ่งอยู่ในพิกัดเมตรแบบเดียวกับที่ `projectPoint`
+ * ให้ค่ามา (สัมพัทธ์กับ `base`) กลับเป็น bbox แบบ lat/lon เพื่อให้การกรองเนื้อหา
+ * (ว่าจะแสดงป้ายชื่อ/สถานที่/เส้นไหนบ้าง) ตามทันสิ่งที่มองเห็นจริงขณะผู้ใช้ซูมและเลื่อนแผนที่
+ * แทนที่จะค้างอยู่กับกรอบที่แผนที่ fit ไว้ตอนเริ่มต้น
  */
 export function bboxFromView(
   base: BBox,
@@ -129,14 +129,14 @@ const FOOTBRIDGE_SEARCH_RADIUS_M = 500
 const FOOTBRIDGE_DETOUR_FACTOR = 1.6
 const ROAD_SNAP_MAX_DISTANCE_M = 40
 
-// A leg that couldn't be snapped to any road is a straight line cutting
-// across whatever's actually there (buildings, lots) — fine for a short hop
-// off a mapped road onto a doorway, but past this length it's standing in
-// for a real route we don't know, and a straight line understates it.
-// Confirmed case: the "shortcut" to a footbridge from "ตรงข้ามโรงแรมมณเฑียร
-// ริเวอร์ไซด์" read as 203m via a 154m unsnapped straight leg, while
-// Google Maps' actual routed distance is longer — this buffer keeps that
-// unmapped leg from being reported as if it were a real, walkable line.
+// ช่วงเดิน (leg) ที่ snap เข้ากับถนนไม่ได้เลย คือเส้นตรงที่ตัดผ่านสิ่งที่มีอยู่จริง
+// (ตึก, ที่ดิน) — ถ้าเป็นช่วงสั้นๆ แค่เดินจากถนนที่มีในแผนที่เข้าประตูบ้านก็ไม่เป็นไร
+// แต่ถ้ายาวเกินระยะนี้ มันกำลังทำหน้าที่แทนเส้นทางเดินจริงที่เราไม่รู้ว่าเป็นอย่างไร
+// และเส้นตรงจะประเมินระยะทางต่ำกว่าความเป็นจริง
+// เคสที่ยืนยันแล้ว: ทางลัดไปสะพานลอยจาก "ตรงข้ามโรงแรมมณเฑียร
+// ริเวอร์ไซด์" คำนวณได้ 203 เมตรผ่านช่วงเส้นตรงที่ไม่ได้ snap ยาว 154 เมตร
+// ทั้งที่ระยะทางจริงตามเส้นทางของ Google Maps ยาวกว่านั้น — บัฟเฟอร์นี้ป้องกันไม่ให้
+// ช่วงที่ไม่มีในแผนที่ถูกรายงานราวกับเป็นเส้นทางเดินได้จริง
 const UNSNAPPED_WALK_BUFFER = 1.4
 const UNSNAPPED_BUFFER_MIN_M = 60
 
@@ -145,12 +145,11 @@ interface RoadSnapResult {
   snapped: boolean
 }
 
-// A straight line between two points a block apart cuts across buildings —
-// it reads as a displacement vector, not a walk. Where a road runs close to
-// both ends of a leg, follow that road's own vertices between them instead,
-// with only a short perpendicular hop at each end connecting the real point
-// to the road. Falls back to a straight line where no road is close enough
-// to both ends (e.g. crossing a footbridge itself).
+// เส้นตรงระหว่างสองจุดที่ห่างกันหนึ่งช่วงตึกจะตัดผ่านตัวตึกไปเลย — มันดูเหมือน
+// เวกเตอร์บอกทิศทางการกระจัด ไม่ใช่เส้นทางเดินจริง ถ้ามีถนนที่วิ่งใกล้ทั้งสองปลายของ
+// ช่วงนี้ ให้เดินตามจุดหักมุมของถนนเส้นนั้นแทน โดยมีแค่ช่วงสั้นๆ ที่ตั้งฉากกับถนน
+// เชื่อมจุดจริงเข้ากับถนนที่ปลายทั้งสองข้าง หากไม่มีถนนที่อยู่ใกล้พอทั้งสองปลาย
+// (เช่น กรณีข้ามสะพานลอยเอง) จะตกกลับไปใช้เส้นตรงแทน
 function snapToNearestRoad(from: LatLon, to: LatLon, lines: MapLine[]): RoadSnapResult {
   let best: { path: LatLon[]; score: number } | null = null
 
@@ -195,13 +194,11 @@ function snapWalkToRoads(points: LatLon[], lines: MapLine[]): { points: LatLon[]
   return { points: snapped, meters }
 }
 
-// A pragmatic heuristic, not real pedestrian routing: if a nearby footbridge's
-// endpoints let you reach the destination without much more walking than a
-// straight line would take, assume that's the sanctioned way to cross
-// whatever road sits between the alight stop and the destination. This never
-// guesses which side of a road anyone is standing on (WF-003) — both ends
-// here are fixed, known coordinates (an alight stop and a destination), not
-// a live rider position.
+// เป็นฮิวริสติกเชิงปฏิบัติ ไม่ใช่การหาเส้นทางเดินเท้าจริง: ถ้าปลายทั้งสองข้างของ
+// สะพานลอยที่อยู่ใกล้เคียงพาไปถึงจุดหมายได้โดยเดินไม่ไกลไปกว่าเส้นตรงมากนัก
+// ให้ถือว่านั่นคือทางที่ใช้ข้ามถนนที่คั่นระหว่างป้ายลงกับจุดหมาย ฟังก์ชันนี้ไม่เคย
+// เดาว่าผู้ใช้ยืนอยู่ฝั่งไหนของถนน (WF-003) — จุดทั้งสองข้างในที่นี้เป็นพิกัดคงที่ที่รู้
+// ล่วงหน้า (ป้ายลงรถกับจุดหมาย) ไม่ใช่ตำแหน่งผู้โดยสารแบบเรียลไทม์
 export function findWalkingPath(from: LatLon, to: LatLon, lines: MapLine[]): WalkPath {
   const directMeters = haversineMeters(from, to)
   let best: { points: LatLon[]; totalMeters: number } | null = null
@@ -227,20 +224,19 @@ export function findWalkingPath(from: LatLon, to: LatLon, lines: MapLine[]): Wal
   return { points: snapped.points, meters: snapped.meters, viaFootbridge: !!best }
 }
 
-// motorway/trunk/primary — matches ROAD_PRIORITY in build-map-background.mjs.
-// Secondary/tertiary roads are excluded: real friction (crossing without a
-// signal, dodging fast multi-lane traffic) mainly comes from the big ones.
+// motorway/trunk/primary — ตรงกับ ROAD_PRIORITY ใน build-map-background.mjs
+// ถนนระดับ secondary/tertiary ไม่นับรวม: ความยากลำบากจริงๆ ในการข้าม (ไม่มีสัญญาณไฟ
+// ต้องหลบรถหลายเลนที่วิ่งเร็ว) ส่วนใหญ่มาจากถนนสายใหญ่เท่านั้น
 const MAJOR_ROAD_MAX_PRIORITY = 2
 
 function crossProduct(o: LatLon, a: LatLon, b: LatLon): number {
   return (a.lon - o.lon) * (b.lat - o.lat) - (a.lat - o.lat) * (b.lon - o.lon)
 }
 
-// Product-based (not sign-XOR) on purpose: a point that lands exactly on the
-// other segment gives a cross product of 0, and 0 * anything is never < 0 —
-// so merely touching an endpoint (e.g. a destination that sits right at a
-// road vertex, which happens with real OSM-derived coordinates) reads as
-// "not crossing", only a genuine straddle does.
+// จงใจเปรียบเทียบด้วยผลคูณ (ไม่ใช่ sign-XOR): จุดที่ตกอยู่บนอีกเส้นพอดีจะให้ค่า
+// cross product เป็น 0 และ 0 คูณกับอะไรก็ไม่มีทาง < 0 — ดังนั้นการแค่แตะที่ปลายจุด
+// (เช่น จุดหมายที่อยู่พอดีบนจุดหักมุมของถนน ซึ่งเกิดขึ้นได้จริงกับพิกัดที่มาจาก OSM)
+// จะถูกตีความว่า "ไม่ได้ตัดผ่าน" มีแต่กรณีที่คร่อมเส้นกันจริงๆ เท่านั้นที่จะนับว่าตัดผ่าน
 function segmentsIntersect(p1: LatLon, p2: LatLon, p3: LatLon, p4: LatLon): boolean {
   const d1 = crossProduct(p3, p4, p1)
   const d2 = crossProduct(p3, p4, p2)
@@ -249,11 +245,10 @@ function segmentsIntersect(p1: LatLon, p2: LatLon, p3: LatLon, p4: LatLon): bool
   return d1 * d2 < 0 && d3 * d4 < 0
 }
 
-// Whether walking straight from one point to the other crosses a major
-// road — a real, known-in-advance fact about two fixed points (an alight
-// stop or origin, and a destination or board stop), not a guess about
-// where a live rider is standing relative to a road (WF-003 stays
-// untouched by this: it's a different question).
+// ตรวจว่าเดินเป็นเส้นตรงจากจุดหนึ่งไปอีกจุดหนึ่งจะตัดผ่านถนนสายใหญ่หรือไม่ —
+// เป็นข้อเท็จจริงที่รู้ล่วงหน้าได้แน่นอนของจุดคงที่สองจุด (ป้ายลงรถหรือจุดต้นทาง
+// กับจุดหมายหรือป้ายขึ้นรถ) ไม่ใช่การเดาว่าผู้โดยสารแบบเรียลไทม์ยืนอยู่ตรงไหน
+// เทียบกับถนน (WF-003 ไม่เกี่ยวข้องกับส่วนนี้ เป็นคนละคำถามกัน)
 export function crossesMajorRoad(from: LatLon, to: LatLon, lines: MapLine[]): boolean {
   for (const line of lines) {
     if (line.kind !== 'road' || line.priority > MAJOR_ROAD_MAX_PRIORITY) continue
@@ -317,16 +312,16 @@ interface SegmentProjection {
 }
 
 /**
- * After Douglas-Peucker simplification, a stop's true closest approach to the route
- * is often *along a segment* between two kept vertices, not at either vertex — simplification
- * only guarantees the removed points stay within tolerance of the simplified line, not that a
- * stop lands near a surviving vertex. Projecting onto segments (not just comparing to
- * vertices) is what keeps the rendered line from visibly detaching from the stop marker.
+ * หลังจากลดจุดของเส้นทางด้วย Douglas-Peucker แล้ว จุดที่ป้ายเข้าใกล้เส้นทางที่สุดจริงๆ
+ * มักอยู่ *บนช่วงเส้น (segment)* ระหว่างจุดหักมุมสองจุดที่เหลืออยู่ ไม่ใช่ที่จุดหักมุมจุดใดจุดหนึ่ง —
+ * การลดจุดรับประกันแค่ว่าจุดที่ถูกตัดออกยังอยู่ในระยะเผื่อของเส้นที่ลดแล้ว แต่ไม่ได้รับประกันว่า
+ * ป้ายจะอยู่ใกล้จุดหักมุมที่เหลือรอด การโปรเจกต์ลงบนช่วงเส้น (ไม่ใช่แค่เทียบกับจุดหักมุม)
+ * คือสิ่งที่ทำให้เส้นที่วาดออกมาไม่หลุดออกจากหมุดป้ายให้เห็นชัดๆ
  *
- * Loop routes (วนซ้าย/วนขวา) can also pass within meters of the same stop twice, so an
- * unconstrained search can snap to the wrong occurrence. `expectedFraction` (how far along
- * the stop sequence we already are, 0..1) narrows the search to a window around where the
- * shape should be at that point, falling back to the full shape when that window is empty.
+ * สายที่วนรอบ (วนซ้าย/วนขวา) ก็อาจผ่านใกล้ป้ายเดียวกันสองครั้งในระยะไม่กี่เมตรได้เช่นกัน
+ * ถ้าค้นหาแบบไม่จำกัดขอบเขตก็อาจ snap ผิดจุดได้ `expectedFraction` (บอกว่าตอนนี้อยู่ไกล
+ * แค่ไหนแล้วในลำดับป้าย ค่า 0..1) จะจำกัดขอบเขตการค้นหาให้อยู่ในช่วงที่คาดว่ารูปเส้นทาง
+ * ควรจะอยู่ ณ จุดนั้น และจะย้อนกลับไปค้นทั้งเส้นทางถ้าช่วงที่จำกัดไว้นั้นว่างเปล่า
  */
 function nearestSegmentProjection(
   shape: [number, number][],

@@ -17,6 +17,9 @@ export function useGeolocation(): GeolocationState {
   const statusRef = useRef<GeolocationStatus>('idle')
   const watchIdRef = useRef<number | null>(null)
 
+  // เก็บสถานะไว้ทั้งใน ref และ state คู่กัน: state ใช้สั่งให้ re-render ส่วน ref ใช้ให้
+  // callback ของ watchPosition (ที่ผูกไว้ตอน request() ถูกเรียกครั้งเดียว) อ่านค่าสถานะ
+  // ล่าสุดได้เสมอ โดยไม่ติด stale closure จากค่าตอนที่ callback ถูกสร้าง
   const setStatusBoth = useCallback((next: GeolocationStatus) => {
     statusRef.current = next
     setStatus(next)

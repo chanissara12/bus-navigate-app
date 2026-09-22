@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 const AUTO_HIDE_MS = 5000
 
 export function MapAttribution() {
+  // ต้องแสดงเครดิตตามสัญญาอนุญาต ODbL/CC-BY ของแหล่งข้อมูล แต่ให้ซ่อนอัตโนมัติหลัง
+  // AUTO_HIDE_MS เพื่อไม่ให้บังแผนที่ตลอดเวลา — ผู้ใช้กดปุ่ม ⓘ เพื่อเปิดดูซ้ำได้
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {

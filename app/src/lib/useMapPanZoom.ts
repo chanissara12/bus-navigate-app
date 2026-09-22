@@ -8,7 +8,7 @@ const TAP_THRESHOLD_PX = 8
 const FIT_VIEW: ViewBox = { zoom: 1, panX: 0, panY: 0 }
 
 interface Options {
-  /** Fired when a single pointer is pressed and released without dragging or pinching. */
+  /** เรียกเมื่อมีการกดปล่อยนิ้วเดียวโดยไม่ได้ลากหรือบีบซูม (นับเป็นการแตะ/tap) */
   onTap?: (userPoint: { x: number; y: number }) => void
 }
 
@@ -44,9 +44,9 @@ export function useMapPanZoom(width: number, height: number, options: Options = 
     return (pixels / rect.width) * (width / viewRef.current.zoom)
   }
 
-  // React attaches onWheel as a passive listener, so preventDefault() inside a JSX
-  // handler is silently ignored and the page scrolls underneath while zooming with a
-  // mouse wheel or trackpad. A native, non-passive listener is required to block it.
+  // React ผูก onWheel เป็น passive listener โดยปริยาย ทำให้ preventDefault() ที่เรียกใน
+  // handler แบบ JSX ถูกเพิกเฉยเงียบๆ และหน้าเว็บจะเลื่อนสกรอลผ่านไปพร้อมกับตอนซูมด้วย
+  // ล้อเมาส์หรือแทร็กแพด จึงต้องผูก listener แบบ native ที่ไม่ใช่ passive เพื่อบล็อกพฤติกรรมนี้
   useEffect(() => {
     const svg = svgRef.current
     if (!svg) return
@@ -109,6 +109,9 @@ export function useMapPanZoom(width: number, height: number, options: Options = 
     lastPinchDistanceRef.current = null
 
     if (pointersRef.current.size === 0 && gestureRef.current) {
+      // นับเป็นการแตะ (tap) ก็ต่อเมื่อไม่มีการขยับเกินเกณฑ์ (moved) และไม่เคยมีนิ้วที่สอง
+      // แตะร่วมด้วย (hadSecondPointer) — ถ้าเคยกลายเป็นการบีบซูมแล้วยกนิ้วที่สองออกก่อน
+      // เหลือนิ้วเดียว ก็ไม่ควรตีความว่าเป็นการแตะตอนปล่อยนิ้วสุดท้าย
       const { moved, hadSecondPointer } = gestureRef.current
       if (!moved && !hadSecondPointer) onTapRef.current?.(toUserUnits(e.clientX, e.clientY))
       gestureRef.current = null

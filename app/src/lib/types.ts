@@ -34,10 +34,11 @@ export interface BusData {
   directions: Direction[]
 }
 
-// On-disk format: columnar (struct-of-arrays) instead of array-of-objects,
-// coordinates delta-encoded as 1e6-scaled integers, offsets in 5-second units.
-// See WF-009's resolution for why: repeated JSON keys and float precision were
-// most of the shipped bytes.
+// รูปแบบข้อมูลบนดิสก์: เป็นแบบ columnar (struct-of-arrays คือแยกเก็บเป็นอาเรย์ของ
+// แต่ละฟิลด์) แทนที่จะเป็น array-of-objects (อาเรย์ของอ็อบเจ็กต์ทีละรายการ),
+// พิกัดเข้ารหัสแบบ delta-encoded เป็นจำนวนเต็มที่คูณด้วย 1e6, ค่า offset เก็บเป็น
+// หน่วยละ 5 วินาที ดูเหตุผลได้จากข้อสรุปของ WF-009: คีย์ JSON ที่ซ้ำกันซ้ำๆ
+// และความละเอียดของเลขทศนิยม (float) คือส่วนใหญ่ของขนาดไฟล์ที่ส่งออกไป
 export interface PackedStops {
   id: string[]
   nameTh: string[]

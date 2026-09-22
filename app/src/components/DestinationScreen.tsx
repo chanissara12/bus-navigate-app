@@ -93,6 +93,7 @@ function BoardNowGroupCard({
   group: BoardNowGroup
   onShowMap: (leg: Leg, isFinalLeg: boolean) => void
 }) {
+  // ตัวเลือกที่ดีที่สุดของกลุ่มแสดงเสมอ ส่วนตัวเลือกที่เหลือซ่อนไว้ก่อนจนกว่าผู้ใช้จะกดดูเพิ่มเติม
   const [expanded, setExpanded] = useState(false)
   const [bestOption, ...restOptions] = group.options
 
@@ -126,14 +127,20 @@ export function DestinationScreen({ data, location }: Props) {
   const { status, coords, error, request } = location
   const { background } = useMapBackground()
   const [destination, setDestination] = useState<Destination>(FAVORITE_DESTINATIONS[0])
+  // isFinalLeg บอกว่าช่วงที่กำลังแสดงบนแผนที่คือช่วงสุดท้ายของการเดินทางหรือไม่ —
+  // ใช้ตัดสินใจว่าจะส่ง destination เข้าไปให้ LegMapOverlay วาดเส้นทางเดินต่อหรือไม่
   const [mapLeg, setMapLeg] = useState<{ leg: Leg; isFinalLeg: boolean } | null>(null)
 
+  // หาทุกเส้นทางที่เป็นไปได้จากตำแหน่งปัจจุบันไปปลายทาง แล้วจัดกลุ่มตามสาย/ทิศ
+  // ที่ขึ้นได้ตอนนี้ เพื่อโชว์เป็นการ์ดต่อกลุ่ม (ไม่ใช่ต่อเส้นทางเดี่ยวๆ)
   const groups = useMemo(() => {
     if (!coords) return []
     const journeys = findJourneys(data, coords, destination, background?.lines)
     return groupByBoardNowDirection(journeys)
   }, [data, coords, destination, background])
 
+  // คำนวณแยกจาก groups เพราะต้องใช้เปรียบเทียบว่าเดินตรงไปเร็วกว่านั่งรถหรือไม่
+  // แม้ตอนที่ groups ว่างเปล่าก็ยังต้องรู้ว่าควรเดินหรือไม่มีสายไปเลย
   const directWalk = useMemo(() => {
     if (!coords) return null
     return findDirectWalk(coords, destination, background?.lines)
@@ -145,7 +152,7 @@ export function DestinationScreen({ data, location }: Props) {
     const [bestGroup] = groupByBoardNowDirection(journeys)
     if (!bestGroup) return
     const bestOption = bestGroup.options[0]
-    // A transfer's first leg only reaches the transfer point, not the destination.
+    // ช่วงแรกของการต่อรถพาไปถึงแค่จุดเปลี่ยนรถ ไม่ถึงปลายทางจริง
     setMapLeg(
       bestOption.type === 'direct'
         ? { leg: bestOption.leg, isFinalLeg: true }
@@ -193,12 +200,11 @@ export function DestinationScreen({ data, location }: Props) {
         )}
 
         {groups.length === 0 && directWalk && (
-          // Note: groups can come back empty for two different reasons —
-          // findJourneys already suppressed every bus option because walking
-          // beats them (see DIRECT_WALK_MAX_M there), or nothing was in
-          // range at all. DESTINATION_WALK_RADIUS_M (looser than that
-          // internal cutoff) is reused here only to decide which message
-          // reads as true, not to redo the suppression.
+          // Note: groups ว่างเปล่าได้จาก 2 สาเหตุ — findJourneys กรองตัวเลือกรถเมล์
+          // ทั้งหมดทิ้งไปแล้วเพราะเดินเร็วกว่า (ดู DIRECT_WALK_MAX_M ในไฟล์นั้น)
+          // หรือไม่มีสายอยู่ในระยะเลยจริงๆ DESTINATION_WALK_RADIUS_M (ซึ่งกว้างกว่า
+          // เกณฑ์ที่ใช้กรองข้างในนั้น) ถูกนำมาใช้ตรงนี้เพียงเพื่อเลือกว่าข้อความไหน
+          // ตรงกับความจริง ไม่ได้เอามากรองซ้ำ
           <p className="status">
             {directWalk.meters <= DESTINATION_WALK_RADIUS_M
               ? `จุดหมายอยู่ใกล้แค่ ${Math.round(directWalk.meters)} ม. เดินไปเลยดีกว่านั่งรถ (ประมาณ ${minutes(directWalk.sec)} นาที${directWalk.crossesMajorRoad ? ' — ข้ามถนนใหญ่' : ''})`

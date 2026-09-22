@@ -30,6 +30,9 @@ export function MisboardScreen({ data, location }: Props) {
     return data.directions.filter((d) => routeCodeStartsWithInput(data.routes[d.routeIdx], routeInput))
   }, [data, routeInput])
 
+  // หาก่อนว่า GPS ปัจจุบันตรงกับป้ายไหนบนทิศที่ขึ้นผิด (ในระยะ CURRENT_POSITION_RADIUS_M)
+  // ถ้าหาไม่เจอถือว่าไม่มีสัญญาณ GPS ที่ใช้ได้ ยังกู้สถานการณ์ไม่ได้ — ถ้าเจอ ค่อยดูว่า
+  // ป้ายไหนข้างหน้าอยู่ในระยะเดินถึงปลายทางบ้าง แล้วให้ recoverFromMisboarding ตัดสินใจ
   const recovery = useMemo(() => {
     if (!selected || !coords) return null
     const position = findCurrentPositionOnDirection(data, selected.direction, coords, CURRENT_POSITION_RADIUS_M)

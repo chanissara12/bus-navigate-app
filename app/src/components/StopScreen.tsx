@@ -31,11 +31,15 @@ export function StopScreen({ data, location, onOpenRoute }: Props) {
     return boardableDirectionsAtStop(data, nearest.stop.id)
   }, [data, nearest])
 
+  // candidates เป็น null เมื่อยังไม่ได้พิมพ์เลขสาย (แสดงทุกสายที่ขึ้นได้จากป้ายนี้)
+  // แต่เป็น [] เมื่อพิมพ์แล้วไม่เจอสายที่ตรง — สองสถานะนี้ต้องแยกกันเพื่อโชว์ผลลัพธ์ถูกจอ
   const candidates = useMemo(() => {
     if (input === '') return null
     return boardable.filter((b) => routeCodeStartsWithInput(b.route, input))
   }, [boardable, input])
 
+  // ตรงกับ "ขึ้นได้" ก็ต่อเมื่อเลขสายที่พิมพ์ตรงกับสายใดสายหนึ่งแบบเป๊ะๆ ไม่ใช่แค่ขึ้นต้นตรงกัน
+  // (เช่นพิมพ์ "8" ไม่ควรฟันธงว่าขึ้นได้ทันทีถ้ามีทั้งสาย 8 และ 8ก)
   const hasExactMatch = useMemo(() => {
     if (!candidates) return false
     return candidates.some((b) => routeMatchesInput(b.route, input))

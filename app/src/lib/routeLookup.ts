@@ -30,6 +30,8 @@ export function boardableDirectionsAtStop(data: BusData, stopId: string): Boarda
   for (const direction of data.directions) {
     const positionInSequence = direction.stopIdxs.indexOf(stopIdx)
     if (positionInSequence === -1) continue
+    // ป้ายสุดท้ายของทิศคือปลายทาง ไม่ใช่จุดขึ้นรถ — ขึ้นตรงนี้แล้วรถก็จบเที่ยวพอดี
+    // จึงตัดออกจากรายการทิศที่ขึ้นได้
     const isLastStop = positionInSequence === direction.stopIdxs.length - 1
     if (isLastStop) continue
     result.push({ route: data.routes[direction.routeIdx], direction, positionInSequence })
@@ -41,12 +43,11 @@ export function stopSequenceFrom(direction: Direction, fromPosition: number): nu
   return direction.stopIdxs.slice(fromPosition)
 }
 
-// WF-006: 15.6% of routes have feed data for only one direction, and a
-// handful of `M`-prefixed routes have suspiciously short trips (<5 stops) —
-// either could be a real loop route or missing data, and the ticket's
-// resolution is to show these anyway with an explicit warning rather than
-// hide them (the rider would wait for a route they don't know exists) or
-// show them silently (the rider would assume there's no way back).
+// WF-006: 15.6% ของสายทั้งหมดมีข้อมูลในฟีดแค่ทิศเดียว และสายที่ขึ้นต้นด้วย `M`
+// บางส่วนมีเที่ยววิ่งที่สั้นผิดปกติ (<5 ป้าย) — กรณีเหล่านี้อาจเป็นสายวนรอบจริง
+// หรือข้อมูลขาดหายก็ได้ แนวทางแก้ของทิคเก็ตนี้คือแสดงสายเหล่านี้ต่อไปพร้อมคำเตือน
+// ชัดเจน แทนที่จะซ่อนไว้ (ผู้ใช้จะรอสายที่ไม่รู้ด้วยซ้ำว่ามีอยู่) หรือแสดงเฉยๆ
+// โดยไม่เตือน (ผู้ใช้จะเข้าใจผิดว่าไม่มีทางกลับ)
 const SHORT_TRIP_STOP_COUNT = 5
 
 export function hasNoReturnData(data: BusData, direction: Direction): boolean {
