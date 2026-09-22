@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
+import { useFavoriteDestinations } from '../lib/favoriteDestinations'
 import type { LatLon } from '../lib/geo'
 import { searchPlaces } from '../lib/placeSearch'
 import type { MapBackground } from '../lib/types'
 import { DestinationPicker, type PickedDestination } from './DestinationPicker'
+import { FavoriteDestinationsManager } from './FavoriteDestinationsManager'
 
 const MAX_SEARCH_RESULTS = 8
 
@@ -20,8 +21,10 @@ interface Props {
 }
 
 export function DestinationSelector({ background, center, value, onSelectFavorite, onPick }: Props) {
+  const favorites = useFavoriteDestinations()
   const [searchInput, setSearchInput] = useState('')
   const [pickingOnMap, setPickingOnMap] = useState(false)
+  const [managingFavorites, setManagingFavorites] = useState(false)
 
   const searchResults = useMemo(() => {
     if (!background) return []
@@ -43,7 +46,7 @@ export function DestinationSelector({ background, center, value, onSelectFavorit
       {/* ปุ่มกดครั้งเดียวแทน dropdown มาตรฐาน — ปลายทางโปรดมีแค่ไม่กี่รายการ
           การกดเลือกตรงๆ เร็วกว่าต้องเปิด dropdown แล้วเลื่อนหาทุกครั้ง */}
       <div className="favorite-destinations">
-        {FAVORITE_DESTINATIONS.map((d) => (
+        {favorites.map((d) => (
           <button
             key={d.name}
             type="button"
@@ -54,6 +57,17 @@ export function DestinationSelector({ background, center, value, onSelectFavorit
           </button>
         ))}
       </div>
+      <button type="button" className="manage-favorites-button" onClick={() => setManagingFavorites(true)}>
+        ⚙ จัดการปลายทางโปรด
+      </button>
+
+      {managingFavorites && (
+        <FavoriteDestinationsManager
+          background={background}
+          center={center}
+          onClose={() => setManagingFavorites(false)}
+        />
+      )}
 
       <input
         className="number-input"

@@ -8,7 +8,7 @@ import {
   type Journey,
   type Leg,
 } from '../lib/destinationLookup'
-import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
+import { DEFAULT_FAVORITE_DESTINATIONS, useFavoriteDestinations } from '../lib/favoriteDestinations'
 import { formatRouteCode } from '../lib/formatRoute'
 import { hasNoReturnData } from '../lib/routeLookup'
 import { useMapBackground } from '../lib/useMapBackground'
@@ -117,7 +117,8 @@ function BoardNowGroupCard({
 export function DestinationScreen({ data, location }: Props) {
   const { status, coords, error, request } = location
   const { background } = useMapBackground()
-  const [destination, setDestination] = useState<Destination>(FAVORITE_DESTINATIONS[0])
+  const favorites = useFavoriteDestinations()
+  const [destination, setDestination] = useState<Destination>(() => favorites[0] ?? DEFAULT_FAVORITE_DESTINATIONS[0])
   // 1 ช่วงสำหรับสายตรง หรือ 2 ช่วงสำหรับการต่อรถ — LegMapOverlay วาดทั้งหมดในแผนที่เดียว
   // เสมอ จึงไม่ต้องแยกกรณี "ช่วงแรกยังไม่ถึงปลายทาง" เหมือนตอนที่เคยโชว์ทีละช่วงแล้ว
   const [mapLegs, setMapLegs] = useState<Leg[] | null>(null)

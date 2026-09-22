@@ -1,11 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { DestinationScreen } from './DestinationScreen'
-import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
+import { DEFAULT_FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData } from '../lib/types'
 
-const SIAM = FAVORITE_DESTINATIONS[0] // { name: 'สยาม', lat: 13.746, lon: 100.534 } — the default destination
+const SIAM = DEFAULT_FAVORITE_DESTINATIONS[0] // { name: 'สยาม', lat: 13.746, lon: 100.534 } — the default destination
 
 // 'origin' is where the mocked GPS sits. 'near' and 'far' both sit on the
 // route past it, within the 800m destination radius of สยาม (the default

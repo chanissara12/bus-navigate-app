@@ -1,11 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MisboardScreen } from './MisboardScreen'
-import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
+import { DEFAULT_FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import type { GeolocationState } from '../lib/useGeolocation'
 import type { BusData } from '../lib/types'
 
-const SIAM = FAVORITE_DESTINATIONS[0] // { name: 'สยาม', lat: 13.746, lon: 100.534 }
+const SIAM = DEFAULT_FAVORITE_DESTINATIONS[0] // { name: 'สยาม', lat: 13.746, lon: 100.534 }
 
 // stop 'X' is where the mocked GPS position always lands; stop 'Y' sits
 // exactly on the destination, so it's always within its 800m walk radius.
@@ -56,7 +56,7 @@ describe('MisboardScreen', () => {
   it('says get off at the next stop when the destination is one stop away', () => {
     render(<MisboardScreen data={makeData([0, 2])} location={grantedAtOrigin()} />)
     selectTheRoute()
-    // default destination is FAVORITE_DESTINATIONS[0], i.e. สยาม — matches stop Y
+    // default destination is DEFAULT_FAVORITE_DESTINATIONS[0], i.e. สยาม — matches stop Y
     expect(screen.getByText('ลงป้ายหน้าได้เลย — ป้ายใกล้สยาม')).toBeInTheDocument()
   })
 

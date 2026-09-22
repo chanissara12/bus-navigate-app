@@ -413,6 +413,67 @@ select {
   color: #fff;
 }
 
+.manage-favorites-button {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.favorites-manager-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.favorites-manager-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.favorites-manager-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-h);
+}
+
+.favorites-manager-feedback {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--ok-bg);
+  color: var(--ok-text);
+  font-size: 14px;
+}
+
+.remove-favorite-button {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 10px;
+  border: 1px solid var(--no-text);
+  border-radius: 8px;
+  background: var(--no-bg);
+  color: var(--no-text);
+  cursor: pointer;
+}
+
 .destination-search-results button {
   width: 100%;
   text-align: left;

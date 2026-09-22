@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { DestinationSelector } from './DestinationSelector'
-import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
+import { DEFAULT_FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import type { MapBackground } from '../lib/types'
 
 function makeBackground(): MapBackground {
@@ -23,7 +23,7 @@ describe('DestinationSelector', () => {
       <DestinationSelector
         background={makeBackground()}
         center={{ lat: 13.75, lon: 100.5 }}
-        value={FAVORITE_DESTINATIONS[0]}
+        value={DEFAULT_FAVORITE_DESTINATIONS[0]}
         onSelectFavorite={vi.fn()}
         onPick={onPick}
       />,
@@ -47,15 +47,15 @@ describe('DestinationSelector', () => {
       <DestinationSelector
         background={makeBackground()}
         center={{ lat: 13.75, lon: 100.5 }}
-        value={FAVORITE_DESTINATIONS[0]}
+        value={DEFAULT_FAVORITE_DESTINATIONS[0]}
         onSelectFavorite={onSelectFavorite}
         onPick={onPick}
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: FAVORITE_DESTINATIONS[1].name }))
+    fireEvent.click(screen.getByRole('button', { name: DEFAULT_FAVORITE_DESTINATIONS[1].name }))
 
-    expect(onSelectFavorite).toHaveBeenCalledWith(FAVORITE_DESTINATIONS[1])
+    expect(onSelectFavorite).toHaveBeenCalledWith(DEFAULT_FAVORITE_DESTINATIONS[1])
     expect(onPick).not.toHaveBeenCalled()
   })
 
@@ -65,7 +65,7 @@ describe('DestinationSelector', () => {
       <DestinationSelector
         background={makeBackground()}
         center={{ lat: 13.75, lon: 100.5 }}
-        value={FAVORITE_DESTINATIONS[0]}
+        value={DEFAULT_FAVORITE_DESTINATIONS[0]}
         onSelectFavorite={vi.fn()}
         onPick={onPick}
       />,
@@ -80,7 +80,7 @@ describe('DestinationSelector', () => {
       <DestinationSelector
         background={null}
         center={{ lat: 13.75, lon: 100.5 }}
-        value={FAVORITE_DESTINATIONS[0]}
+        value={DEFAULT_FAVORITE_DESTINATIONS[0]}
         onSelectFavorite={vi.fn()}
         onPick={vi.fn()}
       />,

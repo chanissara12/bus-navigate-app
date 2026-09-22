@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { findStopIdxsWithinRadius, DESTINATION_WALK_RADIUS_M } from '../lib/destinationLookup'
-import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
+import { DEFAULT_FAVORITE_DESTINATIONS, useFavoriteDestinations } from '../lib/favoriteDestinations'
 import { recoverFromMisboarding } from '../lib/misboardRecovery'
 import { routeCodeStartsWithInput } from '../lib/numberMatch'
 import { findCurrentPositionOnDirection, hasNoReturnData } from '../lib/routeLookup'
@@ -23,7 +23,8 @@ export function MisboardScreen({ data, location }: Props) {
   const { background } = useMapBackground()
   const [routeInput, setRouteInput] = useState('')
   const [selected, setSelected] = useState<{ route: Route; direction: Direction } | null>(null)
-  const [destination, setDestination] = useState<Destination>(FAVORITE_DESTINATIONS[0])
+  const favorites = useFavoriteDestinations()
+  const [destination, setDestination] = useState<Destination>(() => favorites[0] ?? DEFAULT_FAVORITE_DESTINATIONS[0])
 
   const matchingDirections = useMemo(() => {
     if (routeInput === '') return []
