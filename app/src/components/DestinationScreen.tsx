@@ -119,13 +119,13 @@ export function DestinationScreen({ data, location }: Props) {
 
   const groups = useMemo(() => {
     if (!coords) return []
-    const journeys = findJourneys(data, coords, destination)
+    const journeys = findJourneys(data, coords, destination, background?.lines)
     return groupByBoardNowDirection(journeys)
-  }, [data, coords, destination])
+  }, [data, coords, destination, background])
 
   function openBestLegMap(forDestination: Destination) {
     if (!coords) return
-    const journeys = findJourneys(data, coords, forDestination)
+    const journeys = findJourneys(data, coords, forDestination, background?.lines)
     const [bestGroup] = groupByBoardNowDirection(journeys)
     if (!bestGroup) return
     const bestOption = bestGroup.options[0]

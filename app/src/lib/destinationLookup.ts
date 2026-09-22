@@ -1,6 +1,7 @@
 import { haversineMeters, walkSeconds, type LatLon } from './geo'
 import { buildSpatialIndex, type SpatialIndex } from './spatialIndex'
-import type { BusData, Direction, Route } from './types'
+import { findWalkingPath } from './svgMap'
+import type { BusData, Direction, MapLine, Route } from './types'
 
 export const ORIGIN_WALK_RADIUS_M = 400
 export const DESTINATION_WALK_RADIUS_M = 800
@@ -63,6 +64,22 @@ function getIndex(data: BusData): SpatialIndex {
 
 export function findStopIdxsWithinRadius(data: BusData, center: LatLon, radiusM: number): Set<number> {
   return new Set(getIndex(data).stopsNear(center, radiusM))
+}
+
+// A straight line from a stop to a destination can cut across a road that
+// isn't actually crossable there — real distance is what findWalkingPath
+// (which knows about roads and footbridges) would have you walk instead.
+// Confirmed case: "ตรงข้ามโรงแรมมณเฑียร ริเวอร์ไซด์" reads as the closest
+// stop to "เทอร์มินอล 21 พระราม 3" by straight line (149m) and used to win
+// the ranking on that basis, but it's on the opposite side of ถนนพระราม 3
+// from the destination (confirmed by a perpendicular side test against the
+// road line) — the real walk is longer, and a same-side stop should win
+// instead when one exists.
+function walkPathMeters(from: LatLon, to: LatLon, lines: MapLine[]): number {
+  const path = findWalkingPath(from, to, lines).points
+  let total = 0
+  for (let i = 1; i < path.length; i += 1) total += haversineMeters(path[i - 1], path[i])
+  return total
 }
 
 function buildLeg(data: BusData, direction: Direction, boardPosition: number, alightPosition: number): Leg {
@@ -186,17 +203,22 @@ function findTransferJourneys(
   return journeys
 }
 
-export function findJourneys(data: BusData, origin: LatLon, destination: LatLon): Journey[] {
+export function findJourneys(
+  data: BusData,
+  origin: LatLon,
+  destination: LatLon,
+  mapLines?: MapLine[] | null,
+): Journey[] {
   const index = getIndex(data)
+  const walkMeters = (a: LatLon, b: LatLon) => (mapLines ? walkPathMeters(a, b, mapLines) : haversineMeters(a, b))
+
   const originStopIdxs = index.stopsNear(origin, ORIGIN_WALK_RADIUS_M)
   const originIdxs = new Set(originStopIdxs)
-  const originWalkMetersByStopIdx = new Map(
-    originStopIdxs.map((idx) => [idx, haversineMeters(origin, data.stops[idx])]),
-  )
+  const originWalkMetersByStopIdx = new Map(originStopIdxs.map((idx) => [idx, walkMeters(origin, data.stops[idx])]))
   const destStopIdxs = index.stopsNear(destination, DESTINATION_WALK_RADIUS_M)
   const destIdxs = new Set(destStopIdxs)
   const destWalkMetersByStopIdx = new Map(
-    destStopIdxs.map((idx) => [idx, haversineMeters(destination, data.stops[idx])]),
+    destStopIdxs.map((idx) => [idx, walkMeters(destination, data.stops[idx])]),
   )
 
   const journeys: Journey[] = [

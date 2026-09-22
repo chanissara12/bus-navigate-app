@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { findJourneys, groupByBoardNowDirection, ORIGIN_WALK_RADIUS_M, DESTINATION_WALK_RADIUS_M } from './destinationLookup'
 import { walkSeconds } from './geo'
-import type { BusData } from './types'
+import type { BusData, MapLine } from './types'
 
 // Stops laid out roughly 100m apart along the equator so haversine distances are easy to reason about.
 const METERS_PER_DEGREE = 111320
@@ -208,6 +208,66 @@ describe('findJourneys — destination walk time', () => {
 
     expect(journeys[0].type).toBe('direct')
     if (journeys[0].type === 'direct') expect(journeys[0].leg.alightStopIdx).toBe(2) // 'near-dest' wins overall
+  })
+})
+
+describe('findJourneys — map-aware walking distance', () => {
+  // Both alight candidates sit well outside the 400m origin radius, so
+  // 'origin' is the only valid board stop — keeps the comparison to exactly
+  // the two alight options. 'closerByAir' is 20m from the destination in a
+  // straight line, but a bent road stands between them (confirmed real
+  // case: a stop that reads as closest by air was actually across
+  // ถนนพระราม 3 from the destination). 'fartherByAir' is 130m away but has
+  // a clear line to the destination.
+  function makeData(): BusData {
+    return {
+      generatedAt: '',
+      feedVersion: null,
+      stops: [
+        stopAt('origin', 0),
+        stopAt('closerByAir', 700),
+        stopAt('fartherByAir', 850),
+      ],
+      routes: [{ id: 'r1', agency: 'BMTA', newCode: '1-1', oldCode: null, longNameTh: '', longNameEn: '' }],
+      directions: [
+        {
+          routeIdx: 0,
+          directionId: 0,
+          headsignTh: '',
+          headsignEn: '',
+          stopIdxs: [0, 1, 2],
+          offsetsSec: [0, 600, 660],
+          headwaySec: 600,
+          shapeCoords: [],
+        },
+      ],
+    }
+  }
+
+  const destination = { lat: 0, lon: 720 / METERS_PER_DEGREE }
+  const bentRoad: MapLine = {
+    kind: 'road',
+    // both ends sit exactly on closerByAir and destination, but bow out
+    // through a kink far off the direct line — a real detour, not a shortcut
+    points: [
+      [0, 700 / METERS_PER_DEGREE],
+      [200 / METERS_PER_DEGREE, 710 / METERS_PER_DEGREE],
+      [0, 720 / METERS_PER_DEGREE],
+    ],
+    name: null,
+    priority: 1,
+  }
+
+  it('picks the stop that is closer by straight-line distance when no map data is available', () => {
+    const journeys = findJourneys(makeData(), { lat: 0, lon: 0 }, destination)
+    expect(journeys[0].type).toBe('direct')
+    if (journeys[0].type === 'direct') expect(journeys[0].leg.alightStopIdx).toBe(1) // closerByAir
+  })
+
+  it('prefers the stop with the shorter real walk once road data reveals the detour', () => {
+    const journeys = findJourneys(makeData(), { lat: 0, lon: 0 }, destination, [bentRoad])
+    expect(journeys[0].type).toBe('direct')
+    if (journeys[0].type === 'direct') expect(journeys[0].leg.alightStopIdx).toBe(2) // fartherByAir wins for real
   })
 })
 
