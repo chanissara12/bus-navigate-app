@@ -292,6 +292,10 @@ select {
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
+  /* ปักแผนที่ไว้ด้านบนจอ ไม่ให้เลื่อนหายไปตอนเลื่อนดูรายการผลลัพธ์ด้านล่าง */
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 .leg-map-overlay-header {
@@ -405,6 +409,11 @@ select {
 .tabs {
   display: flex;
   border-top: 1px solid var(--border);
+  /* ปักเมนูล่างให้ติดขอบล่างจอเสมอ ไม่เลื่อนหายไปพร้อมเนื้อหาที่ยาวเกินจอ */
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  z-index: 10;
 }
 
 .tabs button {
