@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { findJourneys, groupByBoardNowDirection, ORIGIN_WALK_RADIUS_M, DESTINATION_WALK_RADIUS_M } from './destinationLookup'
+import { walkSeconds } from './geo'
 import type { BusData } from './types'
 
 // Stops laid out roughly 100m apart along the equator so haversine distances are easy to reason about.
@@ -152,6 +153,23 @@ describe('findJourneys — origin walk time', () => {
     const groups = groupByBoardNowDirection(journeys)
     const nearGroup = groups.find((g) => g.boardStopIdx === 0)
     expect(nearGroup?.originWalkMeters).toBeCloseTo(0, 0)
+  })
+})
+
+describe('findJourneys — destination walk time', () => {
+  it('reports and counts the walk from the alight stop to the actual destination', () => {
+    const data = makeOriginWalkData()
+    // destination is 200m past the 'dest' stop (idx 2), still within the 800m destination radius
+    const destination = { lat: 0, lon: 1200 / METERS_PER_DEGREE }
+    const journeys = findJourneys(data, { lat: 0, lon: 0 }, destination)
+
+    const direct = journeys.find((j) => j.type === 'direct')
+    expect(direct?.destinationWalkMeters).toBeCloseTo(200, 0)
+
+    if (direct?.type === 'direct') {
+      const rideOnly = direct.leg.waitSec + direct.leg.rideSec
+      expect(direct.totalSec).toBeCloseTo(rideOnly + walkSeconds(200), 0)
+    }
   })
 })
 

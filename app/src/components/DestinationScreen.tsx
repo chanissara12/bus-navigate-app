@@ -32,7 +32,8 @@ function JourneyLine({
     const alightName = data.stops[journey.leg.alightStopIdx].nameTh || data.stops[journey.leg.alightStopIdx].nameEn
     return (
       <li>
-        ลงป้าย {alightName} — {minutes(journey.totalSec)} นาที
+        ลงป้าย {alightName} — {minutes(journey.totalSec)} นาที (เดินต่ออีก{' '}
+        {Math.round(journey.destinationWalkMeters)} ม.)
         <button type="button" className="show-map" aria-label="ดูแผนที่" onClick={() => onShowMap(journey.leg)}>
           🗺
         </button>
@@ -54,7 +55,8 @@ function JourneyLine({
       >
         🗺
       </button>{' '}
-      แล้วลงป้าย {alightName} — {minutes(journey.totalSec)} นาที
+      แล้วลงป้าย {alightName} — {minutes(journey.totalSec)} นาที (เดินต่ออีก{' '}
+      {Math.round(journey.destinationWalkMeters)} ม.)
       <button
         type="button"
         className="show-map"
