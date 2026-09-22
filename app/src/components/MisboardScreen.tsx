@@ -110,7 +110,14 @@ export function MisboardScreen({ data, location }: Props) {
             ยังลงไม่ได้อีก {recovery.stopsRemaining} ป้าย แล้วลงที่ {data.stops[recovery.stopIdx].nameTh}
           </p>
         )}
-        {recovery?.kind === 'no-recovery' && <p className="verdict no">คันนี้ไม่พาไปที่นั่น ไม่มีทางกู้ได้จากคันนี้</p>}
+        {recovery?.kind === 'no-recovery' && (
+          <>
+            <p className="verdict no">คันนี้ไม่พาไปที่นั่น ไม่มีทางกู้ได้จากคันนี้</p>
+            <button type="button" className="pick-from-map-button" onClick={() => setSelected(null)}>
+              ลองเลือกทิศทางอื่น
+            </button>
+          </>
+        )}
       </div>
     </LocationGate>
   )
