@@ -121,6 +121,7 @@ function pointInBbox(lat: number, lon: number, bbox: BBox): boolean {
 
 export interface WalkPath {
   points: LatLon[]
+  meters: number
   viaFootbridge: boolean
 }
 
@@ -128,13 +129,29 @@ const FOOTBRIDGE_SEARCH_RADIUS_M = 500
 const FOOTBRIDGE_DETOUR_FACTOR = 1.6
 const ROAD_SNAP_MAX_DISTANCE_M = 40
 
+// A leg that couldn't be snapped to any road is a straight line cutting
+// across whatever's actually there (buildings, lots) — fine for a short hop
+// off a mapped road onto a doorway, but past this length it's standing in
+// for a real route we don't know, and a straight line understates it.
+// Confirmed case: the "shortcut" to a footbridge from "ตรงข้ามโรงแรมมณเฑียร
+// ริเวอร์ไซด์" read as 203m via a 154m unsnapped straight leg, while
+// Google Maps' actual routed distance is longer — this buffer keeps that
+// unmapped leg from being reported as if it were a real, walkable line.
+const UNSNAPPED_WALK_BUFFER = 1.4
+const UNSNAPPED_BUFFER_MIN_M = 60
+
+interface RoadSnapResult {
+  points: LatLon[]
+  snapped: boolean
+}
+
 // A straight line between two points a block apart cuts across buildings —
 // it reads as a displacement vector, not a walk. Where a road runs close to
 // both ends of a leg, follow that road's own vertices between them instead,
 // with only a short perpendicular hop at each end connecting the real point
 // to the road. Falls back to a straight line where no road is close enough
 // to both ends (e.g. crossing a footbridge itself).
-function snapToNearestRoad(from: LatLon, to: LatLon, lines: MapLine[]): LatLon[] {
+function snapToNearestRoad(from: LatLon, to: LatLon, lines: MapLine[]): RoadSnapResult {
   let best: { path: LatLon[]; score: number } | null = null
 
   for (const line of lines) {
@@ -160,16 +177,22 @@ function snapToNearestRoad(from: LatLon, to: LatLon, lines: MapLine[]): LatLon[]
     best = { path: forward ? onRoad : onRoad.reverse(), score }
   }
 
-  return best ? [from, ...best.path, to] : [from, to]
+  return best ? { points: [from, ...best.path, to], snapped: true } : { points: [from, to], snapped: false }
 }
 
-function snapWalkToRoads(points: LatLon[], lines: MapLine[]): LatLon[] {
+function snapWalkToRoads(points: LatLon[], lines: MapLine[]): { points: LatLon[]; meters: number } {
   const snapped: LatLon[] = [points[0]]
+  let meters = 0
   for (let i = 0; i < points.length - 1; i += 1) {
     const segment = snapToNearestRoad(points[i], points[i + 1], lines)
-    snapped.push(...segment.slice(1))
+    snapped.push(...segment.points.slice(1))
+
+    let segmentMeters = 0
+    for (let j = 1; j < segment.points.length; j += 1) segmentMeters += haversineMeters(segment.points[j - 1], segment.points[j])
+    if (!segment.snapped && segmentMeters > UNSNAPPED_BUFFER_MIN_M) segmentMeters *= UNSNAPPED_WALK_BUFFER
+    meters += segmentMeters
   }
-  return snapped
+  return { points: snapped, meters }
 }
 
 // A pragmatic heuristic, not real pedestrian routing: if a nearby footbridge's
@@ -200,7 +223,8 @@ export function findWalkingPath(from: LatLon, to: LatLon, lines: MapLine[]): Wal
   }
 
   const rawPoints = best ? best.points : [from, to]
-  return { points: snapWalkToRoads(rawPoints, lines), viaFootbridge: !!best }
+  const snapped = snapWalkToRoads(rawPoints, lines)
+  return { points: snapped.points, meters: snapped.meters, viaFootbridge: !!best }
 }
 
 // motorway/trunk/primary — matches ROAD_PRIORITY in build-map-background.mjs.

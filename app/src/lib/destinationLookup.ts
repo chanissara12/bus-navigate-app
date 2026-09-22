@@ -88,10 +88,7 @@ export function findStopIdxsWithinRadius(data: BusData, center: LatLon, radiusM:
 // road line) — the real walk is longer, and a same-side stop should win
 // instead when one exists.
 function walkPathMeters(from: LatLon, to: LatLon, lines: MapLine[]): number {
-  const path = findWalkingPath(from, to, lines).points
-  let total = 0
-  for (let i = 1; i < path.length; i += 1) total += haversineMeters(path[i - 1], path[i])
-  return total
+  return findWalkingPath(from, to, lines).meters
 }
 
 function buildLeg(data: BusData, direction: Direction, boardPosition: number, alightPosition: number): Leg {

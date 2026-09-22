@@ -380,6 +380,34 @@ describe('findWalkingPath', () => {
     const path = findWalkingPath(from, to, [farRoad])
     expect(path.points).toEqual([from, to])
   })
+
+  it('reports the straight-line distance as-is when no road is nearby to snap to and the leg is short', () => {
+    const nearFrom = { lat: 0, lon: 0 }
+    const nearTo = { lat: 0, lon: 30 / METERS_PER_DEGREE } // ~30m, below the buffer threshold
+    const path = findWalkingPath(nearFrom, nearTo, [])
+    expect(path.meters).toBeCloseTo(30, 0)
+  })
+
+  it('inflates an unsnapped leg past the buffer threshold, since a straight line there is not a real walkable route', () => {
+    const path = findWalkingPath(from, to, [])
+    expect(path.meters).toBeGreaterThan(210)
+    expect(path.meters).toBeCloseTo(210 * 1.4, 0)
+  })
+
+  it('does not inflate a leg that was snapped to a real road', () => {
+    const road: MapLine = {
+      kind: 'road',
+      points: [
+        [20 / METERS_PER_DEGREE, 0],
+        [20 / METERS_PER_DEGREE, 210 / METERS_PER_DEGREE],
+      ],
+      name: null,
+      priority: 1,
+    }
+    const path = findWalkingPath(from, to, [road])
+    // a snapped, road-following leg should reflect real distance, not the buffered estimate
+    expect(path.meters).toBeLessThan(210 * 1.4)
+  })
 })
 
 describe('bboxFromView', () => {
