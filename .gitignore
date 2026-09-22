@@ -12,3 +12,36 @@ gtfs/
 
 # raw OSM extract จาก Overpass ไม่ commit — โหลดใหม่ได้ด้วย build-map-background.mjs
 osm/
+
+# Secrets and environment
+.env
+.env.*
+!.env.example
+
+# Local-only overrides, any stack, any extension
+*.local.*
+*.local
+
+# Editor and OS
+# .vscode holds this repo's shared formatting settings and is committed on purpose —
+# ignore the folder's personal contents, keep the two files the team relies on.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+desktop.ini
+*.swp
+*~
+
+# React/Vite app (app/) — dependencies, build output, test artifacts
+node_modules/
+dist/
+dist-ssr/
+build/
+.vite/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
