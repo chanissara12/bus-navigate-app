@@ -66,6 +66,8 @@ body {
 main {
   flex: 1;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 h2 {
@@ -105,9 +107,12 @@ h2 {
 }
 
 .location-gate {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* จัดกึ่งกลางแนวตั้งของพื้นที่ที่เหลือ กันไม่ให้ปุ่มลอยค้างบนสุดแล้วเหลือพื้นที่ว่างโล่งด้านล่าง */
+  justify-content: center;
   gap: 12px;
   padding: 32px 16px;
   text-align: center;
