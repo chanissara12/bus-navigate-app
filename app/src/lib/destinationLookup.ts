@@ -1,7 +1,14 @@
 import { haversineMeters, walkSeconds, type LatLon } from './geo'
 import { buildSpatialIndex, type SpatialIndex } from './spatialIndex'
-import { findWalkingPath } from './svgMap'
+import { crossesMajorRoad, findWalkingPath } from './svgMap'
 import type { BusData, Direction, MapLine, Route } from './types'
+
+// Crossing a busy arterial road (no signal, multiple fast lanes) is real
+// friction a rider weighs even when it's technically the faster option by
+// the clock — this makes the ranking reflect that instead of only ever
+// minimizing raw seconds. Expressed as a time penalty (not a distance one)
+// so it stacks cleanly with walkSeconds() in totalSec.
+const MAJOR_ROAD_CROSSING_PENALTY_SEC = 300
 
 export const ORIGIN_WALK_RADIUS_M = 400
 export const DESTINATION_WALK_RADIUS_M = 800
@@ -23,7 +30,9 @@ export interface DirectJourney {
   type: 'direct'
   leg: Leg
   originWalkMeters: number
+  originCrossesMajorRoad: boolean
   destinationWalkMeters: number
+  destinationCrossesMajorRoad: boolean
   totalSec: number
 }
 
@@ -33,7 +42,9 @@ export interface TransferJourney {
   secondLeg: Leg
   transferWalkSec: number
   originWalkMeters: number
+  originCrossesMajorRoad: boolean
   destinationWalkMeters: number
+  destinationCrossesMajorRoad: boolean
   totalSec: number
 }
 
@@ -45,6 +56,7 @@ export interface BoardNowGroup {
   direction: Direction
   boardStopIdx: number
   originWalkMeters: number
+  originCrossesMajorRoad: boolean
   options: Journey[]
 }
 
@@ -99,8 +111,10 @@ function findDirectJourneys(
   data: BusData,
   originIdxs: Set<number>,
   originWalkMetersByStopIdx: Map<number, number>,
+  originCrossesByStopIdx: Map<number, boolean>,
   destIdxs: Set<number>,
   destWalkMetersByStopIdx: Map<number, number>,
+  destCrossesByStopIdx: Map<number, boolean>,
 ): DirectJourney[] {
   const journeys: DirectJourney[] = []
   for (const direction of data.directions) {
@@ -108,6 +122,7 @@ function findDirectJourneys(
       const boardStopIdx = direction.stopIdxs[boardPosition]
       if (!originIdxs.has(boardStopIdx)) continue
       const originWalkMeters = originWalkMetersByStopIdx.get(boardStopIdx) ?? 0
+      const originCrossesMajorRoad = originCrossesByStopIdx.get(boardStopIdx) ?? false
       // Explore every stop the destination radius reaches on this ride, not
       // just the first — the closest-by-route-position stop isn't always the
       // closest-to-walk one (e.g. "เทอร์มินอล 21 พระราม 3" sits past
@@ -118,13 +133,22 @@ function findDirectJourneys(
         const alightStopIdx = direction.stopIdxs[alightPosition]
         if (!destIdxs.has(alightStopIdx)) continue
         const destinationWalkMeters = destWalkMetersByStopIdx.get(alightStopIdx) ?? 0
+        const destinationCrossesMajorRoad = destCrossesByStopIdx.get(alightStopIdx) ?? false
         const leg = buildLeg(data, direction, boardPosition, alightPosition)
         journeys.push({
           type: 'direct',
           leg,
           originWalkMeters,
+          originCrossesMajorRoad,
           destinationWalkMeters,
-          totalSec: walkSeconds(originWalkMeters) + leg.waitSec + leg.rideSec + walkSeconds(destinationWalkMeters),
+          destinationCrossesMajorRoad,
+          totalSec:
+            walkSeconds(originWalkMeters) +
+            leg.waitSec +
+            leg.rideSec +
+            walkSeconds(destinationWalkMeters) +
+            (originCrossesMajorRoad ? MAJOR_ROAD_CROSSING_PENALTY_SEC : 0) +
+            (destinationCrossesMajorRoad ? MAJOR_ROAD_CROSSING_PENALTY_SEC : 0),
         })
       }
     }
@@ -137,8 +161,10 @@ function findTransferJourneys(
   index: SpatialIndex,
   originIdxs: Set<number>,
   originWalkMetersByStopIdx: Map<number, number>,
+  originCrossesByStopIdx: Map<number, boolean>,
   destIdxs: Set<number>,
   destWalkMetersByStopIdx: Map<number, number>,
+  destCrossesByStopIdx: Map<number, boolean>,
 ): TransferJourney[] {
   const journeys: TransferJourney[] = []
   const seen = new Set<string>()
@@ -148,6 +174,7 @@ function findTransferJourneys(
       const boardStopIdx = firstDirection.stopIdxs[boardPosition]
       if (!originIdxs.has(boardStopIdx)) continue
       const originWalkMeters = originWalkMetersByStopIdx.get(boardStopIdx) ?? 0
+      const originCrossesMajorRoad = originCrossesByStopIdx.get(boardStopIdx) ?? false
 
       for (let transferAPos = boardPosition + 1; transferAPos < firstDirection.stopIdxs.length; transferAPos += 1) {
         const transferStopAIdx = firstDirection.stopIdxs[transferAPos]
@@ -174,6 +201,7 @@ function findTransferJourneys(
               seen.add(dedupeKey)
 
               const destinationWalkMeters = destWalkMetersByStopIdx.get(alightStopIdx) ?? 0
+              const destinationCrossesMajorRoad = destCrossesByStopIdx.get(alightStopIdx) ?? false
               const firstLeg = buildLeg(data, firstDirection, boardPosition, transferAPos)
               const secondLeg = buildLeg(data, secondDirection, transferBPos, alightPosition)
               const transferWalkSec = walkSeconds(transferDistanceM)
@@ -183,7 +211,9 @@ function findTransferJourneys(
                 secondLeg,
                 transferWalkSec,
                 originWalkMeters,
+                originCrossesMajorRoad,
                 destinationWalkMeters,
+                destinationCrossesMajorRoad,
                 totalSec:
                   walkSeconds(originWalkMeters) +
                   firstLeg.waitSec +
@@ -191,7 +221,9 @@ function findTransferJourneys(
                   transferWalkSec +
                   secondLeg.waitSec +
                   secondLeg.rideSec +
-                  walkSeconds(destinationWalkMeters),
+                  walkSeconds(destinationWalkMeters) +
+                  (originCrossesMajorRoad ? MAJOR_ROAD_CROSSING_PENALTY_SEC : 0) +
+                  (destinationCrossesMajorRoad ? MAJOR_ROAD_CROSSING_PENALTY_SEC : 0),
               })
             }
           }
@@ -211,19 +243,39 @@ export function findJourneys(
 ): Journey[] {
   const index = getIndex(data)
   const walkMeters = (a: LatLon, b: LatLon) => (mapLines ? walkPathMeters(a, b, mapLines) : haversineMeters(a, b))
+  const crosses = (a: LatLon, b: LatLon) => (mapLines ? crossesMajorRoad(a, b, mapLines) : false)
 
   const originStopIdxs = index.stopsNear(origin, ORIGIN_WALK_RADIUS_M)
   const originIdxs = new Set(originStopIdxs)
   const originWalkMetersByStopIdx = new Map(originStopIdxs.map((idx) => [idx, walkMeters(origin, data.stops[idx])]))
+  const originCrossesByStopIdx = new Map(originStopIdxs.map((idx) => [idx, crosses(origin, data.stops[idx])]))
   const destStopIdxs = index.stopsNear(destination, DESTINATION_WALK_RADIUS_M)
   const destIdxs = new Set(destStopIdxs)
   const destWalkMetersByStopIdx = new Map(
     destStopIdxs.map((idx) => [idx, walkMeters(destination, data.stops[idx])]),
   )
+  const destCrossesByStopIdx = new Map(destStopIdxs.map((idx) => [idx, crosses(destination, data.stops[idx])]))
 
   const journeys: Journey[] = [
-    ...findDirectJourneys(data, originIdxs, originWalkMetersByStopIdx, destIdxs, destWalkMetersByStopIdx),
-    ...findTransferJourneys(data, index, originIdxs, originWalkMetersByStopIdx, destIdxs, destWalkMetersByStopIdx),
+    ...findDirectJourneys(
+      data,
+      originIdxs,
+      originWalkMetersByStopIdx,
+      originCrossesByStopIdx,
+      destIdxs,
+      destWalkMetersByStopIdx,
+      destCrossesByStopIdx,
+    ),
+    ...findTransferJourneys(
+      data,
+      index,
+      originIdxs,
+      originWalkMetersByStopIdx,
+      originCrossesByStopIdx,
+      destIdxs,
+      destWalkMetersByStopIdx,
+      destCrossesByStopIdx,
+    ),
   ]
 
   return journeys.sort((a, b) => a.totalSec - b.totalSec)
@@ -267,6 +319,7 @@ export function groupByBoardNowDirection(journeys: Journey[]): BoardNowGroup[] {
         direction: leg.direction,
         boardStopIdx: leg.boardStopIdx,
         originWalkMeters: journey.originWalkMeters,
+        originCrossesMajorRoad: journey.originCrossesMajorRoad,
         options: [journey],
       })
     }

@@ -4,6 +4,7 @@ import {
   bboxFromView,
   boundingBoxWithMargin,
   bboxSizeMeters,
+  crossesMajorRoad,
   filterLabelsForDisplay,
   filterPlacesForDisplay,
   findWalkingPath,
@@ -402,5 +403,45 @@ describe('bboxFromView', () => {
     expect(result.minLon).toBeCloseTo(base.minLon, 4)
     expect(result.minLat).toBeGreaterThan(base.minLat)
     expect(result.maxLon).toBeLessThan(base.maxLon)
+  })
+})
+
+describe('crossesMajorRoad', () => {
+  const METERS_PER_DEGREE = 111320
+  // A road running east-west at lat 0; 'from' is north of it, 'to' is south.
+  const majorRoad: MapLine = {
+    kind: 'road',
+    points: [
+      [0, -100 / METERS_PER_DEGREE],
+      [0, 100 / METERS_PER_DEGREE],
+    ],
+    name: 'ถนนใหญ่',
+    priority: 2, // primary — counts as major
+  }
+
+  it('is true when the straight walk crosses a major road', () => {
+    const from = { lat: 20 / METERS_PER_DEGREE, lon: 0 }
+    const to = { lat: -20 / METERS_PER_DEGREE, lon: 0 }
+    expect(crossesMajorRoad(from, to, [majorRoad])).toBe(true)
+  })
+
+  it('is false when both points are on the same side', () => {
+    const from = { lat: 20 / METERS_PER_DEGREE, lon: 0 }
+    const to = { lat: 40 / METERS_PER_DEGREE, lon: 0 }
+    expect(crossesMajorRoad(from, to, [majorRoad])).toBe(false)
+  })
+
+  it('ignores a road below the major-road priority threshold', () => {
+    const minorRoad: MapLine = { ...majorRoad, priority: 4 } // tertiary
+    const from = { lat: 20 / METERS_PER_DEGREE, lon: 0 }
+    const to = { lat: -20 / METERS_PER_DEGREE, lon: 0 }
+    expect(crossesMajorRoad(from, to, [minorRoad])).toBe(false)
+  })
+
+  it('ignores non-road lines', () => {
+    const river: MapLine = { ...majorRoad, kind: 'river' }
+    const from = { lat: 20 / METERS_PER_DEGREE, lon: 0 }
+    const to = { lat: -20 / METERS_PER_DEGREE, lon: 0 }
+    expect(crossesMajorRoad(from, to, [river])).toBe(false)
   })
 })

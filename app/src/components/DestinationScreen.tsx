@@ -33,7 +33,8 @@ function JourneyLine({
     return (
       <li>
         ลงป้าย {alightName} — {minutes(journey.totalSec)} นาที (เดินต่ออีก{' '}
-        {Math.round(journey.destinationWalkMeters)} ม.)
+        {Math.round(journey.destinationWalkMeters)} ม.
+        {journey.destinationCrossesMajorRoad ? ' — ข้ามถนนใหญ่' : ''})
         <button
           type="button"
           className="show-map"
@@ -61,7 +62,8 @@ function JourneyLine({
         🗺
       </button>{' '}
       แล้วลงป้าย {alightName} — {minutes(journey.totalSec)} นาที (เดินต่ออีก{' '}
-      {Math.round(journey.destinationWalkMeters)} ม.)
+      {Math.round(journey.destinationWalkMeters)} ม.
+      {journey.destinationCrossesMajorRoad ? ' — ข้ามถนนใหญ่' : ''})
       <button
         type="button"
         className="show-map"
@@ -95,6 +97,7 @@ function BoardNowGroupCard({
           ขึ้นที่ {data.stops[group.boardStopIdx].nameTh || data.stops[group.boardStopIdx].nameEn}
           {' — เดิน '}
           {Math.round(group.originWalkMeters)} ม.
+          {group.originCrossesMajorRoad ? ' — ข้ามถนนใหญ่' : ''}
         </span>
         {hasNoReturnData(data, group.direction) && <span className="no-return-warning">ไม่มีข้อมูลขากลับในฟีด</span>}
       </div>

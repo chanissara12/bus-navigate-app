@@ -203,6 +203,45 @@ export function findWalkingPath(from: LatLon, to: LatLon, lines: MapLine[]): Wal
   return { points: snapWalkToRoads(rawPoints, lines), viaFootbridge: !!best }
 }
 
+// motorway/trunk/primary — matches ROAD_PRIORITY in build-map-background.mjs.
+// Secondary/tertiary roads are excluded: real friction (crossing without a
+// signal, dodging fast multi-lane traffic) mainly comes from the big ones.
+const MAJOR_ROAD_MAX_PRIORITY = 2
+
+function crossProduct(o: LatLon, a: LatLon, b: LatLon): number {
+  return (a.lon - o.lon) * (b.lat - o.lat) - (a.lat - o.lat) * (b.lon - o.lon)
+}
+
+// Product-based (not sign-XOR) on purpose: a point that lands exactly on the
+// other segment gives a cross product of 0, and 0 * anything is never < 0 —
+// so merely touching an endpoint (e.g. a destination that sits right at a
+// road vertex, which happens with real OSM-derived coordinates) reads as
+// "not crossing", only a genuine straddle does.
+function segmentsIntersect(p1: LatLon, p2: LatLon, p3: LatLon, p4: LatLon): boolean {
+  const d1 = crossProduct(p3, p4, p1)
+  const d2 = crossProduct(p3, p4, p2)
+  const d3 = crossProduct(p1, p2, p3)
+  const d4 = crossProduct(p1, p2, p4)
+  return d1 * d2 < 0 && d3 * d4 < 0
+}
+
+// Whether walking straight from one point to the other crosses a major
+// road — a real, known-in-advance fact about two fixed points (an alight
+// stop or origin, and a destination or board stop), not a guess about
+// where a live rider is standing relative to a road (WF-003 stays
+// untouched by this: it's a different question).
+export function crossesMajorRoad(from: LatLon, to: LatLon, lines: MapLine[]): boolean {
+  for (const line of lines) {
+    if (line.kind !== 'road' || line.priority > MAJOR_ROAD_MAX_PRIORITY) continue
+    for (let i = 0; i < line.points.length - 1; i += 1) {
+      const a: LatLon = { lat: line.points[i][0], lon: line.points[i][1] }
+      const b: LatLon = { lat: line.points[i + 1][0], lon: line.points[i + 1][1] }
+      if (segmentsIntersect(from, to, a, b)) return true
+    }
+  }
+  return false
+}
+
 export function lineClassName(line: MapLine): string {
   if (line.kind === 'river') return 'map-river'
   if (line.kind === 'footbridge') return 'map-footbridge'
