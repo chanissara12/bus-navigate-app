@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { findJourneys, groupByBoardNowDirection, type Journey, type Leg } from '../lib/destinationLookup'
+import { findJourneys, groupByBoardNowDirection, type BoardNowGroup, type Journey, type Leg } from '../lib/destinationLookup'
 import { FAVORITE_DESTINATIONS } from '../lib/favoriteDestinations'
 import { formatRouteCode } from '../lib/formatRoute'
 import { hasNoReturnData } from '../lib/routeLookup'
@@ -74,6 +74,43 @@ function JourneyLine({
   )
 }
 
+function BoardNowGroupCard({
+  data,
+  group,
+  onShowMap,
+}: {
+  data: BusData
+  group: BoardNowGroup
+  onShowMap: (leg: Leg, isFinalLeg: boolean) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [bestOption, ...restOptions] = group.options
+
+  return (
+    <div className="board-now-group">
+      <div className="group-header">
+        <span className="route-code">{formatRouteCode(group.route)}</span>
+        <span>ไป {group.direction.headsignTh || group.direction.headsignEn}</span>
+        <span className="board-stop">
+          ขึ้นที่ {data.stops[group.boardStopIdx].nameTh || data.stops[group.boardStopIdx].nameEn}
+          {' — เดิน '}
+          {Math.round(group.originWalkMeters)} ม.
+        </span>
+        {hasNoReturnData(data, group.direction) && <span className="no-return-warning">ไม่มีข้อมูลขากลับในฟีด</span>}
+      </div>
+      <ul>
+        <JourneyLine data={data} journey={bestOption} onShowMap={onShowMap} />
+        {expanded && restOptions.map((option, i) => <JourneyLine key={i} data={data} journey={option} onShowMap={onShowMap} />)}
+      </ul>
+      {restOptions.length > 0 && (
+        <button type="button" className="expand-options" onClick={() => setExpanded((e) => !e)}>
+          {expanded ? 'ย่อ' : `ดูเพิ่มเติม (${restOptions.length})`}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function DestinationScreen({ data, location }: Props) {
   const { status, coords, error, request } = location
   const { background } = useMapBackground()
@@ -143,25 +180,7 @@ export function DestinationScreen({ data, location }: Props) {
 
         <div className="board-now-groups">
           {groups.map((group) => (
-            <div key={group.key} className="board-now-group">
-              <div className="group-header">
-                <span className="route-code">{formatRouteCode(group.route)}</span>
-                <span>ไป {group.direction.headsignTh || group.direction.headsignEn}</span>
-                <span className="board-stop">
-                  ขึ้นที่ {data.stops[group.boardStopIdx].nameTh || data.stops[group.boardStopIdx].nameEn}
-                  {' — เดิน '}
-                  {Math.round(group.originWalkMeters)} ม.
-                </span>
-                {hasNoReturnData(data, group.direction) && (
-                  <span className="no-return-warning">ไม่มีข้อมูลขากลับในฟีด</span>
-                )}
-              </div>
-              <ul>
-                {group.options.map((option, i) => (
-                  <JourneyLine key={i} data={data} journey={option} onShowMap={showLegMap} />
-                ))}
-              </ul>
-            </div>
+            <BoardNowGroupCard key={group.key} data={data} group={group} onShowMap={showLegMap} />
           ))}
         </div>
       </div>

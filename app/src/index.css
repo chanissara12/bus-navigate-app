@@ -249,6 +249,18 @@ select {
   padding: 12px;
 }
 
+.expand-options {
+  display: block;
+  margin-top: 8px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
 .group-header {
   display: flex;
   flex-wrap: wrap;
