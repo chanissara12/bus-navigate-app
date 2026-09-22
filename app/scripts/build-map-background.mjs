@@ -6,7 +6,12 @@
 //
 // A generic User-Agent like "Mozilla/5.0" gets a bare 406 from
 // overpass-api.de's WAF on /api/interpreter specifically (its /api/status
-// still answers) — send a full browser UA string.
+// still answers) — send a full browser UA string. If that endpoint stays
+// blocked, overpass.kumi.systems is a working mirror, but check its
+// osm3s.timestamp_osm_base in the response: it can lag the main instance by
+// months (the places.json shipped as of 2026-09-22 was fetched from kumi
+// with a 2026-07-15 base — acceptable for a monthly-refresh convenience
+// layer, but prefer overpass-api.de when it's available).
 //
 // roads.json — motorway/trunk/primary and their _link variants:
 // [out:json][timeout:180];
@@ -64,7 +69,17 @@ const OUT_FILE = join(__dirname, '..', 'public', 'data', 'map-background.json')
 const ROAD_TOLERANCE_M = 30
 const RIVER_TOLERANCE_M = 40
 const MIN_LINE_LENGTH_M = 250
-const PLACE_DEDUPE_RADIUS_M = 550
+// Was 550m back when places.json only covered 5-6 sparse categories
+// (stations, malls, hospitals, universities, markets). Once
+// worship/school/park/government/landmark-bus-stop were added, real, distinct
+// places in dense areas started colliding: a 550m radius silently dropped
+// "เทอร์มินอล 21 พระราม 3" and "ทรี ออน ธรี" because seven separate named
+// places (mall, hotel, pier, temple, bus stops) sit within 550m of each
+// other there, and dedup keeps only whichever was encountered first.
+// Measured against the current extract: 550m -> 1,717 places (both those
+// landmarks missing); 150m -> 3,883 places (both present, +87KB gzip) with
+// no meaningfully closer look-alike duplicates reappearing.
+const PLACE_DEDUPE_RADIUS_M = 150
 
 const ROAD_PRIORITY = { river: 0, motorway: 1, trunk: 1, primary: 2, secondary: 3, tertiary: 4 }
 
