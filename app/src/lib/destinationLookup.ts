@@ -21,6 +21,7 @@ export interface Leg {
 export interface DirectJourney {
   type: 'direct'
   leg: Leg
+  originWalkMeters: number
   totalSec: number
 }
 
@@ -29,6 +30,7 @@ export interface TransferJourney {
   firstLeg: Leg
   secondLeg: Leg
   transferWalkSec: number
+  originWalkMeters: number
   totalSec: number
 }
 
@@ -39,6 +41,7 @@ export interface BoardNowGroup {
   route: Route
   direction: Direction
   boardStopIdx: number
+  originWalkMeters: number
   options: Journey[]
 }
 
@@ -73,15 +76,27 @@ function buildLeg(data: BusData, direction: Direction, boardPosition: number, al
   }
 }
 
-function findDirectJourneys(data: BusData, originIdxs: Set<number>, destIdxs: Set<number>): DirectJourney[] {
+function findDirectJourneys(
+  data: BusData,
+  originIdxs: Set<number>,
+  originWalkMetersByStopIdx: Map<number, number>,
+  destIdxs: Set<number>,
+): DirectJourney[] {
   const journeys: DirectJourney[] = []
   for (const direction of data.directions) {
     for (let boardPosition = 0; boardPosition < direction.stopIdxs.length; boardPosition += 1) {
-      if (!originIdxs.has(direction.stopIdxs[boardPosition])) continue
+      const boardStopIdx = direction.stopIdxs[boardPosition]
+      if (!originIdxs.has(boardStopIdx)) continue
+      const originWalkMeters = originWalkMetersByStopIdx.get(boardStopIdx) ?? 0
       for (let alightPosition = boardPosition + 1; alightPosition < direction.stopIdxs.length; alightPosition += 1) {
         if (!destIdxs.has(direction.stopIdxs[alightPosition])) continue
         const leg = buildLeg(data, direction, boardPosition, alightPosition)
-        journeys.push({ type: 'direct', leg, totalSec: leg.waitSec + leg.rideSec })
+        journeys.push({
+          type: 'direct',
+          leg,
+          originWalkMeters,
+          totalSec: walkSeconds(originWalkMeters) + leg.waitSec + leg.rideSec,
+        })
         break
       }
     }
@@ -93,6 +108,7 @@ function findTransferJourneys(
   data: BusData,
   index: SpatialIndex,
   originIdxs: Set<number>,
+  originWalkMetersByStopIdx: Map<number, number>,
   destIdxs: Set<number>,
 ): TransferJourney[] {
   const journeys: TransferJourney[] = []
@@ -100,7 +116,9 @@ function findTransferJourneys(
 
   for (const firstDirection of data.directions) {
     for (let boardPosition = 0; boardPosition < firstDirection.stopIdxs.length; boardPosition += 1) {
-      if (!originIdxs.has(firstDirection.stopIdxs[boardPosition])) continue
+      const boardStopIdx = firstDirection.stopIdxs[boardPosition]
+      if (!originIdxs.has(boardStopIdx)) continue
+      const originWalkMeters = originWalkMetersByStopIdx.get(boardStopIdx) ?? 0
 
       for (let transferAPos = boardPosition + 1; transferAPos < firstDirection.stopIdxs.length; transferAPos += 1) {
         const transferStopAIdx = firstDirection.stopIdxs[transferAPos]
@@ -130,7 +148,14 @@ function findTransferJourneys(
                 firstLeg,
                 secondLeg,
                 transferWalkSec,
-                totalSec: firstLeg.waitSec + firstLeg.rideSec + transferWalkSec + secondLeg.waitSec + secondLeg.rideSec,
+                originWalkMeters,
+                totalSec:
+                  walkSeconds(originWalkMeters) +
+                  firstLeg.waitSec +
+                  firstLeg.rideSec +
+                  transferWalkSec +
+                  secondLeg.waitSec +
+                  secondLeg.rideSec,
               })
               break
             }
@@ -145,12 +170,16 @@ function findTransferJourneys(
 
 export function findJourneys(data: BusData, origin: LatLon, destination: LatLon): Journey[] {
   const index = getIndex(data)
-  const originIdxs = new Set(index.stopsNear(origin, ORIGIN_WALK_RADIUS_M))
+  const originStopIdxs = index.stopsNear(origin, ORIGIN_WALK_RADIUS_M)
+  const originIdxs = new Set(originStopIdxs)
+  const originWalkMetersByStopIdx = new Map(
+    originStopIdxs.map((idx) => [idx, haversineMeters(origin, data.stops[idx])]),
+  )
   const destIdxs = new Set(index.stopsNear(destination, DESTINATION_WALK_RADIUS_M))
 
   const journeys: Journey[] = [
-    ...findDirectJourneys(data, originIdxs, destIdxs),
-    ...findTransferJourneys(data, index, originIdxs, destIdxs),
+    ...findDirectJourneys(data, originIdxs, originWalkMetersByStopIdx, destIdxs),
+    ...findTransferJourneys(data, index, originIdxs, originWalkMetersByStopIdx, destIdxs),
   ]
 
   return journeys.sort((a, b) => a.totalSec - b.totalSec)
@@ -193,6 +222,7 @@ export function groupByBoardNowDirection(journeys: Journey[]): BoardNowGroup[] {
         route: leg.route,
         direction: leg.direction,
         boardStopIdx: leg.boardStopIdx,
+        originWalkMeters: journey.originWalkMeters,
         options: [journey],
       })
     }

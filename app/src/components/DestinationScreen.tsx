@@ -126,6 +126,8 @@ export function DestinationScreen({ data, location }: Props) {
                 <span>ไป {group.direction.headsignTh || group.direction.headsignEn}</span>
                 <span className="board-stop">
                   ขึ้นที่ {data.stops[group.boardStopIdx].nameTh || data.stops[group.boardStopIdx].nameEn}
+                  {' — เดิน '}
+                  {Math.round(group.originWalkMeters)} ม.
                 </span>
                 {hasNoReturnData(data, group.direction) && (
                   <span className="no-return-warning">ไม่มีข้อมูลขากลับในฟีด</span>

@@ -87,6 +87,74 @@ describe('findJourneys', () => {
   })
 })
 
+function makeOriginWalkData(): BusData {
+  return {
+    generatedAt: '',
+    feedVersion: null,
+    stops: [
+      stopAt('close', 0), // 0 — right where the rider is standing
+      stopAt('far', 350), // 1 — still within the 400m origin radius, but a real walk
+      stopAt('dest', 1000), // 2
+    ],
+    routes: [
+      { id: 'route-a', agency: 'BMTA', newCode: '1-1', oldCode: null, longNameTh: '', longNameEn: '' },
+      { id: 'route-b', agency: 'BMTA', newCode: '2-2', oldCode: null, longNameTh: '', longNameEn: '' },
+    ],
+    directions: [
+      {
+        // boards right next to the rider, but a slightly slower ride (10 min)
+        routeIdx: 0,
+        directionId: 0,
+        headsignTh: 'from close',
+        headsignEn: 'from close',
+        stopIdxs: [0, 2],
+        offsetsSec: [0, 600],
+        headwaySec: 600,
+        shapeCoords: [],
+      },
+      {
+        // a 350m walk away, but 1 minute less ride time
+        routeIdx: 1,
+        directionId: 0,
+        headsignTh: 'from far',
+        headsignEn: 'from far',
+        stopIdxs: [1, 2],
+        offsetsSec: [0, 540],
+        headwaySec: 600,
+        shapeCoords: [],
+      },
+    ],
+  }
+}
+
+describe('findJourneys — origin walk time', () => {
+  it('prefers boarding at the nearer stop once the walk there is counted, even with a marginally slower ride', () => {
+    const data = makeOriginWalkData()
+    const journeys = findJourneys(data, { lat: 0, lon: 0 }, { lat: 0, lon: 1000 / METERS_PER_DEGREE })
+    // 'far' has a 60s shorter ride but a ~290s longer walk — 'close' should win overall
+    expect(journeys[0].type).toBe('direct')
+    if (journeys[0].type === 'direct') expect(journeys[0].leg.boardStopIdx).toBe(0)
+  })
+
+  it('reports the walking distance to each board stop', () => {
+    const data = makeOriginWalkData()
+    const journeys = findJourneys(data, { lat: 0, lon: 0 }, { lat: 0, lon: 1000 / METERS_PER_DEGREE })
+    const byBoardStop = new Map(
+      journeys.map((j) => [(j.type === 'direct' ? j.leg : j.firstLeg).boardStopIdx, j.originWalkMeters]),
+    )
+    expect(byBoardStop.get(0)).toBeCloseTo(0, 0)
+    expect(byBoardStop.get(1)).toBeCloseTo(350, 0)
+  })
+
+  it('exposes the same originWalkMeters on the board-now group', () => {
+    const data = makeOriginWalkData()
+    const journeys = findJourneys(data, { lat: 0, lon: 0 }, { lat: 0, lon: 1000 / METERS_PER_DEGREE })
+    const groups = groupByBoardNowDirection(journeys)
+    const nearGroup = groups.find((g) => g.boardStopIdx === 0)
+    expect(nearGroup?.originWalkMeters).toBeCloseTo(0, 0)
+  })
+})
+
 describe('groupByBoardNowDirection', () => {
   it('groups journeys by the bus you would board right now', () => {
     const data = makeData()
