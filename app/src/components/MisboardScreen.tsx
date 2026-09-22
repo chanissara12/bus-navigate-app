@@ -58,6 +58,7 @@ export function MisboardScreen({ data, location }: Props) {
               <button
                 type="button"
                 className="route-card"
+                aria-label={`สาย ${formatRouteCode(data.routes[direction.routeIdx])} ไป ${direction.headsignTh || direction.headsignEn}`}
                 onClick={() => setSelected({ route: data.routes[direction.routeIdx], direction })}
               >
                 <span className="route-code">{formatRouteCode(data.routes[direction.routeIdx])}</span>

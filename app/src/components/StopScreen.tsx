@@ -81,7 +81,12 @@ export function StopScreen({ data, location, onOpenRoute }: Props) {
           <ul className="route-list">
             {(candidates ?? boardable).map((b) => (
               <li key={`${b.direction.routeIdx}-${b.direction.directionId}`}>
-                <button type="button" className="route-card" onClick={() => onOpenRoute(b)}>
+                <button
+                  type="button"
+                  className="route-card"
+                  aria-label={`สาย ${formatRouteCode(b.route)} ไป ${b.direction.headsignTh || b.direction.headsignEn}`}
+                  onClick={() => onOpenRoute(b)}
+                >
                   <span className="route-code">{formatRouteCode(b.route)}</span>
                   <span className="route-headsign">ไป {b.direction.headsignTh || b.direction.headsignEn}</span>
                   {hasNoReturnData(data, b.direction) && (
