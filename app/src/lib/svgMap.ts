@@ -126,6 +126,51 @@ export interface WalkPath {
 
 const FOOTBRIDGE_SEARCH_RADIUS_M = 500
 const FOOTBRIDGE_DETOUR_FACTOR = 1.6
+const ROAD_SNAP_MAX_DISTANCE_M = 40
+
+// A straight line between two points a block apart cuts across buildings —
+// it reads as a displacement vector, not a walk. Where a road runs close to
+// both ends of a leg, follow that road's own vertices between them instead,
+// with only a short perpendicular hop at each end connecting the real point
+// to the road. Falls back to a straight line where no road is close enough
+// to both ends (e.g. crossing a footbridge itself).
+function snapToNearestRoad(from: LatLon, to: LatLon, lines: MapLine[]): LatLon[] {
+  let best: { path: LatLon[]; score: number } | null = null
+
+  for (const line of lines) {
+    if (line.kind !== 'road' || line.points.length < 2) continue
+    const fromProj = nearestSegmentProjection(line.points, from)
+    const toProj = nearestSegmentProjection(line.points, to)
+    if (!fromProj || !toProj) continue
+    if (fromProj.distanceM > ROAD_SNAP_MAX_DISTANCE_M || toProj.distanceM > ROAD_SNAP_MAX_DISTANCE_M) continue
+
+    const score = fromProj.distanceM + toProj.distanceM
+    if (best && score >= best.score) continue
+
+    const forward = fromProj.segmentIndex <= toProj.segmentIndex
+    const [loProj, hiProj] = forward ? [fromProj, toProj] : [toProj, fromProj]
+    const middle = line.points
+      .slice(loProj.segmentIndex + 1, hiProj.segmentIndex + 1)
+      .map(([lat, lon]): LatLon => ({ lat, lon }))
+    const onRoad = [
+      { lat: loProj.point[0], lon: loProj.point[1] },
+      ...middle,
+      { lat: hiProj.point[0], lon: hiProj.point[1] },
+    ]
+    best = { path: forward ? onRoad : onRoad.reverse(), score }
+  }
+
+  return best ? [from, ...best.path, to] : [from, to]
+}
+
+function snapWalkToRoads(points: LatLon[], lines: MapLine[]): LatLon[] {
+  const snapped: LatLon[] = [points[0]]
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const segment = snapToNearestRoad(points[i], points[i + 1], lines)
+    snapped.push(...segment.slice(1))
+  }
+  return snapped
+}
 
 // A pragmatic heuristic, not real pedestrian routing: if a nearby footbridge's
 // endpoints let you reach the destination without much more walking than a
@@ -154,7 +199,8 @@ export function findWalkingPath(from: LatLon, to: LatLon, lines: MapLine[]): Wal
     }
   }
 
-  return best ? { points: best.points, viaFootbridge: true } : { points: [from, to], viaFootbridge: false }
+  const rawPoints = best ? best.points : [from, to]
+  return { points: snapWalkToRoads(rawPoints, lines), viaFootbridge: !!best }
 }
 
 export function lineClassName(line: MapLine): string {

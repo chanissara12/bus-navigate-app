@@ -329,7 +329,7 @@ describe('findWalkingPath', () => {
     expect(path.viaFootbridge).toBe(false)
   })
 
-  it('ignores lines that are not footbridges', () => {
+  it('does not treat a road as a footbridge crossing', () => {
     const road: MapLine = {
       kind: 'road',
       points: [
@@ -341,6 +341,43 @@ describe('findWalkingPath', () => {
     }
     const path = findWalkingPath(from, to, [road])
     expect(path.viaFootbridge).toBe(false)
+  })
+
+  it('follows a nearby road instead of cutting straight across when one runs close to both ends', () => {
+    // A bent road: from is 20m off its start, to is 20m off its end, with a
+    // kink in between well off the direct line — following the road should
+    // visibly bow out through that kink rather than draw a straight vector.
+    const road: MapLine = {
+      kind: 'road',
+      points: [
+        [20 / METERS_PER_DEGREE, 0],
+        [40 / METERS_PER_DEGREE, 105 / METERS_PER_DEGREE], // kink, well off the direct from->to line
+        [20 / METERS_PER_DEGREE, 210 / METERS_PER_DEGREE],
+      ],
+      name: null,
+      priority: 1,
+    }
+    const path = findWalkingPath(from, to, [road])
+    expect(path.viaFootbridge).toBe(false)
+    expect(path.points[0]).toEqual(from)
+    expect(path.points[path.points.length - 1]).toEqual(to)
+    // more than the 2 points a straight line would have — it followed the road's kink
+    expect(path.points.length).toBeGreaterThan(2)
+    expect(path.points.some((p) => p.lat > 30 / METERS_PER_DEGREE)).toBe(true)
+  })
+
+  it('falls back to a straight line when no road runs close enough to both ends', () => {
+    const farRoad: MapLine = {
+      kind: 'road',
+      points: [
+        [1, 1],
+        [1.001, 1.001],
+      ],
+      name: null,
+      priority: 1,
+    }
+    const path = findWalkingPath(from, to, [farRoad])
+    expect(path.points).toEqual([from, to])
   })
 })
 
