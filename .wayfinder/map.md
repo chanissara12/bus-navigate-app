@@ -1,9 +1,18 @@
 # [wayfinder:map] Phase 1 Spec — Public Transit Decision & Recovery Assistant
 
-**STATUS: COMPLETE** — all 10 tickets closed. The destination (data model, API
+**STATUS: COMPLETE** — all 11 tickets closed. The destination (data model, API
 contracts, module boundaries) is locked and ready to hand to implementation. The two
 "Not yet specified" items below are deliberately out of this destination's scope
 (deferred to a future effort), not unfinished parts of this one.
+
+**Amendment (post-implementation):** [T11](tickets/T11-initial-trip-planning-search.md)
+was added after T09/T05 turned out to reference an "initial TravelOption generation"
+algorithm that no ticket had actually designed — T05's resolution assumed it was
+"already covered" elsewhere, and T09 assembled its endpoint list from
+PROPOSAL.md/CONTEXT.md directly without verifying that assumption. Caught during
+implementation of T09's controllers, not before. The map was briefly inaccurate
+("COMPLETE" while a load-bearing piece was missing) between T09 closing and T11
+closing; no other ticket's decisions changed as a result.
 
 ## Destination
 
@@ -48,6 +57,19 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
+- [Initial trip planning search (TravelOption generation) & destination/stop search](tickets/T11-initial-trip-planning-search.md):
+  Closes the gap T09/T05 assumed was already covered elsewhere. Destination/stop search
+  is a case-insensitive substring match across `BusStop`/`Place` names, capped at 20,
+  no fuzzy matching. `POST /travel-options` is **direct-connections only** — no
+  transfer search, since `TravelSession`/`TravelOptionEvaluation` have no multi-leg
+  modeling; a Direction must have a boarding `RouteStop` within the walk budget of
+  `currentLocation` *and* a later-sequenced alighting `RouteStop` within the walk
+  budget of the destination (the sequence-order check is new — T05/T06 never needed
+  it, since they always check a single already-directionally-consistent pair).
+  `EstimatedDuration`/`WaitingTime` deferred (need live Trip-schedule matching, a
+  separate feature). The walk-budget reachability check is extracted out of
+  `TravelOptionEvaluationService` into a shared helper so this ticket's search and
+  T05's comparison don't duplicate the same haversine-plus-budget logic a third time.
 - [Finalize module & folder boundaries](tickets/T10-module-boundaries.md): Extracted a
   shared `TravelOptionEvaluation` service (not owned by either) so `recovery` doesn't
   reach into `trip-planning`'s internals. Confirmed the four-module split holds — no

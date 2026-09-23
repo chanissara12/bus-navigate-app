@@ -33,8 +33,11 @@ reasons, not a single score. Define, against the entities settled in
 **Scope:** This algorithm checks **one specific candidate** Route/Direction (the
 approaching bus the user points at or the app detects arriving at the same stop)
 against the user's currently planned `TravelOption` — a 1-to-1 comparison, not a fresh
-alternatives search. Full alternative-route search is trip-planning's job (already
-covered by initial `TravelOption` generation), not this ticket.
+alternatives search. Full alternative-route search is trip-planning's job — initial
+`TravelOption` generation, per
+[Initial trip planning search](T11-initial-trip-planning-search.md) (T11, added after
+this ticket, since no ticket had actually designed that algorithm until then) — not
+this ticket.
 
 **Accept/reject rule** (hard gates, not just ranking — matches PROPOSAL.md section 19's
 explicit "don't take this bus" examples):

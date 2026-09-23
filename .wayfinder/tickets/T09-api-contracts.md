@@ -58,7 +58,12 @@ Also resolve, now that the pieces exist to decide it:
 
 **Trip planning** (`trip-planning`)
 - `POST /travel-options` — body `{ currentLocation, destinationPlaceId }` →
-  `TravelOption[]` (full search, per initial trip planning)
+  `TravelOption[]` (full search, per initial trip planning — this shape held up, but the
+  algorithm behind it wasn't actually designed until
+  [T11](T11-initial-trip-planning-search.md), added after this ticket closed; see the
+  map's amendment note)
+- `GET /places/search` (listed above under Places / stop search) and its matching
+  algorithm: same T11 gap/fix applies.
 - `POST /travel-options/compare` — body `{ currentTravelSessionId, candidateRouteId,
   candidateDirectionId }` → `{ accepted: bool, option?: TravelOption, reasons:
   ReasonCode[] }` (the T05 "can I take this bus?" check — 1-to-1, not a fresh search)
