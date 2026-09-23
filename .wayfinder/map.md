@@ -1,5 +1,10 @@
 # [wayfinder:map] Phase 1 Spec — Public Transit Decision & Recovery Assistant
 
+**STATUS: COMPLETE** — all 10 tickets closed. The destination (data model, API
+contracts, module boundaries) is locked and ready to hand to implementation. The two
+"Not yet specified" items below are deliberately out of this destination's scope
+(deferred to a future effort), not unfinished parts of this one.
+
 ## Destination
 
 A locked spec — data model, API contracts, and frontend/backend module boundaries —
@@ -43,6 +48,12 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
+- [Finalize module & folder boundaries](tickets/T10-module-boundaries.md): Extracted a
+  shared `TravelOptionEvaluation` service (not owned by either) so `recovery` doesn't
+  reach into `trip-planning`'s internals. Confirmed the four-module split holds — no
+  5th module for bus stop context. Core entities live at `BusNavigate.Domain`'s top
+  level, not nested in any one feature folder, since they're shared across all of
+  them. **This closes the map.**
 - [Full Phase 1 API contract](tickets/T09-api-contracts.md): Anonymous identity via
   client-generated `X-Device-Id` header (lazy `User` upsert, no session round-trip).
   Error shape `{message, code?, details?}` matching CLAUDE.md's frontend `catchError`
