@@ -15,6 +15,9 @@ builder.Services.AddDbContext<BusNavigateDbContext>(options =>
 builder.Services.AddGtfsImport();
 builder.Services.AddHostedService<GtfsImportBackgroundService>();
 
+builder.Services.AddTravelSession();
+builder.Services.AddHostedService<TravelSessionStallSweepBackgroundService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

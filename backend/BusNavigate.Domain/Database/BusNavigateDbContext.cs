@@ -21,6 +21,10 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
 
     public DbSet<ServiceException> ServiceExceptions => Set<ServiceException>();
 
+    public DbSet<User> Users => Set<User>();
+
+    public DbSet<TravelSession> TravelSessions => Set<TravelSession>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -96,6 +100,31 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
             entity.HasOne(e => e.RouteStop)
                 .WithMany(rs => rs.TripStopTimes)
                 .HasForeignKey(e => e.RouteStopId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasIndex(e => e.ExternalDeviceId).IsUnique();
+        });
+
+        modelBuilder.Entity<TravelSession>(entity =>
+        {
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.TravelSessions)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Direction)
+                .WithMany()
+                .HasForeignKey(e => e.DirectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.BoardingStop)
+                .WithMany()
+                .HasForeignKey(e => e.BoardingStopId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.AlightingStop)
+                .WithMany()
+                .HasForeignKey(e => e.AlightingStopId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
