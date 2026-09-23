@@ -73,6 +73,11 @@ A dated override to ServiceCalendar for a specific Trip or Direction (e.g. no se
 **TransitAlert**:
 A human-facing status flag for a BusRoute/Direction — one of Normal, Delayed, Temporarily Suspended, Not Operating Today, Route Changed, Cancelled, Unknown (see Section 11 of PROPOSAL.md). Phase 1 covers only scheduled/announced status, not live in-trip deviation detection (that's Dynamic Route Change, Phase 2).
 
+### People
+
+**User**:
+The person using the app. Phase 1 needs User identity only to own a TravelSession (anonymous/device-scoped — no login); no preference/report modeling yet.
+
 ## Out of scope for Phase 1 (fog, not modeled yet)
 
 - **Vehicle / RealtimeVehicle** — live vehicle position; Phase 1 "Can I take this bus?" reasons from Trip schedule data only, no live tracking.
