@@ -9,7 +9,7 @@ import { PrototypeVariant } from '../../../../shared/components/prototype-switch
 // direction is picked — only the winner should reach main.
 const PROTOTYPE_VARIANTS: PrototypeVariant[] = [
     { key: 'A', label: 'List-first' },
-    { key: 'B', label: 'Split map + list' },
+    { key: 'B', label: 'Split list + journey detail' },
     { key: 'C', label: 'Comparison carousel' }
 ];
 

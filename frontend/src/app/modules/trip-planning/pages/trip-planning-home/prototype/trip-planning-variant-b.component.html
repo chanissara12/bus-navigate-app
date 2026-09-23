@@ -23,22 +23,35 @@
         </button>
     </div>
 
-    <div class="flex flex-col">
-        <div class="flex-1 m-4 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-100 flex items-center justify-center text-slate-400 text-sm">
-            🗺️ แผนที่ (mock)
+    <div *ngIf="selectedOption as sel" class="p-6 overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <div class="text-xs text-slate-500">เส้นทางที่เลือก</div>
+                <div class="text-lg font-semibold text-slate-900">{{ sel.routeName }} · {{ sel.directionName }}</div>
+            </div>
+            <span class="rounded-full px-3 py-1 text-xs font-medium" [ngClass]="statusClasses(sel.serviceStatus)">
+                {{ statusLabel(sel.serviceStatus) }}
+            </span>
         </div>
 
-        <div *ngIf="selectedOption as sel" class="mx-4 mb-4 rounded-2xl bg-white border border-slate-200 shadow-sm p-4">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-semibold text-slate-900">{{ sel.routeName }} · {{ sel.directionName }}</span>
-                <span class="rounded-full px-2 py-0.5 text-xs font-medium" [ngClass]="statusClasses(sel.serviceStatus)">
-                    {{ statusLabel(sel.serviceStatus) }}
+        <ol class="relative border-l-2 border-slate-200 ml-3">
+            <li class="mb-6 ml-6">
+                <span class="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-slate-600 text-xs">🚶</span>
+                <div class="text-sm font-medium text-slate-900">เดินไปป้ายรถ</div>
+                <div class="text-xs text-slate-500">{{ sel.walkingDistanceMeters }} เมตร</div>
+            </li>
+            <li class="mb-6 ml-6">
+                <span class="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-sky-600 text-white text-xs font-bold">
+                    {{ sel.routeNumber }}
                 </span>
-            </div>
-            <div class="text-sm text-slate-600 space-y-1">
-                <div>🚏 ขึ้นที่ {{ sel.boardingStopName }}</div>
-                <div>🏁 ลงที่ {{ sel.alightingStopName }}</div>
-            </div>
-        </div>
+                <div class="text-sm font-medium text-slate-900">ขึ้นรถที่ {{ sel.boardingStopName }}</div>
+                <div class="text-xs text-slate-500">{{ sel.directionName }}</div>
+            </li>
+            <li class="ml-6">
+                <span class="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-slate-600 text-xs">🏁</span>
+                <div class="text-sm font-medium text-slate-900">ลงรถที่ {{ sel.alightingStopName }}</div>
+                <div class="text-xs text-slate-500">ถึง {{ destination }}</div>
+            </li>
+        </ol>
     </div>
 </div>

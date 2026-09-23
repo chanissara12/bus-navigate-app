@@ -1,5 +1,6 @@
-// PROTOTYPE — Variant B: "Split map + list". Compact rows on the left, a map
-// placeholder on the right; selecting a row updates the summary panel below the map.
+// PROTOTYPE — Variant B: "Split list + journey detail". Compact rows on the left;
+// selecting a row expands a step-by-step journey timeline on the right. No map —
+// route-map visualization is explicitly deferred out of Phase 1 scope (map.md).
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 
