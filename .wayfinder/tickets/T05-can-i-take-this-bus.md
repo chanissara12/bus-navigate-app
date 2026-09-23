@@ -2,8 +2,8 @@
 
 **Parent map:** [Phase 1 Spec — Public Transit Decision & Recovery Assistant](../map.md)
 
-**Status:** open (unclaimed)
-**Blocked by:** [Core Phase 1 data model schema](T03-core-data-model.md)
+**Status:** open (unclaimed) — unblocked
+**Blocked by:** none (~~[Core Phase 1 data model schema](T03-core-data-model.md)~~ closed)
 **Blocks:** [Wrong-bus recovery algorithm](T06-wrong-bus-recovery.md), [Full Phase 1 API contract](T09-api-contracts.md)
 
 ## Question

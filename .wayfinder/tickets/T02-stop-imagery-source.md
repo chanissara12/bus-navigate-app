@@ -2,7 +2,7 @@
 
 **Parent map:** [Phase 1 Spec — Public Transit Decision & Recovery Assistant](../map.md)
 
-**Status:** claimed (research agent, branch `research/stop-imagery-source`)
+**Status:** closed (resolved by research agent)
 **Blocked by:** none
 **Blocks:** [Bus Stop Context data model](T08-bus-stop-context.md)
 
@@ -37,4 +37,24 @@ provider?
 
 ## Resolution
 
-(pending)
+**Recommendation:** No imagery source clears the bar for Phase 1. Bus Stop Context should
+degrade to **structured text-only data** for Phase 1 — road side, crossing/pedestrian-bridge
+description, and named nearby landmarks/BTS-MRT proximity — with `StopImage` (photos)
+deferred to a later phase. Use **OpenStreetMap POI/landmark tags** (ODbL, with the
+"Produced Work" exception covering display in the app without forcing the app itself
+open-source) as the source for the landmark/crossing text, each carrying `source`,
+`updated date`, and `verification status` per CONTEXT.md's `StopLandmark` model.
+
+**Rationale:** Every street-level-imagery candidate fails at least one hard requirement
+for a commercial consumer product: Google Street View Static API's ToS forbids caching
+or storing imagery beyond a panorama/place ID (incompatible with a durable "verified
+stop photo" record); Mapillary's commercial use is gated by a Meta-controlled
+commercial-terms carve-out plus re-identification/privacy safeguard obligations that are
+disproportionate for an MVP; KartaView has a clean CC-BY-SA license but essentially no
+Bangkok bus-stop coverage; and no official Thai government or BMTA-published stop
+photography/landmark dataset exists on data.go.th or the MOT data catalog. OSM's POI
+data, by contrast, is free, has decent central-Bangkok coverage, and (via ODbL's
+Produced Work exception) can be displayed with attribution alone, without any
+share-alike obligation on the app's own code or proprietary BusStop data.
+
+**Full research:** [.wayfinder/research/stop-imagery-source.md](../research/stop-imagery-source.md)

@@ -2,8 +2,8 @@
 
 **Parent map:** [Phase 1 Spec — Public Transit Decision & Recovery Assistant](../map.md)
 
-**Status:** open (unclaimed)
-**Blocked by:** [Choose bus-stop imagery source](T02-stop-imagery-source.md), [Core Phase 1 data model schema](T03-core-data-model.md)
+**Status:** open (unclaimed) — unblocked
+**Blocked by:** none (~~[Core Phase 1 data model schema](T03-core-data-model.md)~~ and ~~[Choose bus-stop imagery source](T02-stop-imagery-source.md)~~ both closed — see resolutions: no imagery source, text-only via OSM)
 **Blocks:** [Full Phase 1 API contract](T09-api-contracts.md)
 
 ## Question

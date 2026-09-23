@@ -2,8 +2,8 @@
 
 **Parent map:** [Phase 1 Spec — Public Transit Decision & Recovery Assistant](../map.md)
 
-**Status:** open (unclaimed)
-**Blocked by:** [Core Phase 1 data model schema](T03-core-data-model.md)
+**Status:** open (unclaimed) — unblocked
+**Blocked by:** none (~~[Core Phase 1 data model schema](T03-core-data-model.md)~~ closed — note: T03's resolution flags that Namtang's static GTFS export has no alert/status feed, so this ticket must identify a separate source or default to always-`Unknown`)
 **Blocks:** [Full Phase 1 API contract](T09-api-contracts.md)
 
 ## Question

@@ -43,8 +43,27 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
-(none yet — charting only; see Notes above for standing decisions made while naming
-the destination)
+- [Core Phase 1 data model schema](tickets/T03-core-data-model.md): EF Core entities
+  for BusRoute/Direction/RouteStop/BusStop/Trip/TripStopTime/ServiceCalendar/
+  ServiceException, mapped from Namtang GTFS. Direction stays coarse (one per
+  route+direction_id, not per stop-pattern variant); Trips reference a subset of
+  RouteStops via TripStopTime. RoadSide ships as `Unknown` in Phase 1 (no curation
+  tooling) — boarding-direction correctness never depends on it, only on Direction
+  membership. Import is a scheduled weekly upsert job keyed by GTFS natural IDs.
+  TripStopTime uses `TimeSpan` (not `TimeOnly`) for times, since GTFS times can exceed
+  24:00:00. TransitAlert/DataConfidence deferred to T07 (not stored here).
+- [Choose transit data source](tickets/T01-transit-data-source.md): Ingest the
+  **Namtang GTFS feed** (Thailand's Office of Transport and Traffic Policy and
+  Planning, OTP/สนข.) under **CC BY 4.0** — commercial use permitted with attribution
+  only, no share-alike/partnership required. Covers Bangkok bus routes, both
+  directions, ordered stops, and schedules, matching the domain model directly.
+  Attribution must be surfaced by the API contract ticket.
+- [Choose bus-stop imagery & landmark source](tickets/T02-stop-imagery-source.md): No
+  imagery source (Google Street View Static API, Mapillary, KartaView, official Thai
+  gov/BMTA data) clears the licensing/coverage bar for Phase 1 — `StopImage` (photos)
+  deferred. Bus Stop Context degrades to structured text-only data sourced from
+  OpenStreetMap POI/landmark tags (ODbL, Produced Work exception — attribution only,
+  no share-alike burden).
 
 ## Not yet specified
 
