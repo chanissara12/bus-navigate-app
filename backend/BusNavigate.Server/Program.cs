@@ -18,6 +18,8 @@ builder.Services.AddHostedService<GtfsImportBackgroundService>();
 builder.Services.AddTravelSession();
 builder.Services.AddHostedService<TravelSessionStallSweepBackgroundService>();
 
+builder.Services.AddTravelOptionEvaluation();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
