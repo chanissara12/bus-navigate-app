@@ -1,13 +1,11 @@
 # [wayfinder:map] Phase 1 Spec — Public Transit Decision & Recovery Assistant
 
 **STATUS: DATA/API/BOUNDARIES COMPLETE, UI LAYOUT IN PROGRESS** — the original 12
-tickets (data model, API contracts, module boundaries) are closed and locked. Three
-follow-on UI-layout tickets are open (see "Open (UI layout, in progress)" below),
-opened as a batch alongside T12 rather than discovered one at a time — same kind of
-narrow exception to "no UI/wireframe design in scope" that T12 was, just not resolved
-yet. The two "Not yet specified" items below are a separate thing: deliberately out
-of this destination's scope entirely (deferred to a future effort), not unfinished
-parts of this one.
+tickets (data model, API contracts, module boundaries) are closed and locked. T12
+(trip-planning) and T13 (bus-stop) UI-layout tickets are also closed; T14/T15 remain
+open (see "Open (UI layout, in progress)" below). The two "Not yet specified" items
+below are a separate thing: deliberately out of this destination's scope entirely
+(deferred to a future effort), not unfinished parts of this one.
 
 **Amendment (post-implementation):** [T11](tickets/T11-initial-trip-planning-search.md)
 was added after T09/T05 turned out to reference an "initial TravelOption generation"
@@ -34,9 +32,20 @@ frontend code — see T12's resolution for the follow-up cleanup still owed.
 [T14](tickets/T14-travel-session-ui-layout.md), and
 [T15](tickets/T15-recovery-ui-layout.md) were opened to track the same UI-layout gap
 as T12 for the three remaining feature modules (`bus-stop`, `travel-session`,
-`recovery`) — placeholders only, not yet prototyped or resolved. Opened together so
-the gap is visible up front instead of being rediscovered module-by-module the way
-T11 and T12 each were.
+`recovery`) — opened together so the gap is visible up front instead of being
+rediscovered module-by-module the way T11 and T12 each were.
+
+**Amendment 4 (post-implementation):** [T13](tickets/T13-bus-stop-ui-layout.md)
+closed with Variant A (list-first accordion) for `bus-stop` — a single stacked list
+with inline expansion, chosen over T12's original split-panel pick because a bus-stop
+lookup carries far less simultaneous detail than a trip-planning comparison. T12 was
+then **revised** from its original Variant B pick to Variant A as well, specifically
+to keep `trip-planning` and `bus-stop` — two screens a rider moves between in one
+continuous flow — on the same layout family, rather than each module optimizing
+independently. See T12's Resolution for the full before/after. T13 also surfaced an
+unresolved gap: the Question asked how a stop's serving `RouteStop`s are shown, but
+`GET /bus-stops/{id}` doesn't return that data at all — flagged in T13, not resolved
+by it.
 
 ## Destination
 
@@ -81,9 +90,6 @@ included; components are expected to emerge during implementation.
 
 ## Open (UI layout, in progress)
 
-- [Bus-stop lookup/context UI layout](tickets/T13-bus-stop-ui-layout.md) — how
-  text-only `StopLandmark` context (T08) and serving `RouteStop`s are laid out; not
-  yet prototyped.
 - [Active-trip tracking UI layout](tickets/T14-travel-session-ui-layout.md) — one
   adaptive shell vs. per-state screens across T04's state machine, how the get-off
   alert surfaces, and the handoff into recovery on `MISBOARDED`; not yet prototyped.
@@ -95,16 +101,23 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
+- [Bus-stop lookup/context UI layout](tickets/T13-bus-stop-ui-layout.md): List-first
+  accordion wins — nearby stops (`GET /bus-stops/nearby`) as a single stacked list,
+  tapping a row expands its `StopLandmark[]` context inline below it. Chosen over a
+  split list+detail panel (too much layout for how little a stop carries at once) and
+  a single-stop "walking guide" focus (fights the real use case of comparing 2-3
+  nearby stops before committing to one). Surfaced an unresolved gap: `GET
+  /bus-stops/{id}` doesn't return which `RouteStop`s serve the stop, so the prototype
+  can't show that even though the ticket's Question asked for it. Not yet folded into
+  the mainline frontend code.
 - [Trip-planning search/results UI layout](tickets/T12-trip-planning-ui-layout.md):
-  Split layout wins — a compact result-row list on the left (every `TravelOption`
-  visible, per the map's "never collapse to one answer" rule) and a step-by-step
-  journey timeline (walk → board → alight) on the right when a row is selected, built
-  from T11's `TravelOption[]` fields directly. No map component — an earlier draft
-  with a map placeholder was rejected for reopening the "route-map visualization
-  deferred" decision below. Chosen over a full-width stacked-card layout (wastes
-  desktop width, gets noisy past 3-4 results) and a horizontal comparison-card
-  carousel (cramped stop names at card width, weaker default than a vertical list for
-  a capped, unranked result set). Not yet folded into the mainline frontend code.
+  **Revised to list-first** (full-width stacked cards, single-column scroll) —
+  originally a split list + journey-detail layout, changed after T13 landed on
+  list-first for `bus-stop` so the two screens a rider moves between share one layout
+  family instead of diverging. Every `TravelOption` still shown, per the map's "never
+  collapse to one answer" rule. No map component — an earlier draft with a map
+  placeholder was rejected for reopening the "route-map visualization deferred"
+  decision below. Not yet folded into the mainline frontend code.
 - [Initial trip planning search (TravelOption generation) & destination/stop search](tickets/T11-initial-trip-planning-search.md):
   Closes the gap T09/T05 assumed was already covered elsewhere. Destination/stop search
   is a case-insensitive substring match across `BusStop`/`Place` names, capped at 20,

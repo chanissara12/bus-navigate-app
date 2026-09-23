@@ -42,6 +42,17 @@ before this ticket closed.
 
 ## Resolution
 
+**Revised: Variant A — list-first — wins** (superseded the original choice below once
+[T13](T13-bus-stop-ui-layout.md)'s bus-stop prototype landed on A for a related
+reason — single stacked-list scroll over a split desktop-oriented panel — and the two
+sibling `trip-planning`/`bus-stop` screens were brought in line for consistency across
+the app rather than each module picking independently). Search fields on top, results
+as full-width stacked cards below, single-column scroll — every `TravelOption` shown,
+matching the map's "never collapse to one answer" decision the same way B did.
+
+<details>
+<summary>Original resolution (superseded) — Variant B, split list + journey detail</summary>
+
 **Variant B — split list + journey detail — wins.** Left rail: compact rows (route
 badge, direction, walk distance, a small status dot), matching the map's "never
 collapse to one answer" decision by keeping every `TravelOption` visible and tappable,
@@ -59,6 +70,17 @@ Rejected:
   narrow card widths, and horizontal scroll discovery is a weaker default than a
   vertical list for a "top 20 capped, no ranking" result set (map Notes).
 
+</details>
+
+Rejected on revision:
+- **B (split list + journey detail)** — the original pick; superseded, not because it
+  was wrong on its own merits (still true: desktop/tablet width used productively,
+  progressive disclosure keeps the list scannable), but because keeping it would leave
+  `trip-planning` and `bus-stop` on two different layout families for what a rider
+  experiences as one connected flow (find a stop → plan a trip).
+- **C (comparison carousel)** — reasoning unchanged from the original resolution
+  above.
+
 **No map component, by design** — confirms rather than reopens the map's existing
 "Not yet specified" deferral of route-map visualization; this ticket doesn't change
 that decision, it just makes sure the winning trip-planning layout doesn't
@@ -68,8 +90,8 @@ accidentally imply a map exists.
 `?variant=` switcher) currently lives on the `test` branch at
 `frontend/src/app/modules/trip-planning/pages/trip-planning-home/prototype/` and
 `frontend/src/app/shared/components/prototype-switcher/`. Per the project's prototype
-workflow, the next step is: fold variant B's markup into
-`trip-planning-home.component`, drop variants A/C and the switcher from the mainline,
+workflow, the next step is: fold variant A's markup into
+`trip-planning-home.component`, drop variants B/C and the switcher from the mainline,
 and move the full prototype set to a throwaway branch as the primary source. That
 follow-up hasn't been done yet — this ticket only captures the layout decision.
 
