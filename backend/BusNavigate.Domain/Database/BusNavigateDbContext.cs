@@ -27,6 +27,8 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
 
     public DbSet<Place> Places => Set<Place>();
 
+    public DbSet<TransitAlert> TransitAlerts => Set<TransitAlert>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -135,6 +137,19 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
             entity.HasIndex(e => e.ExternalId).IsUnique();
             entity.Property(e => e.Latitude).HasPrecision(9, 6);
             entity.Property(e => e.Longitude).HasPrecision(9, 6);
+        });
+
+        modelBuilder.Entity<TransitAlert>(entity =>
+        {
+            entity.HasIndex(e => new { e.BusRouteId, e.DirectionId });
+            entity.HasOne(e => e.BusRoute)
+                .WithMany()
+                .HasForeignKey(e => e.BusRouteId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Direction)
+                .WithMany()
+                .HasForeignKey(e => e.DirectionId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -3,6 +3,7 @@ using System;
 using BusNavigate.Domain.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BusNavigate.Domain.Database.Migrations
 {
     [DbContext(typeof(BusNavigateDbContext))]
-    partial class BusNavigateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260923081420_AddTransitAlert")]
+    partial class AddTransitAlert
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

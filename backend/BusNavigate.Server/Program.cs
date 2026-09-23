@@ -22,6 +22,8 @@ builder.Services.AddTravelOptionEvaluation();
 
 builder.Services.AddRecovery();
 
+builder.Services.AddServiceStatus();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
