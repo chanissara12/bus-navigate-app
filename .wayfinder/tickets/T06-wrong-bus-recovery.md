@@ -2,8 +2,8 @@
 
 **Parent map:** [Phase 1 Spec — Public Transit Decision & Recovery Assistant](../map.md)
 
-**Status:** open (unclaimed)
-**Blocked by:** ["Can I take this bus?" comparison algorithm](T05-can-i-take-this-bus.md) (~~[Core Phase 1 data model schema](T03-core-data-model.md)~~ and ~~[TravelSession state machine](T04-travel-session-state-machine.md)~~ both closed)
+**Status:** open (unclaimed) — unblocked
+**Blocked by:** none (all three prerequisites closed: ~~T03~~, ~~T04~~, ~~T05~~)
 **Blocks:** [Full Phase 1 API contract](T09-api-contracts.md)
 
 ## Question

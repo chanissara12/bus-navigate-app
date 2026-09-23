@@ -43,6 +43,11 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
+- ["Can I take this bus?" comparison algorithm](tickets/T05-can-i-take-this-bus.md):
+  1-to-1 check of one named candidate vs. the current plan (not a fresh search). Hard
+  reject if it can't reach the destination/transfer point, needs >1 extra transfer, or
+  >800m extra walking. Walking distance = haversine × 1.3, at 5 km/h. Structured
+  `Reason` factor codes defined (extendable later).
 - [TravelSession state machine](tickets/T04-travel-session-state-machine.md): States
   `PLANNED → WALKING_TO_STOP → WAITING → RIDING → ALIGHTED → COMPLETED`, plus
   `MISBOARDED` (distinct state, entry point for wrong-bus recovery) and `ABANDONED`
@@ -73,6 +78,17 @@ included; components are expected to emerge during implementation.
 
 ## Not yet specified
 
+- Whether to add route-map visualization (drawing the bus route / walking path on a
+  map) to this Phase 1 destination, or hold it as a fast-follow after Phase 1 ships.
+  Deliberately not ticketed now — the current destination excludes UI/wireframe design,
+  and adding map rendering now would also require pulling in GTFS `shapes.txt` (route
+  geometry), which no ticket currently ingests. Retrofitting later is low-cost (an
+  additive `RouteShape` entity + an extra response field — no rework of `BusRoute`/
+  `Direction`/`RouteStop`/`Trip` or any decision algorithm in T05/T06), so this is
+  intentionally deferred rather than resolved. Note: the pre-rewrite `main` branch had
+  a fully-built map feature (route drawing, walking-path road-snapping, footbridges,
+  map background layer) — worth revisiting as a reference if/when this graduates to a
+  ticket.
 - Whether the chosen transit data source (or stop-imagery source) requires signup,
   registration, or an API key — and if so, a Task ticket to provision access. Can't be
   ticketed until [Choose transit data source](tickets/T01-transit-data-source.md) and
