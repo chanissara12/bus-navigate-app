@@ -43,6 +43,12 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
+- [TravelSession state machine](tickets/T04-travel-session-state-machine.md): States
+  `PLANNED → WALKING_TO_STOP → WAITING → RIDING → ALIGHTED → COMPLETED`, plus
+  `MISBOARDED` (distinct state, entry point for wrong-bus recovery) and `ABANDONED`
+  (auto after 2h no activity). All main transitions are explicit user actions, not
+  GPS-inferred. Get-off assistance is a computed threshold within `RIDING`, not its
+  own state.
 - [Core Phase 1 data model schema](tickets/T03-core-data-model.md): EF Core entities
   for BusRoute/Direction/RouteStop/BusStop/Trip/TripStopTime/ServiceCalendar/
   ServiceException, mapped from Namtang GTFS. Direction stays coarse (one per
