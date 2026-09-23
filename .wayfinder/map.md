@@ -1,9 +1,13 @@
 # [wayfinder:map] Phase 1 Spec — Public Transit Decision & Recovery Assistant
 
-**STATUS: COMPLETE** — all 12 tickets closed. The destination (data model, API
-contracts, module boundaries) is locked and ready to hand to implementation. The two
-"Not yet specified" items below are deliberately out of this destination's scope
-(deferred to a future effort), not unfinished parts of this one.
+**STATUS: DATA/API/BOUNDARIES COMPLETE, UI LAYOUT IN PROGRESS** — the original 12
+tickets (data model, API contracts, module boundaries) are closed and locked. Three
+follow-on UI-layout tickets are open (see "Open (UI layout, in progress)" below),
+opened as a batch alongside T12 rather than discovered one at a time — same kind of
+narrow exception to "no UI/wireframe design in scope" that T12 was, just not resolved
+yet. The two "Not yet specified" items below are a separate thing: deliberately out
+of this destination's scope entirely (deferred to a future effort), not unfinished
+parts of this one.
 
 **Amendment (post-implementation):** [T11](tickets/T11-initial-trip-planning-search.md)
 was added after T09/T05 turned out to reference an "initial TravelOption generation"
@@ -25,6 +29,14 @@ Phase 1" deferral itself was not reopened — T12 confirms it, an earlier protot
 draft that added a map placeholder was rejected specifically for violating it. As of
 this amendment, the winning variant has **not** yet been folded into the mainline
 frontend code — see T12's resolution for the follow-up cleanup still owed.
+
+**Amendment 3 (post-implementation):** [T13](tickets/T13-bus-stop-ui-layout.md),
+[T14](tickets/T14-travel-session-ui-layout.md), and
+[T15](tickets/T15-recovery-ui-layout.md) were opened to track the same UI-layout gap
+as T12 for the three remaining feature modules (`bus-stop`, `travel-session`,
+`recovery`) — placeholders only, not yet prototyped or resolved. Opened together so
+the gap is visible up front instead of being rediscovered module-by-module the way
+T11 and T12 each were.
 
 ## Destination
 
@@ -66,6 +78,20 @@ included; components are expected to emerge during implementation.
     tracking, get-off alerts), `recovery` (wrong-bus/wrong-stop handling).
     `TransitAlert`/service-status is cross-cutting, consumed by all four via a shared
     service — not its own feature module.
+
+## Open (UI layout, in progress)
+
+- [Bus-stop lookup/context UI layout](tickets/T13-bus-stop-ui-layout.md) — how
+  text-only `StopLandmark` context (T08) and serving `RouteStop`s are laid out; not
+  yet prototyped.
+- [Active-trip tracking UI layout](tickets/T14-travel-session-ui-layout.md) — one
+  adaptive shell vs. per-state screens across T04's state machine, how the get-off
+  alert surfaces, and the handoff into recovery on `MISBOARDED`; not yet prototyped.
+- [Wrong-bus recovery UI layout](tickets/T15-recovery-ui-layout.md) — how "continue as
+  the current bus" sits next to genuine `RecoveryOption` alternatives without looking
+  like a normal choice, and how `DataConfidence: Unknown` (unconfirmed BTS/MRT) reads
+  visually; not yet prototyped. Best done after T14 since recovery is entered from a
+  travel-session state.
 
 ## Decisions so far
 
