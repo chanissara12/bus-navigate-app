@@ -1,4 +1,5 @@
 using BusNavigate.Domain.Database;
+using BusNavigate.Server.Middlewares;
 using BusNavigate.Server.Services;
 using BusNavigate.Service.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -25,9 +26,14 @@ builder.Services.AddRecovery();
 
 builder.Services.AddServiceStatus();
 
+builder.Services.AddTripPlanning();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<DeviceIdentityMiddleware>();
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
