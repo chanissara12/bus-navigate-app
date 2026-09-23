@@ -1,8 +1,10 @@
+using BusNavigate.Domain.Interfaces.BusStop;
 using BusNavigate.Domain.Interfaces.GtfsImport;
 using BusNavigate.Domain.Interfaces.Recovery;
 using BusNavigate.Domain.Interfaces.ServiceStatus;
 using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
 using BusNavigate.Domain.Interfaces.TravelSession;
+using BusNavigate.Service.Implements.BusStop;
 using BusNavigate.Service.Implements.GtfsImport;
 using BusNavigate.Service.Implements.Recovery;
 using BusNavigate.Service.Implements.ServiceStatus;
@@ -46,6 +48,15 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddServiceStatus(this IServiceCollection services)
     {
         services.AddScoped<IServiceStatusService, ServiceStatusService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddBusStopContext(this IServiceCollection services)
+    {
+        services.AddHttpClient<IStopLandmarkFetcher, StopLandmarkFetcher>();
+        services.AddScoped<IStopLandmarkSyncService, StopLandmarkSyncService>();
+        services.AddScoped<IBusStopContextService, BusStopContextService>();
 
         return services;
     }

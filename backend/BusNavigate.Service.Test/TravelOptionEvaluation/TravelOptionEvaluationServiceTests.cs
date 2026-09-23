@@ -3,6 +3,7 @@ using BusNavigate.Domain.Entities;
 using BusNavigate.Domain.Exceptions;
 using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
 using Microsoft.EntityFrameworkCore;
+using BusStopEntity = BusNavigate.Domain.Entities.BusStop;
 
 namespace BusNavigate.Service.Test.TravelOptionEvaluation;
 
@@ -35,8 +36,8 @@ public class TravelOptionEvaluationServiceTests
             ImportedAt = DateTime.UtcNow,
         };
         var direction = new Direction { BusRoute = busRoute, ExternalDirectionKey = "R-ORIGINAL-0", DirectionIndex = 0, Headsign = "Siam" };
-        var boardingStop = new BusStop { ExternalStopId = "BOARD", NameTh = "b", NameEn = "b", Latitude = 13.70m, Longitude = 100.50m };
-        var alightingStop = new BusStop
+        var boardingStop = new BusStopEntity { ExternalStopId = "BOARD", NameTh = "b", NameEn = "b", Latitude = 13.70m, Longitude = 100.50m };
+        var alightingStop = new BusStopEntity
         {
             ExternalStopId = "DEST",
             NameTh = "d",
@@ -88,7 +89,7 @@ public class TravelOptionEvaluationServiceTests
         for (var i = 0; i < stopCoordinates.Length; i++)
         {
             var (lat, lon) = stopCoordinates[i];
-            var stop = new BusStop
+            var stop = new BusStopEntity
             {
                 ExternalStopId = $"CAND-{direction.Id}-{i}",
                 NameTh = "c",

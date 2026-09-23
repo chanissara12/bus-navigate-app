@@ -13,7 +13,8 @@ builder.Services.AddDbContext<BusNavigateDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("BusNavigate")));
 
 builder.Services.AddGtfsImport();
-builder.Services.AddHostedService<GtfsImportBackgroundService>();
+builder.Services.AddBusStopContext();
+builder.Services.AddHostedService<WeeklyDataSyncBackgroundService>();
 
 builder.Services.AddTravelSession();
 builder.Services.AddHostedService<TravelSessionStallSweepBackgroundService>();

@@ -29,6 +29,8 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
 
     public DbSet<TransitAlert> TransitAlerts => Set<TransitAlert>();
 
+    public DbSet<StopLandmark> StopLandmarks => Set<StopLandmark>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -149,6 +151,15 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
             entity.HasOne(e => e.Direction)
                 .WithMany()
                 .HasForeignKey(e => e.DirectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<StopLandmark>(entity =>
+        {
+            entity.HasIndex(e => e.ExternalOsmId).IsUnique();
+            entity.HasOne(e => e.BusStop)
+                .WithMany()
+                .HasForeignKey(e => e.BusStopId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

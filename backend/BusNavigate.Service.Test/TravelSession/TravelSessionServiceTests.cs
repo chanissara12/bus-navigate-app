@@ -3,6 +3,7 @@ using BusNavigate.Domain.Entities;
 using BusNavigate.Domain.Exceptions;
 using BusNavigate.Domain.Interfaces.TravelSession;
 using Microsoft.EntityFrameworkCore;
+using BusStopEntity = BusNavigate.Domain.Entities.BusStop;
 
 namespace BusNavigate.Service.Test.TravelSession;
 
@@ -24,8 +25,8 @@ public class TravelSessionServiceTests
         var user = new User { ExternalDeviceId = Guid.NewGuid().ToString(), CreatedAt = DateTime.UtcNow };
         var busRoute = new BusRoute { ExternalRouteId = "R1", ShortName = "1", LongName = "Route 1", DataSource = "test", ImportedAt = DateTime.UtcNow };
         var direction = new Direction { BusRoute = busRoute, ExternalDirectionKey = "R1-0", DirectionIndex = 0, Headsign = "Siam" };
-        var boardingStop = new BusStop { ExternalStopId = "S1", NameTh = "1", NameEn = "1", Latitude = 0, Longitude = 0 };
-        var alightingStop = new BusStop { ExternalStopId = "S2", NameTh = "2", NameEn = "2", Latitude = 0, Longitude = 0 };
+        var boardingStop = new BusStopEntity { ExternalStopId = "S1", NameTh = "1", NameEn = "1", Latitude = 0, Longitude = 0 };
+        var alightingStop = new BusStopEntity { ExternalStopId = "S2", NameTh = "2", NameEn = "2", Latitude = 0, Longitude = 0 };
 
         dbContext.AddRange(user, busRoute, direction, boardingStop, alightingStop);
         await dbContext.SaveChangesAsync();

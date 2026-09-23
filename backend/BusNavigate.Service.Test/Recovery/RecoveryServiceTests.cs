@@ -4,6 +4,7 @@ using BusNavigate.Domain.Exceptions;
 using BusNavigate.Domain.Interfaces.Recovery;
 using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
 using Microsoft.EntityFrameworkCore;
+using BusStopEntity = BusNavigate.Domain.Entities.BusStop;
 using TravelSessionEntity = BusNavigate.Domain.Entities.TravelSession;
 
 namespace BusNavigate.Service.Test.Recovery;
@@ -42,8 +43,8 @@ public class RecoveryServiceTests
             ImportedAt = DateTime.UtcNow,
         };
         var direction = new Direction { BusRoute = busRoute, ExternalDirectionKey = $"plan-{Guid.NewGuid()}", DirectionIndex = 0, Headsign = "Planned" };
-        var boardingStop = new BusStop { ExternalStopId = $"BOARD-{Guid.NewGuid()}", NameTh = "b", NameEn = "b", Latitude = 13.70m, Longitude = 100.50m };
-        var alightingStop = new BusStop
+        var boardingStop = new BusStopEntity { ExternalStopId = $"BOARD-{Guid.NewGuid()}", NameTh = "b", NameEn = "b", Latitude = 13.70m, Longitude = 100.50m };
+        var alightingStop = new BusStopEntity
         {
             ExternalStopId = $"DEST-{Guid.NewGuid()}",
             NameTh = "d",
@@ -95,7 +96,7 @@ public class RecoveryServiceTests
         for (var i = 0; i < stopCoordinates.Length; i++)
         {
             var (lat, lon) = stopCoordinates[i];
-            var stop = new BusStop
+            var stop = new BusStopEntity
             {
                 ExternalStopId = $"S-{direction.Id}-{i}",
                 NameTh = "s",
