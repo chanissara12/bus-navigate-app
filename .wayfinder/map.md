@@ -1,11 +1,11 @@
 # [wayfinder:map] Phase 1 Spec — Public Transit Decision & Recovery Assistant
 
-**STATUS: DATA/API/BOUNDARIES COMPLETE, UI LAYOUT IN PROGRESS** — the original 12
-tickets (data model, API contracts, module boundaries) are closed and locked. T12
-(trip-planning) and T13 (bus-stop) UI-layout tickets are also closed; T14/T15 remain
-open (see "Open (UI layout, in progress)" below). The two "Not yet specified" items
-below are a separate thing: deliberately out of this destination's scope entirely
-(deferred to a future effort), not unfinished parts of this one.
+**STATUS: COMPLETE** — all 15 tickets closed, including the four UI-layout tickets
+(T12-T15) opened after frontend scaffolding started. None of the four winning
+layouts have been folded into the mainline frontend code yet — see each ticket's
+Resolution for that follow-up. The two "Not yet specified" items below are a separate
+thing: deliberately out of this destination's scope entirely (deferred to a future
+effort), not unfinished parts of this one.
 
 **Amendment (post-implementation):** [T11](tickets/T11-initial-trip-planning-search.md)
 was added after T09/T05 turned out to reference an "initial TravelOption generation"
@@ -46,6 +46,21 @@ independently. See T12's Resolution for the full before/after. T13 also surfaced
 unresolved gap: the Question asked how a stop's serving `RouteStop`s are shown, but
 `GET /bus-stops/{id}` doesn't return that data at all — flagged in T13, not resolved
 by it.
+
+**Amendment 5 (post-implementation):** [T14](tickets/T14-travel-session-ui-layout.md)
+closed with Variant A (single status card) — one persistent card shell whose content
+swaps per `TravelSessionState`, rather than a full journey timeline or a full-screen
+takeover per state; the `MISBOARDED` state re-skins the same card and adds a CTA that
+hands off into `recovery`, no embedded recovery UI on this screen.
+[T15](tickets/T15-recovery-ui-layout.md) closed with Variant C (tiered urgency stack)
+— the "continue on current bus" candidate stays inside `RecommendedOptions` per T06's
+"not special-cased" rule but is visually demoted (muted styling, no "แนะนำ" badge) so
+it never reads as a normal, equally-good choice; `LastResortOptions` collapse behind
+an expander and `UnconfirmedRailPointers` get a distinct dashed/reduced-opacity
+treatment. Unlike T12→T13's convergence on one shared layout family, T14 and T15 did
+**not** converge on the same variant letter — each module's actual content density and
+urgency drove an independent pick, and forcing consistency here would have meant
+picking the wrong layout for one of the two screens.
 
 ## Destination
 
@@ -88,19 +103,31 @@ included; components are expected to emerge during implementation.
     `TransitAlert`/service-status is cross-cutting, consumed by all four via a shared
     service — not its own feature module.
 
-## Open (UI layout, in progress)
-
-- [Active-trip tracking UI layout](tickets/T14-travel-session-ui-layout.md) — one
-  adaptive shell vs. per-state screens across T04's state machine, how the get-off
-  alert surfaces, and the handoff into recovery on `MISBOARDED`; not yet prototyped.
-- [Wrong-bus recovery UI layout](tickets/T15-recovery-ui-layout.md) — how "continue as
-  the current bus" sits next to genuine `RecoveryOption` alternatives without looking
-  like a normal choice, and how `DataConfidence: Unknown` (unconfirmed BTS/MRT) reads
-  visually; not yet prototyped. Best done after T14 since recovery is entered from a
-  travel-session state.
-
 ## Decisions so far
 
+- [Wrong-bus recovery UI layout](tickets/T15-recovery-ui-layout.md): Tiered urgency
+  stack wins — `RecommendedOptions` render as prominent tagged cards, except the
+  "continue on current bus" candidate, which per T06 stays in the same list but is
+  deliberately styled muted with no "แนะนำ" badge, so it never reads as a normal
+  choice even though it's technically eligible. `LastResortOptions` collapse behind a
+  closed-by-default expander; `UnconfirmedRailPointers` get a dashed-border, reduced-
+  opacity treatment distinct from confirmed options in every tier. Chosen over a
+  list-first sectioned layout (too easy to mistake the current-bus card for a genuine
+  recommendation) and a split list + reasons-on-selection panel (adds a click of
+  friction this urgent, single-glance screen shouldn't have). Not yet folded into the
+  mainline frontend code.
+- [Active-trip tracking UI layout](tickets/T14-travel-session-ui-layout.md): Single
+  status card wins — one persistent card shell across the whole `TravelSessionState`
+  machine; only its content swaps per state. `RIDING` adds a progress bar plus an
+  inline get-off-soon banner when `IsApproachingDestination`; `MISBOARDED` re-skins
+  the same card (red, warning icon) with a CTA that hands off into `recovery` by plain
+  navigation, no embedded recovery UI. Chosen over a full journey-timeline stepper
+  (wastes space on early single-instruction states, awkward for `MISBOARDED`/
+  `COMPLETED` which don't sit on the normal-flow timeline) and a full-screen
+  per-state takeover (more visual disruption than this screen's information density
+  justifies). No map/live-position rendering — same deferral as T12/T13, doubly so
+  since Phase 1 has no push/streaming infra for a live position marker. Not yet
+  folded into the mainline frontend code.
 - [Bus-stop lookup/context UI layout](tickets/T13-bus-stop-ui-layout.md): List-first
   accordion wins — nearby stops (`GET /bus-stops/nearby`) as a single stacked list,
   tapping a row expands its `StopLandmark[]` context inline below it. Chosen over a
