@@ -57,9 +57,11 @@ public class TravelOptionEvaluationService(BusNavigateDbContext dbContext) : ITr
         // walking distance to the destination.
         if (walkDistanceMeters > TravelOptionEvaluationConstants.WalkBudgetMeters)
         {
+            // Value carries the actual walk distance so a caller can rank multiple
+            // rejected candidates by "how close it got" (T06's last-resort ranking).
             return new TravelOptionEvaluationResult(
                 Accepted: false,
-                Reasons: [new EvaluationReason(ReasonCode.DoesNotReachDestination)]);
+                Reasons: [new EvaluationReason(ReasonCode.DoesNotReachDestination, (decimal)walkDistanceMeters)]);
         }
 
         if (extraTransfers > 1)

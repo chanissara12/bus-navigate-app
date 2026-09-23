@@ -25,6 +25,8 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
 
     public DbSet<TravelSession> TravelSessions => Set<TravelSession>();
 
+    public DbSet<Place> Places => Set<Place>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -126,6 +128,13 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
                 .WithMany()
                 .HasForeignKey(e => e.AlightingStopId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Place>(entity =>
+        {
+            entity.HasIndex(e => e.ExternalId).IsUnique();
+            entity.Property(e => e.Latitude).HasPrecision(9, 6);
+            entity.Property(e => e.Longitude).HasPrecision(9, 6);
         });
     }
 }

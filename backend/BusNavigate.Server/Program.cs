@@ -20,6 +20,8 @@ builder.Services.AddHostedService<TravelSessionStallSweepBackgroundService>();
 
 builder.Services.AddTravelOptionEvaluation();
 
+builder.Services.AddRecovery();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
