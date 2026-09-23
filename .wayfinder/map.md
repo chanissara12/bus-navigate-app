@@ -43,6 +43,12 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
+- [Bus Stop Context data model](tickets/T08-bus-stop-context.md): No `StopImage`
+  table for Phase 1 (no imagery source, no consumer — would be dead schema).
+  `StopLandmark` uses a hybrid `LandmarkType` enum + free-text `Description` fallback,
+  sourced from OSM via the same weekly sync job as GTFS. Attribution is one app-wide
+  static credit line, not per-record. No `VerificationStatus` field yet (only one
+  source exists).
 - [Service Status data model & rules](tickets/T07-service-status.md): No automatic
   status feed exists (verified — Namtang is static-schedule-only). `TransitAlert` is a
   manual, human-curated table only — no GTFS-diff auto-detection (rejected: risks
