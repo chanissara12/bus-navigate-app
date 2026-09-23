@@ -1,6 +1,6 @@
 # [wayfinder:map] Phase 1 Spec — Public Transit Decision & Recovery Assistant
 
-**STATUS: COMPLETE** — all 11 tickets closed. The destination (data model, API
+**STATUS: COMPLETE** — all 12 tickets closed. The destination (data model, API
 contracts, module boundaries) is locked and ready to hand to implementation. The two
 "Not yet specified" items below are deliberately out of this destination's scope
 (deferred to a future effort), not unfinished parts of this one.
@@ -13,6 +13,18 @@ PROPOSAL.md/CONTEXT.md directly without verifying that assumption. Caught during
 implementation of T09's controllers, not before. The map was briefly inaccurate
 ("COMPLETE" while a load-bearing piece was missing) between T09 closing and T11
 closing; no other ticket's decisions changed as a result.
+
+**Amendment 2 (post-implementation):**
+[T12](tickets/T12-trip-planning-ui-layout.md) is a narrow, deliberate exception to
+this map's own "no UI/wireframe design in scope" rule (see Destination below) — once
+frontend scaffolding actually needed a `trip-planning` page and T11's `TravelOption[]`
+shape had nowhere to render, the layout question became a real blocker, not a
+future-phase nicety. Resolved via the project's UI-prototype workflow (three
+structural variants prototyped live, one chosen); the "no route-map visualization in
+Phase 1" deferral itself was not reopened — T12 confirms it, an earlier prototype
+draft that added a map placeholder was rejected specifically for violating it. As of
+this amendment, the winning variant has **not** yet been folded into the mainline
+frontend code — see T12's resolution for the follow-up cleanup still owed.
 
 ## Destination
 
@@ -57,6 +69,16 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
+- [Trip-planning search/results UI layout](tickets/T12-trip-planning-ui-layout.md):
+  Split layout wins — a compact result-row list on the left (every `TravelOption`
+  visible, per the map's "never collapse to one answer" rule) and a step-by-step
+  journey timeline (walk → board → alight) on the right when a row is selected, built
+  from T11's `TravelOption[]` fields directly. No map component — an earlier draft
+  with a map placeholder was rejected for reopening the "route-map visualization
+  deferred" decision below. Chosen over a full-width stacked-card layout (wastes
+  desktop width, gets noisy past 3-4 results) and a horizontal comparison-card
+  carousel (cramped stop names at card width, weaker default than a vertical list for
+  a capped, unranked result set). Not yet folded into the mainline frontend code.
 - [Initial trip planning search (TravelOption generation) & destination/stop search](tickets/T11-initial-trip-planning-search.md):
   Closes the gap T09/T05 assumed was already covered elsewhere. Destination/stop search
   is a case-insensitive substring match across `BusStop`/`Place` names, capped at 20,
