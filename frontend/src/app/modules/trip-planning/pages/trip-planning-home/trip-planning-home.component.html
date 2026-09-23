@@ -1,1 +1,9 @@
-<p>trip-planning-home works!</p>
+<app-trip-planning-variant-a *ngIf="variant === 'A'"></app-trip-planning-variant-a>
+<app-trip-planning-variant-b *ngIf="variant === 'B'"></app-trip-planning-variant-b>
+<app-trip-planning-variant-c *ngIf="variant === 'C'"></app-trip-planning-variant-c>
+
+<app-prototype-switcher
+    [variants]="prototypeVariants"
+    [current]="variant"
+    (currentChange)="onVariantChange($event)"
+></app-prototype-switcher>

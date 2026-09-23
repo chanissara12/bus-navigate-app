@@ -1,0 +1,44 @@
+<div class="grid grid-cols-1 md:grid-cols-[320px_1fr] h-[calc(100vh-4rem)] pb-16">
+    <div class="border-r border-slate-200 bg-white overflow-y-auto">
+        <div class="p-3 border-b border-slate-200">
+            <div class="text-xs text-slate-500">ไปยัง</div>
+            <div class="text-sm font-semibold text-slate-900">{{ destination }}</div>
+        </div>
+
+        <button
+            type="button"
+            *ngFor="let option of options"
+            (click)="select(option.id)"
+            class="w-full text-left flex items-center gap-3 px-3 py-3 border-b border-slate-100 cursor-pointer hover:bg-sky-50"
+            [ngClass]="option.id === selectedId() ? 'bg-sky-50 border-l-4 border-l-sky-600' : 'border-l-4 border-l-transparent'"
+        >
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-600 text-white text-xs font-bold">
+                {{ option.routeNumber }}
+            </span>
+            <span class="flex-1 min-w-0">
+                <span class="block text-sm font-medium text-slate-900 truncate">{{ option.directionName }}</span>
+                <span class="block text-xs text-slate-500">เดิน {{ option.walkingDistanceMeters }} ม.</span>
+            </span>
+            <span class="h-2 w-2 rounded-full shrink-0" [ngClass]="statusClasses(option.serviceStatus)"></span>
+        </button>
+    </div>
+
+    <div class="flex flex-col">
+        <div class="flex-1 m-4 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-100 flex items-center justify-center text-slate-400 text-sm">
+            🗺️ แผนที่ (mock)
+        </div>
+
+        <div *ngIf="selectedOption as sel" class="mx-4 mb-4 rounded-2xl bg-white border border-slate-200 shadow-sm p-4">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-semibold text-slate-900">{{ sel.routeName }} · {{ sel.directionName }}</span>
+                <span class="rounded-full px-2 py-0.5 text-xs font-medium" [ngClass]="statusClasses(sel.serviceStatus)">
+                    {{ statusLabel(sel.serviceStatus) }}
+                </span>
+            </div>
+            <div class="text-sm text-slate-600 space-y-1">
+                <div>🚏 ขึ้นที่ {{ sel.boardingStopName }}</div>
+                <div>🏁 ลงที่ {{ sel.alightingStopName }}</div>
+            </div>
+        </div>
+    </div>
+</div>

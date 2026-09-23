@@ -1,0 +1,26 @@
+<div
+    *ngIf="isDev"
+    class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-full bg-slate-900 text-white px-4 py-2 shadow-lg ring-2 ring-fuchsia-400"
+>
+    <button
+        type="button"
+        class="cursor-pointer rounded-full px-2 py-1 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
+        (click)="previous()"
+        aria-label="Previous variant"
+    >
+        ←
+    </button>
+
+    <span class="text-sm font-medium tabular-nums">
+        {{ currentVariant?.key }}<ng-container *ngIf="currentVariant?.label"> ({{ currentVariant?.label }})</ng-container>
+    </span>
+
+    <button
+        type="button"
+        class="cursor-pointer rounded-full px-2 py-1 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
+        (click)="next()"
+        aria-label="Next variant"
+    >
+        →
+    </button>
+</div>
