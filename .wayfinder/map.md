@@ -43,6 +43,13 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
+- [Service Status data model & rules](tickets/T07-service-status.md): No automatic
+  status feed exists (verified — Namtang is static-schedule-only). `TransitAlert` is a
+  manual, human-curated table only — no GTFS-diff auto-detection (rejected: risks
+  confidently-wrong "Cancelled" claims on mere data blips). Default with no record:
+  `Normal` + `DataConfidence: Scheduled`, safe even if never curated. "Not Operating
+  Today" (from ServiceCalendar/ServiceException) is kept strictly separate from
+  "Cancelled" (a TransitAlert record) at the API level.
 - [Wrong-bus recovery algorithm & Recovery Point search](tickets/T06-wrong-bus-recovery.md):
   Reuses T05's algorithm exactly (same thresholds, no relaxation) from the new
   CurrentLocation; "continue on current bus" isn't special-cased, just another
