@@ -1,6 +1,8 @@
 using BusNavigate.Domain.Database;
+using BusNavigate.Domain.Entities;
 using BusNavigate.Domain.Exceptions;
 using BusNavigate.Domain.Interfaces.TravelSession;
+using BusNavigate.Domain.ViewModels.TravelSession;
 using Microsoft.EntityFrameworkCore;
 using TravelSessionEntity = BusNavigate.Domain.Entities.TravelSession;
 using TravelSessionState = BusNavigate.Domain.Entities.TravelSessionState;
@@ -103,5 +105,40 @@ public class TravelSessionService : ITravelSessionService
         }
 
         return staleSessions.Count;
+    }
+
+    // Threshold matching T04's "1 stop to Siam" framing.
+    private const int ApproachingDestinationThreshold = 1;
+
+    public async Task<TravelSessionProgress> GetProgressAsync(
+        int travelSessionId, int? currentStopSequence, CancellationToken cancellationToken = default)
+    {
+        var session = await _dbContext.TravelSessions.FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
+            ?? throw new ValidateException($"Travel session {travelSessionId} was not found.");
+
+        if (session.State != TravelSessionState.Riding)
+        {
+            throw new ValidateException(
+                $"Progress is only available while RIDING (session is currently '{session.State}').");
+        }
+
+        var routeStopSequences = await _dbContext.RouteStops
+            .Where(rs => rs.DirectionId == session.DirectionId &&
+                (rs.BusStopId == session.BoardingStopId || rs.BusStopId == session.AlightingStopId))
+            .ToDictionaryAsync(rs => rs.BusStopId, rs => rs.SequenceNumber, cancellationToken);
+
+        if (!routeStopSequences.TryGetValue(session.AlightingStopId, out var alightingSequence) ||
+            !routeStopSequences.TryGetValue(session.BoardingStopId, out var boardingSequence))
+        {
+            throw new ValidateException("Session's boarding/alighting stop is no longer part of its Direction.");
+        }
+
+        var effectiveCurrentSequence = currentStopSequence ?? boardingSequence;
+        var remainingStopCount = Math.Max(0, alightingSequence - effectiveCurrentSequence);
+
+        return new TravelSessionProgress(
+            remainingStopCount,
+            remainingStopCount <= ApproachingDestinationThreshold,
+            DataConfidence.Estimated);
     }
 }

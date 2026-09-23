@@ -35,6 +35,23 @@ public class TravelSessionServiceTests
         return session.Id;
     }
 
+    // Boarding at SequenceNumber 1, alighting at SequenceNumber 4 — three stops apart.
+    private static async Task<int> SeedRidingSessionWithRouteStopsAsync(
+        BusNavigateDbContext dbContext, Service.Implements.TravelSession.TravelSessionService service)
+    {
+        var sessionId = await SeedSessionAsync(dbContext, service);
+        var session = await dbContext.TravelSessions.SingleAsync(s => s.Id == sessionId);
+        session.State = TravelSessionState.Riding;
+
+        dbContext.RouteStops.Add(
+            new RouteStop { DirectionId = session.DirectionId, BusStopId = session.BoardingStopId, SequenceNumber = 1 });
+        dbContext.RouteStops.Add(
+            new RouteStop { DirectionId = session.DirectionId, BusStopId = session.AlightingStopId, SequenceNumber = 4 });
+        await dbContext.SaveChangesAsync();
+
+        return sessionId;
+    }
+
     [Fact]
     public async Task CreateAsync_CreatesSessionInPlannedState()
     {
@@ -166,5 +183,78 @@ public class TravelSessionServiceTests
         Assert.Equal(0, abandonedCount);
         var unchanged = await dbContext.TravelSessions.SingleAsync(s => s.Id == sessionId);
         Assert.Equal(TravelSessionState.Completed, unchanged.State);
+    }
+
+    [Fact]
+    public async Task GetProgressAsync_NoCurrentStopSequenceProvided_AssumesStillAtBoardingStop()
+    {
+        // Arrange — boarding seq 1, alighting seq 4 → 3 stops remaining if not moved yet.
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedRidingSessionWithRouteStopsAsync(dbContext, service);
+
+        // Act
+        var result = await service.GetProgressAsync(sessionId, currentStopSequence: null);
+
+        // Assert
+        Assert.Equal(3, result.RemainingStopCount);
+        Assert.False(result.IsApproachingDestination);
+        Assert.Equal(DataConfidence.Estimated, result.DataConfidence);
+    }
+
+    [Fact]
+    public async Task GetProgressAsync_OneStopFromAlighting_IsApproachingDestination()
+    {
+        // Arrange
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedRidingSessionWithRouteStopsAsync(dbContext, service);
+
+        // Act — reported at sequence 3, alighting is at sequence 4.
+        var result = await service.GetProgressAsync(sessionId, currentStopSequence: 3);
+
+        // Assert
+        Assert.Equal(1, result.RemainingStopCount);
+        Assert.True(result.IsApproachingDestination);
+    }
+
+    [Fact]
+    public async Task GetProgressAsync_ReportedPastAlighting_ClampsRemainingCountToZero()
+    {
+        // Arrange
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedRidingSessionWithRouteStopsAsync(dbContext, service);
+
+        // Act — reported at sequence 6, past the alighting stop's sequence of 4.
+        var result = await service.GetProgressAsync(sessionId, currentStopSequence: 6);
+
+        // Assert
+        Assert.Equal(0, result.RemainingStopCount);
+        Assert.True(result.IsApproachingDestination);
+    }
+
+    [Theory]
+    [InlineData(TravelSessionState.Planned)]
+    [InlineData(TravelSessionState.Waiting)]
+    [InlineData(TravelSessionState.Alighted)]
+    public async Task GetProgressAsync_SessionNotRiding_ThrowsValidateException(TravelSessionState state)
+    {
+        // Arrange
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedRidingSessionWithRouteStopsAsync(dbContext, service);
+        var session = await dbContext.TravelSessions.SingleAsync(s => s.Id == sessionId);
+        session.State = state;
+        await dbContext.SaveChangesAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidateException>(() => service.GetProgressAsync(sessionId, null));
+    }
+
+    [Fact]
+    public async Task GetProgressAsync_UnknownSession_ThrowsValidateException()
+    {
+        // Arrange
+        var (_, service) = CreateSubject();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidateException>(() => service.GetProgressAsync(999, null));
     }
 }
