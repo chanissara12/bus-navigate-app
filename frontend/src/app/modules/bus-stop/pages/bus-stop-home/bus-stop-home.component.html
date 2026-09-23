@@ -1,1 +1,9 @@
-<p>bus-stop-home works!</p>
+<app-bus-stop-variant-a *ngIf="variant === 'A'"></app-bus-stop-variant-a>
+<app-bus-stop-variant-b *ngIf="variant === 'B'"></app-bus-stop-variant-b>
+<app-bus-stop-variant-c *ngIf="variant === 'C'"></app-bus-stop-variant-c>
+
+<app-prototype-switcher
+    [variants]="prototypeVariants"
+    [current]="variant"
+    (currentChange)="onVariantChange($event)"
+></app-prototype-switcher>
