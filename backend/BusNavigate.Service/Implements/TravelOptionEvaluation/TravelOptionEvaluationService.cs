@@ -8,8 +8,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BusNavigate.Service.Implements.TravelOptionEvaluation;
 
-public class TravelOptionEvaluationService(BusNavigateDbContext dbContext) : ITravelOptionEvaluationService
+public class TravelOptionEvaluationService : ITravelOptionEvaluationService
 {
+    private readonly BusNavigateDbContext _dbContext;
+
+    public TravelOptionEvaluationService(BusNavigateDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
     // TravelSession has no multi-leg/transfer modeling yet (same limitation noted in
     // T04's ALIGHTED->COMPLETED comment), so both the original plan's and every
     // candidate's transfer count are fixed at 0 in Phase 1's current data model. T05's
@@ -21,12 +28,12 @@ public class TravelOptionEvaluationService(BusNavigateDbContext dbContext) : ITr
     public async Task<TravelOptionEvaluationResult> EvaluateAsync(
         int travelSessionId, int candidateDirectionId, CancellationToken cancellationToken = default)
     {
-        var session = await dbContext.TravelSessions
+        var session = await _dbContext.TravelSessions
             .Include(s => s.AlightingStop)
             .FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
             ?? throw new ValidateException($"Travel session {travelSessionId} was not found.");
 
-        var candidateRouteStops = await dbContext.RouteStops
+        var candidateRouteStops = await _dbContext.RouteStops
             .Where(rs => rs.DirectionId == candidateDirectionId)
             .Include(rs => rs.BusStop)
             .ToListAsync(cancellationToken);

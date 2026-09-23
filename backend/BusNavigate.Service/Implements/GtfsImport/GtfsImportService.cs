@@ -4,18 +4,27 @@ using BusNavigate.Domain.Entities;
 using BusNavigate.Domain.Interfaces.GtfsImport;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using BusStopEntity = BusNavigate.Domain.Entities.BusStop;
 
 namespace BusNavigate.Service.Implements.GtfsImport;
 
-public class GtfsImportService(
-    BusNavigateDbContext dbContext,
-    IGtfsFeedFetcher feedFetcher,
-    ILogger<GtfsImportService> logger
-) : IGtfsImportService
+public class GtfsImportService : IGtfsImportService
 {
+    private readonly BusNavigateDbContext _dbContext;
+    private readonly IGtfsFeedFetcher _feedFetcher;
+    private readonly ILogger<GtfsImportService> _logger;
+
+    public GtfsImportService(
+        BusNavigateDbContext dbContext, IGtfsFeedFetcher feedFetcher, ILogger<GtfsImportService> logger)
+    {
+        _dbContext = dbContext;
+        _feedFetcher = feedFetcher;
+        _logger = logger;
+    }
+
     public async Task ImportAsync(CancellationToken cancellationToken = default)
     {
-        var feed = await feedFetcher.FetchLatestAsync(cancellationToken);
+        var feed = await _feedFetcher.FetchLatestAsync(cancellationToken);
 
         var agencies = GtfsParser.ParseAgencies(feed.Agency);
         var routes = GtfsParser.ParseRoutes(feed.Routes);
@@ -29,8 +38,8 @@ public class GtfsImportService(
 
         // The in-memory provider (used in unit tests) doesn't support transactions —
         // only wrap the import in one against a real relational database.
-        var transaction = dbContext.Database.IsRelational()
-            ? await dbContext.Database.BeginTransactionAsync(cancellationToken)
+        var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
             : null;
         await using var _ = transaction;
 
@@ -62,7 +71,7 @@ public class GtfsImportService(
             await transaction.CommitAsync(cancellationToken);
         }
 
-        logger.LogInformation(
+        _logger.LogInformation(
             "GTFS import complete: {RouteCount} routes, {DirectionCount} directions, {StopCount} stops, {TripCount} trips",
             busRouteByExternalId.Count, directionByExternalKey.Count, busStopByExternalId.Count, tripByExternalId.Count);
     }
@@ -70,14 +79,14 @@ public class GtfsImportService(
     private async Task<Dictionary<string, ServiceCalendar>> UpsertServiceCalendarsAsync(
         List<GtfsCalendar> calendars, CancellationToken cancellationToken)
     {
-        var existing = await dbContext.ServiceCalendars.ToDictionaryAsync(c => c.ExternalServiceId, cancellationToken);
+        var existing = await _dbContext.ServiceCalendars.ToDictionaryAsync(c => c.ExternalServiceId, cancellationToken);
 
         foreach (var calendar in calendars)
         {
             if (!existing.TryGetValue(calendar.ServiceId, out var entity))
             {
                 entity = new ServiceCalendar { ExternalServiceId = calendar.ServiceId };
-                dbContext.ServiceCalendars.Add(entity);
+                _dbContext.ServiceCalendars.Add(entity);
                 existing[calendar.ServiceId] = entity;
             }
 
@@ -92,7 +101,7 @@ public class GtfsImportService(
             entity.EndDate = calendar.EndDate;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return existing;
     }
 
@@ -101,14 +110,14 @@ public class GtfsImportService(
         Dictionary<string, ServiceCalendar> serviceCalendarByExternalId,
         CancellationToken cancellationToken)
     {
-        var existing = await dbContext.ServiceExceptions
+        var existing = await _dbContext.ServiceExceptions
             .ToDictionaryAsync(e => (e.ServiceCalendarId, e.ExceptionDate), cancellationToken);
 
         foreach (var calendarDate in calendarDates)
         {
             if (!serviceCalendarByExternalId.TryGetValue(calendarDate.ServiceId, out var calendar))
             {
-                logger.LogWarning(
+                _logger.LogWarning(
                     "Skipping calendar_dates row: unknown service_id {ServiceId}", calendarDate.ServiceId);
                 continue;
             }
@@ -122,7 +131,7 @@ public class GtfsImportService(
 
             if (exceptionType is null)
             {
-                logger.LogWarning(
+                _logger.LogWarning(
                     "Skipping calendar_dates row: unknown exception_type {ExceptionType}", calendarDate.ExceptionType);
                 continue;
             }
@@ -131,14 +140,14 @@ public class GtfsImportService(
             if (!existing.TryGetValue(key, out var entity))
             {
                 entity = new ServiceException { ServiceCalendarId = calendar.Id, ExceptionDate = calendarDate.Date };
-                dbContext.ServiceExceptions.Add(entity);
+                _dbContext.ServiceExceptions.Add(entity);
                 existing[key] = entity;
             }
 
             entity.ExceptionType = exceptionType.Value;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<Dictionary<string, BusRoute>> UpsertBusRoutesAsync(
@@ -147,14 +156,14 @@ public class GtfsImportService(
         DateTime importedAt,
         CancellationToken cancellationToken)
     {
-        var existing = await dbContext.BusRoutes.ToDictionaryAsync(r => r.ExternalRouteId, cancellationToken);
+        var existing = await _dbContext.BusRoutes.ToDictionaryAsync(r => r.ExternalRouteId, cancellationToken);
 
         foreach (var route in routes)
         {
             if (!existing.TryGetValue(route.RouteId, out var entity))
             {
                 entity = new BusRoute { ExternalRouteId = route.RouteId };
-                dbContext.BusRoutes.Add(entity);
+                _dbContext.BusRoutes.Add(entity);
                 existing[route.RouteId] = entity;
             }
 
@@ -165,7 +174,7 @@ public class GtfsImportService(
             entity.ImportedAt = importedAt;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return existing;
     }
 
@@ -176,7 +185,7 @@ public class GtfsImportService(
         Dictionary<string, BusRoute> busRouteByExternalId,
         CancellationToken cancellationToken)
     {
-        var existing = await dbContext.Directions.ToDictionaryAsync(d => d.ExternalDirectionKey, cancellationToken);
+        var existing = await _dbContext.Directions.ToDictionaryAsync(d => d.ExternalDirectionKey, cancellationToken);
 
         var groups = trips
             .Where(t => busRouteByExternalId.ContainsKey(t.RouteId))
@@ -194,7 +203,7 @@ public class GtfsImportService(
             if (!existing.TryGetValue(externalKey, out var entity))
             {
                 entity = new Direction { ExternalDirectionKey = externalKey };
-                dbContext.Directions.Add(entity);
+                _dbContext.Directions.Add(entity);
                 existing[externalKey] = entity;
             }
 
@@ -203,21 +212,21 @@ public class GtfsImportService(
             entity.Headsign = mostCommonHeadsign;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return existing;
     }
 
-    private async Task<Dictionary<string, BusStop>> UpsertBusStopsAsync(
+    private async Task<Dictionary<string, BusStopEntity>> UpsertBusStopsAsync(
         List<GtfsStop> stops, CancellationToken cancellationToken)
     {
-        var existing = await dbContext.BusStops.ToDictionaryAsync(s => s.ExternalStopId, cancellationToken);
+        var existing = await _dbContext.BusStops.ToDictionaryAsync(s => s.ExternalStopId, cancellationToken);
 
         foreach (var stop in stops)
         {
             if (!existing.TryGetValue(stop.StopId, out var entity))
             {
-                entity = new BusStop { ExternalStopId = stop.StopId };
-                dbContext.BusStops.Add(entity);
+                entity = new BusStopEntity { ExternalStopId = stop.StopId };
+                _dbContext.BusStops.Add(entity);
                 existing[stop.StopId] = entity;
             }
 
@@ -228,7 +237,7 @@ public class GtfsImportService(
             entity.Longitude = stop.Longitude;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return existing;
     }
 
@@ -239,10 +248,10 @@ public class GtfsImportService(
     private async Task<Dictionary<(int DirectionId, int BusStopId), RouteStop>> UpsertRouteStopsAsync(
         List<GtfsStopTime> stopTimes,
         Dictionary<string, int> directionIdByTripId,
-        Dictionary<string, BusStop> busStopByExternalId,
+        Dictionary<string, BusStopEntity> busStopByExternalId,
         CancellationToken cancellationToken)
     {
-        var existing = await dbContext.RouteStops
+        var existing = await _dbContext.RouteStops
             .ToDictionaryAsync(rs => (rs.DirectionId, rs.BusStopId), cancellationToken);
 
         var minSequenceByDirectionAndStop = new Dictionary<(int DirectionId, int BusStopId), int>();
@@ -273,7 +282,7 @@ public class GtfsImportService(
                 if (!existing.TryGetValue(key, out var entity))
                 {
                     entity = new RouteStop { DirectionId = key.DirectionId, BusStopId = key.BusStopId };
-                    dbContext.RouteStops.Add(entity);
+                    _dbContext.RouteStops.Add(entity);
                     existing[key] = entity;
                 }
 
@@ -281,7 +290,7 @@ public class GtfsImportService(
             }
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return existing;
     }
 
@@ -291,7 +300,7 @@ public class GtfsImportService(
         Dictionary<string, ServiceCalendar> serviceCalendarByExternalId,
         CancellationToken cancellationToken)
     {
-        var existing = await dbContext.Trips.ToDictionaryAsync(t => t.ExternalTripId, cancellationToken);
+        var existing = await _dbContext.Trips.ToDictionaryAsync(t => t.ExternalTripId, cancellationToken);
 
         foreach (var trip in trips)
         {
@@ -299,14 +308,14 @@ public class GtfsImportService(
             if (!directionByExternalKey.TryGetValue(directionKey, out var direction) ||
                 !serviceCalendarByExternalId.TryGetValue(trip.ServiceId, out var serviceCalendar))
             {
-                logger.LogWarning("Skipping trip {TripId}: missing direction or service calendar", trip.TripId);
+                _logger.LogWarning("Skipping trip {TripId}: missing direction or service calendar", trip.TripId);
                 continue;
             }
 
             if (!existing.TryGetValue(trip.TripId, out var entity))
             {
                 entity = new Trip { ExternalTripId = trip.TripId };
-                dbContext.Trips.Add(entity);
+                _dbContext.Trips.Add(entity);
                 existing[trip.TripId] = entity;
             }
 
@@ -314,7 +323,7 @@ public class GtfsImportService(
             entity.ServiceCalendarId = serviceCalendar.Id;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return existing;
     }
 
@@ -322,11 +331,11 @@ public class GtfsImportService(
         List<GtfsStopTime> stopTimes,
         Dictionary<string, Trip> tripByExternalId,
         Dictionary<string, int> directionIdByTripId,
-        Dictionary<string, BusStop> busStopByExternalId,
+        Dictionary<string, BusStopEntity> busStopByExternalId,
         Dictionary<(int DirectionId, int BusStopId), RouteStop> routeStopByDirectionAndStop,
         CancellationToken cancellationToken)
     {
-        var existing = await dbContext.TripStopTimes
+        var existing = await _dbContext.TripStopTimes
             .ToDictionaryAsync(t => (t.TripId, t.RouteStopId), cancellationToken);
 
         foreach (var stopTime in stopTimes)
@@ -343,7 +352,7 @@ public class GtfsImportService(
             if (!existing.TryGetValue(key, out var entity))
             {
                 entity = new TripStopTime { TripId = trip.Id, RouteStopId = routeStop.Id };
-                dbContext.TripStopTimes.Add(entity);
+                _dbContext.TripStopTimes.Add(entity);
                 existing[key] = entity;
             }
 
@@ -351,6 +360,6 @@ public class GtfsImportService(
             entity.DepartureTime = stopTime.DepartureTime;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

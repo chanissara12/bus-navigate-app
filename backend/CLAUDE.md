@@ -80,6 +80,36 @@ BusNavigate.Service.Test     # Unit Test
 - Do not use `.Result` or `.Wait()`
 - Log via the injected `ILogger<T>` — never `Console.WriteLine`
 - Register services with the correct DI lifetime (`Scoped` for request-bound state, `Singleton` for stateless/shared, `Transient` sparingly) — never resolve a `Scoped` service from a `Singleton`
+- Inject dependencies via an explicit constructor, not a primary constructor — declare
+  a private `_camelCase` readonly field per dependency and assign it in the constructor
+  body, then use the field everywhere else in the class:
+
+  ```csharp
+  public class StopLandmarkFetcher : IStopLandmarkFetcher
+  {
+      private readonly BusNavigateDbContext _dbContext;
+      private readonly IConfiguration _configuration;
+      private readonly ILogger<StopLandmarkFetcher> _logger;
+
+      public StopLandmarkFetcher(
+          BusNavigateDbContext dbContext, IConfiguration configuration, ILogger<StopLandmarkFetcher> logger)
+      {
+          _dbContext = dbContext;
+          _configuration = configuration;
+          _logger = logger;
+      }
+
+      public async Task<string> FetchLandmarksAsync(CancellationToken cancellationToken = default)
+      {
+          var stops = await _dbContext.BusStops.ToListAsync(cancellationToken);
+          // ...
+          _logger.LogInformation("...");
+      }
+  }
+  ```
+
+  This does not apply to a `DbContext`'s own constructor (`: base(options)`) — that's
+  the standard EF Core idiom, not a service dependency.
 
 ### Business Validation
 

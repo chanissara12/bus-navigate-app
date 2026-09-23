@@ -7,14 +7,21 @@ using BusNavigate.Domain.Interfaces.Recovery;
 using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
 using BusNavigate.Domain.ViewModels.Recovery;
 using Microsoft.EntityFrameworkCore;
+using BusStopEntity = BusNavigate.Domain.Entities.BusStop;
 
 namespace BusNavigate.Service.Implements.Recovery;
 
-public class RecoveryService(
-    BusNavigateDbContext dbContext,
-    ITravelOptionEvaluationService travelOptionEvaluationService
-) : IRecoveryService
+public class RecoveryService : IRecoveryService
 {
+    private readonly BusNavigateDbContext _dbContext;
+    private readonly ITravelOptionEvaluationService _travelOptionEvaluationService;
+
+    public RecoveryService(BusNavigateDbContext dbContext, ITravelOptionEvaluationService travelOptionEvaluationService)
+    {
+        _dbContext = dbContext;
+        _travelOptionEvaluationService = travelOptionEvaluationService;
+    }
+
     // Roughly constant everywhere on Earth — used only to size a coarse bounding-box
     // pre-filter (translatable to SQL) before the exact haversine check in memory.
     // There's no PostGIS/spatial index in Phase 1's schema, so this keeps the "nearby
@@ -25,7 +32,7 @@ public class RecoveryService(
         int travelSessionId, int? currentDirectionId, decimal currentLatitude, decimal currentLongitude,
         CancellationToken cancellationToken = default)
     {
-        var sessionExists = await dbContext.TravelSessions
+        var sessionExists = await _dbContext.TravelSessions
             .AnyAsync(s => s.Id == travelSessionId, cancellationToken);
         if (!sessionExists)
         {
@@ -40,7 +47,7 @@ public class RecoveryService(
 
         foreach (var (direction, distanceMeters) in candidateDirections)
         {
-            var evaluation = await travelOptionEvaluationService.EvaluateAsync(
+            var evaluation = await _travelOptionEvaluationService.EvaluateAsync(
                 travelSessionId, direction.Id, cancellationToken);
 
             // DataConfidence.Scheduled: fully computed from GTFS schedule data, no live
@@ -74,7 +81,7 @@ public class RecoveryService(
         var distanceByStopId = stopsWithinRadius.ToDictionary(x => x.Stop.Id, x => x.DistanceMeters);
 
         var nearbyStopIds = distanceByStopId.Keys.ToHashSet();
-        var routeStops = await dbContext.RouteStops
+        var routeStops = await _dbContext.RouteStops
             .Where(rs => nearbyStopIds.Contains(rs.BusStopId))
             .Include(rs => rs.Direction).ThenInclude(d => d.BusRoute)
             .ToListAsync(cancellationToken);
@@ -83,7 +90,7 @@ public class RecoveryService(
 
         if (currentDirectionId is int directionId)
         {
-            var currentDirection = await dbContext.Directions
+            var currentDirection = await _dbContext.Directions
                 .Include(d => d.BusRoute)
                 .FirstOrDefaultAsync(d => d.Id == directionId, cancellationToken)
                 ?? throw new ValidateException($"Direction {directionId} was not found.");
@@ -109,7 +116,7 @@ public class RecoveryService(
         var (minLat, maxLat, minLon, maxLon) = ComputeBoundingBox(
             currentLatitude, currentLongitude, TravelOptionEvaluationConstants.WalkBudgetMeters);
 
-        var nearbyPlaces = await dbContext.Places
+        var nearbyPlaces = await _dbContext.Places
             .Where(p => p.Latitude >= minLat && p.Latitude <= maxLat && p.Longitude >= minLon && p.Longitude <= maxLon)
             .ToListAsync(cancellationToken);
 
@@ -125,13 +132,13 @@ public class RecoveryService(
             .ToList();
     }
 
-    private async Task<List<(BusStop Stop, double DistanceMeters)>> FindStopsWithinRadiusAsync(
+    private async Task<List<(BusStopEntity Stop, double DistanceMeters)>> FindStopsWithinRadiusAsync(
         decimal currentLatitude, decimal currentLongitude, CancellationToken cancellationToken)
     {
         var (minLat, maxLat, minLon, maxLon) = ComputeBoundingBox(
             currentLatitude, currentLongitude, TravelOptionEvaluationConstants.WalkBudgetMeters);
 
-        var stopsInBoundingBox = await dbContext.BusStops
+        var stopsInBoundingBox = await _dbContext.BusStops
             .Where(s => s.Latitude >= minLat && s.Latitude <= maxLat && s.Longitude >= minLon && s.Longitude <= maxLon)
             .ToListAsync(cancellationToken);
 

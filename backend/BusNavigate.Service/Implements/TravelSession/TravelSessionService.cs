@@ -7,8 +7,15 @@ using TravelSessionState = BusNavigate.Domain.Entities.TravelSessionState;
 
 namespace BusNavigate.Service.Implements.TravelSession;
 
-public class TravelSessionService(BusNavigateDbContext dbContext) : ITravelSessionService
+public class TravelSessionService : ITravelSessionService
 {
+    private readonly BusNavigateDbContext _dbContext;
+
+    public TravelSessionService(BusNavigateDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
     // Terminal states never accept a further event or get swept into ABANDONED again.
     private static readonly HashSet<TravelSessionState> TerminalStates =
     [
@@ -54,15 +61,15 @@ public class TravelSessionService(BusNavigateDbContext dbContext) : ITravelSessi
             LastActivityAt = now,
         };
 
-        dbContext.TravelSessions.Add(session);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.TravelSessions.Add(session);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return session;
     }
 
     public async Task<TravelSessionEntity> ApplyEventAsync(
         int travelSessionId, TravelSessionEventType eventType, CancellationToken cancellationToken = default)
     {
-        var session = await dbContext.TravelSessions.FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
+        var session = await _dbContext.TravelSessions.FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
             ?? throw new ValidateException($"Travel session {travelSessionId} was not found.");
 
         if (!Transitions.TryGetValue((session.State, eventType), out var nextState))
@@ -73,7 +80,7 @@ public class TravelSessionService(BusNavigateDbContext dbContext) : ITravelSessi
         session.State = nextState;
         session.LastActivityAt = DateTime.UtcNow;
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return session;
     }
 
@@ -81,7 +88,7 @@ public class TravelSessionService(BusNavigateDbContext dbContext) : ITravelSessi
     {
         var cutoff = DateTime.UtcNow - StallThreshold;
 
-        var staleSessions = await dbContext.TravelSessions
+        var staleSessions = await _dbContext.TravelSessions
             .Where(s => !TerminalStates.Contains(s.State) && s.LastActivityAt < cutoff)
             .ToListAsync(cancellationToken);
 
@@ -92,7 +99,7 @@ public class TravelSessionService(BusNavigateDbContext dbContext) : ITravelSessi
 
         if (staleSessions.Count > 0)
         {
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
         return staleSessions.Count;

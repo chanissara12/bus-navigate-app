@@ -8,12 +8,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BusNavigate.Service.Implements.ServiceStatus;
 
-public class ServiceStatusService(BusNavigateDbContext dbContext) : IServiceStatusService
+public class ServiceStatusService : IServiceStatusService
 {
+    private readonly BusNavigateDbContext _dbContext;
+
+    public ServiceStatusService(BusNavigateDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
     public async Task<ServiceStatusResult> GetStatusAsync(
         int busRouteId, int? directionId, CancellationToken cancellationToken = default)
     {
-        var routeExists = await dbContext.BusRoutes.AnyAsync(r => r.Id == busRouteId, cancellationToken);
+        var routeExists = await _dbContext.BusRoutes.AnyAsync(r => r.Id == busRouteId, cancellationToken);
         if (!routeExists)
         {
             throw new ValidateException($"BusRoute {busRouteId} was not found.");
@@ -34,7 +41,7 @@ public class ServiceStatusService(BusNavigateDbContext dbContext) : IServiceStat
     private async Task<bool> IsNotOperatingTodayAsync(
         int busRouteId, int? directionId, DateOnly today, CancellationToken cancellationToken)
     {
-        var tripsInScope = dbContext.Trips.Where(t => t.Direction.BusRouteId == busRouteId);
+        var tripsInScope = _dbContext.Trips.Where(t => t.Direction.BusRouteId == busRouteId);
         if (directionId is int knownDirectionId)
         {
             tripsInScope = tripsInScope.Where(t => t.DirectionId == knownDirectionId);
@@ -51,11 +58,11 @@ public class ServiceStatusService(BusNavigateDbContext dbContext) : IServiceStat
             return true;
         }
 
-        var calendars = await dbContext.ServiceCalendars
+        var calendars = await _dbContext.ServiceCalendars
             .Where(c => calendarIds.Contains(c.Id))
             .ToListAsync(cancellationToken);
 
-        var exceptionsToday = await dbContext.ServiceExceptions
+        var exceptionsToday = await _dbContext.ServiceExceptions
             .Where(e => calendarIds.Contains(e.ServiceCalendarId) && e.ExceptionDate == today)
             .ToListAsync(cancellationToken);
 
@@ -73,7 +80,7 @@ public class ServiceStatusService(BusNavigateDbContext dbContext) : IServiceStat
         // alerts, since only "== null" then matches. Multiple simultaneously-active
         // alerts are unexpected for manual curation, but if it happens, the most
         // recently entered one wins (an admin correcting an earlier mistake).
-        var alert = await dbContext.TransitAlerts
+        var alert = await _dbContext.TransitAlerts
             .Where(a => a.BusRouteId == busRouteId)
             .Where(a => a.DirectionId == null || a.DirectionId == directionId)
             .Where(a => a.EffectiveFrom <= nowInBangkok && (a.EffectiveTo == null || a.EffectiveTo >= nowInBangkok))

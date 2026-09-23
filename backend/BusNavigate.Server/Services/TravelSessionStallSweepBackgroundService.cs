@@ -5,10 +5,19 @@ namespace BusNavigate.Server.Services;
 // Sweeps for stalled TravelSessions (no activity for 2 hours) and abandons them —
 // matches T04's stall-handling decision. Runs on a short interval since a stalled
 // session should be swept promptly, unlike the weekly GTFS import.
-public class TravelSessionStallSweepBackgroundService(
-    IServiceProvider serviceProvider, ILogger<TravelSessionStallSweepBackgroundService> logger) : BackgroundService
+public class TravelSessionStallSweepBackgroundService : BackgroundService
 {
     private static readonly TimeSpan SweepInterval = TimeSpan.FromMinutes(15);
+
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<TravelSessionStallSweepBackgroundService> _logger;
+
+    public TravelSessionStallSweepBackgroundService(
+        IServiceProvider serviceProvider, ILogger<TravelSessionStallSweepBackgroundService> logger)
+    {
+        _serviceProvider = serviceProvider;
+        _logger = logger;
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -16,7 +25,7 @@ public class TravelSessionStallSweepBackgroundService(
 
         do
         {
-            using var scope = serviceProvider.CreateScope();
+            using var scope = _serviceProvider.CreateScope();
             var travelSessionService = scope.ServiceProvider.GetRequiredService<ITravelSessionService>();
 
             try
@@ -24,12 +33,12 @@ public class TravelSessionStallSweepBackgroundService(
                 var abandonedCount = await travelSessionService.AbandonStaleSessionsAsync(stoppingToken);
                 if (abandonedCount > 0)
                 {
-                    logger.LogInformation("Abandoned {Count} stalled travel session(s)", abandonedCount);
+                    _logger.LogInformation("Abandoned {Count} stalled travel session(s)", abandonedCount);
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                logger.LogError(ex, "Travel session stall sweep failed");
+                _logger.LogError(ex, "Travel session stall sweep failed");
             }
         }
         while (!stoppingToken.IsCancellationRequested && await timer.WaitForNextTickAsync(stoppingToken));

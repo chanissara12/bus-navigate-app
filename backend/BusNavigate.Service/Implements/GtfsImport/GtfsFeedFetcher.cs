@@ -5,19 +5,30 @@ using Microsoft.Extensions.Logging;
 
 namespace BusNavigate.Service.Implements.GtfsImport;
 
-public class GtfsFeedFetcher(HttpClient httpClient, IConfiguration configuration, ILogger<GtfsFeedFetcher> logger) : IGtfsFeedFetcher
+public class GtfsFeedFetcher : IGtfsFeedFetcher
 {
+    private readonly HttpClient _httpClient;
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<GtfsFeedFetcher> _logger;
+
+    public GtfsFeedFetcher(HttpClient httpClient, IConfiguration configuration, ILogger<GtfsFeedFetcher> logger)
+    {
+        _httpClient = httpClient;
+        _configuration = configuration;
+        _logger = logger;
+    }
+
     public async Task<GtfsFeedFiles> FetchLatestAsync(CancellationToken cancellationToken = default)
     {
-        var feedUrl = configuration["GtfsImport:FeedUrl"];
+        var feedUrl = _configuration["GtfsImport:FeedUrl"];
         if (string.IsNullOrWhiteSpace(feedUrl))
         {
             throw new InvalidOperationException("GtfsImport:FeedUrl is not configured.");
         }
 
-        logger.LogInformation("Downloading GTFS feed from {FeedUrl}", feedUrl);
+        _logger.LogInformation("Downloading GTFS feed from {FeedUrl}", feedUrl);
 
-        await using var zipStream = await httpClient.GetStreamAsync(feedUrl, cancellationToken);
+        await using var zipStream = await _httpClient.GetStreamAsync(feedUrl, cancellationToken);
         using var archive = new ZipArchive(zipStream, ZipArchiveMode.Read);
 
         return new GtfsFeedFiles(
