@@ -43,6 +43,12 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
+- [Full Phase 1 API contract](tickets/T09-api-contracts.md): Anonymous identity via
+  client-generated `X-Device-Id` header (lazy `User` upsert, no session round-trip).
+  Error shape `{message, code?, details?}` matching CLAUDE.md's frontend `catchError`
+  convention. No pagination — capped search results (top 20). TravelSession
+  transitions via one `POST /travel-sessions/{id}/events` endpoint, not per-action
+  endpoints. Full endpoint list assembled across all Phase 1 flows.
 - [Bus Stop Context data model](tickets/T08-bus-stop-context.md): No `StopImage`
   table for Phase 1 (no imagery source, no consumer — would be dead schema).
   `StopLandmark` uses a hybrid `LandmarkType` enum + free-text `Description` fallback,

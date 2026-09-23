@@ -2,8 +2,8 @@
 
 **Parent map:** [Phase 1 Spec — Public Transit Decision & Recovery Assistant](../map.md)
 
-**Status:** open (unclaimed)
-**Blocked by:** [Full Phase 1 API contract](T09-api-contracts.md)
+**Status:** open (unclaimed) — unblocked
+**Blocked by:** none (~~T09~~ closed)
 **Blocks:** none — last ticket on the map; resolving this completes the destination.
 
 ## Question
