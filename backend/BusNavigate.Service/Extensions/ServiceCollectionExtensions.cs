@@ -4,12 +4,14 @@ using BusNavigate.Domain.Interfaces.Recovery;
 using BusNavigate.Domain.Interfaces.ServiceStatus;
 using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
 using BusNavigate.Domain.Interfaces.TravelSession;
+using BusNavigate.Domain.Interfaces.TripPlanning;
 using BusNavigate.Service.Implements.BusStop;
 using BusNavigate.Service.Implements.GtfsImport;
 using BusNavigate.Service.Implements.Recovery;
 using BusNavigate.Service.Implements.ServiceStatus;
 using BusNavigate.Service.Implements.TravelOptionEvaluation;
 using BusNavigate.Service.Implements.TravelSession;
+using BusNavigate.Service.Implements.TripPlanning;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BusNavigate.Service.Extensions;
@@ -33,6 +35,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddTravelOptionEvaluation(this IServiceCollection services)
     {
+        services.AddScoped<IReachabilityService, ReachabilityService>();
         services.AddScoped<ITravelOptionEvaluationService, TravelOptionEvaluationService>();
 
         return services;
@@ -57,6 +60,15 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IStopLandmarkFetcher, StopLandmarkFetcher>();
         services.AddScoped<IStopLandmarkSyncService, StopLandmarkSyncService>();
         services.AddScoped<IBusStopContextService, BusStopContextService>();
+        services.AddScoped<INearbyBusStopSearchService, NearbyBusStopSearchService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddTripPlanning(this IServiceCollection services)
+    {
+        services.AddScoped<IPlaceSearchService, PlaceSearchService>();
+        services.AddScoped<ITravelOptionSearchService, TravelOptionSearchService>();
 
         return services;
     }

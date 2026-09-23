@@ -1,7 +1,6 @@
 using BusNavigate.Domain.Constants;
 using BusNavigate.Domain.Database;
 using BusNavigate.Domain.Exceptions;
-using BusNavigate.Domain.Helpers;
 using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
 using BusNavigate.Domain.ViewModels.TravelOptionEvaluation;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +10,12 @@ namespace BusNavigate.Service.Implements.TravelOptionEvaluation;
 public class TravelOptionEvaluationService : ITravelOptionEvaluationService
 {
     private readonly BusNavigateDbContext _dbContext;
+    private readonly IReachabilityService _reachabilityService;
 
-    public TravelOptionEvaluationService(BusNavigateDbContext dbContext)
+    public TravelOptionEvaluationService(BusNavigateDbContext dbContext, IReachabilityService reachabilityService)
     {
         _dbContext = dbContext;
+        _reachabilityService = reachabilityService;
     }
 
     // TravelSession has no multi-leg/transfer modeling yet (same limitation noted in
@@ -33,27 +34,15 @@ public class TravelOptionEvaluationService : ITravelOptionEvaluationService
             .FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
             ?? throw new ValidateException($"Travel session {travelSessionId} was not found.");
 
-        var candidateRouteStops = await _dbContext.RouteStops
-            .Where(rs => rs.DirectionId == candidateDirectionId)
-            .Include(rs => rs.BusStop)
-            .ToListAsync(cancellationToken);
-
-        if (candidateRouteStops.Count == 0)
-        {
-            throw new ValidateException($"Direction {candidateDirectionId} was not found or has no stops.");
-        }
-
         // Destination, for Phase 1's single-leg TravelSession, is the plan's own
         // AlightingStop (see T04) — there's no separate Destination/Place concept yet.
         var destination = session.AlightingStop;
 
-        var nearestStopDistanceMeters = candidateRouteStops
-            .Select(routeStop => GeoDistanceHelper.HaversineDistanceMeters(
-                routeStop.BusStop.Latitude, routeStop.BusStop.Longitude,
-                destination.Latitude, destination.Longitude))
-            .Min();
+        var nearestRouteStop = await _reachabilityService.FindNearestRouteStopAsync(
+            candidateDirectionId, destination.Latitude, destination.Longitude, cancellationToken)
+            ?? throw new ValidateException($"Direction {candidateDirectionId} was not found or has no stops.");
 
-        var walkDistanceMeters = nearestStopDistanceMeters * TravelOptionEvaluationConstants.WalkingDetourFactor;
+        var walkDistanceMeters = nearestRouteStop.DistanceMeters * TravelOptionEvaluationConstants.WalkingDetourFactor;
 
         var extraTransfers = CandidateTransferCount - OriginalTransferCount;
 

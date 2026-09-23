@@ -21,7 +21,7 @@ public class TravelOptionEvaluationServiceTests
             .Options;
         var dbContext = new BusNavigateDbContext(options);
 
-        return (dbContext, new Service.Implements.TravelOptionEvaluation.TravelOptionEvaluationService(dbContext));
+        return (dbContext, new Service.Implements.TravelOptionEvaluation.TravelOptionEvaluationService(dbContext, new Service.Implements.TravelOptionEvaluation.ReachabilityService(dbContext)));
     }
 
     private static async Task<int> SeedTravelSessionAsync(BusNavigateDbContext dbContext)

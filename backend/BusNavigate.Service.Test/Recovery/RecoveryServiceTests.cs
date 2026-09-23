@@ -26,7 +26,7 @@ public class RecoveryServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var dbContext = new BusNavigateDbContext(options);
-        var evaluationService = new Service.Implements.TravelOptionEvaluation.TravelOptionEvaluationService(dbContext);
+        var evaluationService = new Service.Implements.TravelOptionEvaluation.TravelOptionEvaluationService(dbContext, new Service.Implements.TravelOptionEvaluation.ReachabilityService(dbContext));
 
         return (dbContext, new Service.Implements.Recovery.RecoveryService(dbContext, evaluationService));
     }
