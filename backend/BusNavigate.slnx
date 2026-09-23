@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="BusNavigate.Domain/BusNavigate.Domain.csproj" />
+  <Project Path="BusNavigate.Server/BusNavigate.Server.csproj" />
+  <Project Path="BusNavigate.Service.Test/BusNavigate.Service.Test.csproj" />
+  <Project Path="BusNavigate.Service/BusNavigate.Service.csproj" />
+</Solution>

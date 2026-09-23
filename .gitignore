@@ -18,6 +18,12 @@ gtfs/
 .env.*
 !.env.example
 
+# Same contract for the .NET backend: appsettings.json/appsettings.*.json can carry a
+# real DB connection string, so only the placeholder-valued Example file is tracked.
+appsettings.json
+appsettings.*.json
+!appsettings.Example.json
+
 # Local-only overrides, any stack, any extension:
 # appsettings.local.json, vite.config.local.ts, docker-compose.local.yml
 *.local.*
