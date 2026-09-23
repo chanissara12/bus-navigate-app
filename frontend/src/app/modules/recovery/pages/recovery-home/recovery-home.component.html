@@ -1,1 +1,9 @@
-<p>recovery-home works!</p>
+<app-recovery-variant-a *ngIf="variant === 'A'"></app-recovery-variant-a>
+<app-recovery-variant-b *ngIf="variant === 'B'"></app-recovery-variant-b>
+<app-recovery-variant-c *ngIf="variant === 'C'"></app-recovery-variant-c>
+
+<app-prototype-switcher
+    [variants]="prototypeVariants"
+    [current]="variant"
+    (currentChange)="onVariantChange($event)"
+></app-prototype-switcher>

@@ -1,0 +1,12 @@
+<div class="sticky top-0 z-10 flex gap-1.5 overflow-x-auto bg-amber-50 border-b border-amber-200 px-3 py-2">
+    <span class="shrink-0 self-center text-[10px] font-semibold text-amber-700 uppercase mr-1">Demo state</span>
+    <button
+        type="button"
+        *ngFor="let s of states"
+        (click)="currentChange.emit(s.state)"
+        class="shrink-0 rounded-full px-2.5 py-1 text-xs cursor-pointer"
+        [ngClass]="s.state === current ? 'bg-amber-600 text-white' : 'bg-white text-amber-800 border border-amber-300'"
+    >
+        {{ s.icon }} {{ s.label }}
+    </button>
+</div>

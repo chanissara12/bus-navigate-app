@@ -1,0 +1,57 @@
+<div class="grid grid-cols-1 md:grid-cols-[320px_1fr] h-[calc(100vh-4rem)] pb-16">
+    <div class="border-r border-slate-200 bg-white overflow-y-auto">
+        <div class="p-3 border-b border-red-200 bg-red-50 text-xs font-semibold text-red-800">⚠️ ขึ้นรถผิดสาย</div>
+
+        <div class="px-3 pt-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase">แนะนำ</div>
+        <button
+            type="button"
+            *ngFor="let opt of recommended"
+            (click)="select(opt.id)"
+            class="w-full text-left flex items-center gap-2 px-3 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-sky-50"
+            [ngClass]="opt.id === selectedId() ? 'bg-sky-50 border-l-4 border-l-sky-600' : 'border-l-4 border-l-transparent'"
+        >
+            <span class="text-sm text-slate-900">{{ opt.label }}</span>
+        </button>
+
+        <div class="px-3 pt-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase">ทางเลือกสุดท้าย</div>
+        <button
+            type="button"
+            *ngFor="let opt of lastResort"
+            (click)="select(opt.id)"
+            class="w-full text-left flex items-center gap-2 px-3 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-amber-50"
+            [ngClass]="opt.id === selectedId() ? 'bg-amber-50 border-l-4 border-l-amber-500' : 'border-l-4 border-l-transparent'"
+        >
+            <span class="text-sm text-slate-700">{{ opt.label }}</span>
+        </button>
+
+        <div class="px-3 pt-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase">รถไฟฟ้า (ไม่ยืนยัน)</div>
+        <button
+            type="button"
+            *ngFor="let opt of unconfirmedRail"
+            (click)="select(opt.id)"
+            class="w-full text-left flex items-center gap-2 px-3 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-slate-50"
+            [ngClass]="opt.id === selectedId() ? 'bg-slate-100 border-l-4 border-l-slate-400' : 'border-l-4 border-l-transparent'"
+        >
+            <span class="text-sm text-slate-500">{{ opt.label }}</span>
+        </button>
+    </div>
+
+    <div *ngIf="selected() as sel" class="p-6">
+        <div class="text-lg font-semibold text-slate-900 mb-1">
+            {{ sel.label }}
+            <span *ngIf="sel.isCurrentBus" class="text-sm text-slate-400 font-normal">(คันเดิม)</span>
+        </div>
+        <div class="text-sm text-slate-500 mb-4">{{ sel.distanceMeters }} ม.</div>
+
+        <div *ngIf="sel.dataConfidence === 'Unknown'" class="rounded-lg bg-slate-100 text-slate-600 text-sm px-3 py-2 mb-4">
+            ℹ️ ยังไม่ยืนยันข้อมูลเส้นทาง/ตารางเวลาสำหรับจุดนี้
+        </div>
+
+        <div *ngIf="sel.reasons.length > 0">
+            <div class="text-xs font-semibold text-slate-400 uppercase mb-2">เหตุผล</div>
+            <ul class="text-sm text-slate-700 list-disc list-inside space-y-1">
+                <li *ngFor="let reason of sel.reasons">{{ reason }}</li>
+            </ul>
+        </div>
+    </div>
+</div>

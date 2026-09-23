@@ -1,1 +1,9 @@
-<p>travel-session-home works!</p>
+<app-travel-session-variant-a *ngIf="variant === 'A'"></app-travel-session-variant-a>
+<app-travel-session-variant-b *ngIf="variant === 'B'"></app-travel-session-variant-b>
+<app-travel-session-variant-c *ngIf="variant === 'C'"></app-travel-session-variant-c>
+
+<app-prototype-switcher
+    [variants]="prototypeVariants"
+    [current]="variant"
+    (currentChange)="onVariantChange($event)"
+></app-prototype-switcher>
