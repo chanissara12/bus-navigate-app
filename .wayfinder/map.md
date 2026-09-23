@@ -43,6 +43,12 @@ included; components are expected to emerge during implementation.
 
 ## Decisions so far
 
+- [Wrong-bus recovery algorithm & Recovery Point search](tickets/T06-wrong-bus-recovery.md):
+  Reuses T05's algorithm exactly (same thresholds, no relaxation) from the new
+  CurrentLocation; "continue on current bus" isn't special-cased, just another
+  candidate. BTS/MRT modeled as unconfirmed `Place` pointers (`DataConfidence: Unknown`)
+  since Namtang GTFS has no rail data — full rail routing deferred (see Not yet
+  specified). Search radius = same 800m walk budget as T05.
 - ["Can I take this bus?" comparison algorithm](tickets/T05-can-i-take-this-bus.md):
   1-to-1 check of one named candidate vs. the current plan (not a fresh search). Hard
   reject if it can't reach the destination/transfer point, needs >1 extra transfer, or
@@ -89,6 +95,17 @@ included; components are expected to emerge during implementation.
   a fully-built map feature (route drawing, walking-path road-snapping, footbridges,
   map background layer) — worth revisiting as a reference if/when this graduates to a
   ticket.
+- Whether to add full BTS/MRT route/schedule data (not just station location) to
+  recovery/trip-planning. Bigger than the map-visualization fog item above: this would
+  require its own T01-equivalent research effort (BTSC/BEM licensing — separate from
+  and likely harder than the Namtang bus feed), would likely require *renaming/
+  widening* T03's already-closed `BusRoute`/`BusStop` entities to a mode-aware shape
+  rather than purely adding to them, and would add a fare/ticketing-system dimension
+  (Rabbit/MRT card vs. bus fare) that T05/T06's comparison logic doesn't currently
+  account for. Deliberately not ticketed — PROPOSAL.md's own framing is bus-focused
+  ("โดยเฉพาะรถเมล์"); BTS/MRT stations are handled today only as unconfirmed
+  `Place`-level pointers (see T06's resolution). Revisit as its own phase/effort, not a
+  fast-follow addition to this one.
 - Whether the chosen transit data source (or stop-imagery source) requires signup,
   registration, or an API key — and if so, a Task ticket to provision access. Can't be
   ticketed until [Choose transit data source](tickets/T01-transit-data-source.md) and

@@ -3,7 +3,7 @@
 **Parent map:** [Phase 1 Spec — Public Transit Decision & Recovery Assistant](../map.md)
 
 **Status:** open (unclaimed)
-**Blocked by:** [Wrong-bus recovery algorithm](T06-wrong-bus-recovery.md), [Service Status data model](T07-service-status.md), [Bus Stop Context data model](T08-bus-stop-context.md) (~~[TravelSession state machine](T04-travel-session-state-machine.md)~~ and ~~["Can I take this bus?" comparison algorithm](T05-can-i-take-this-bus.md)~~ both closed)
+**Blocked by:** [Service Status data model](T07-service-status.md), [Bus Stop Context data model](T08-bus-stop-context.md) (~~T04~~, ~~T05~~, ~~T06~~ all closed)
 **Blocks:** [Finalize module & folder boundaries](T10-module-boundaries.md)
 
 ## Question
