@@ -2,7 +2,7 @@
 
 **Parent map:** [Frontend Build-out — Real Backend Integration](../map-frontend.md)
 
-**Status:** open
+**Status:** closed
 **Blocked by:** none
 **Blocks:** [Fold trip-planning](F05-fold-trip-planning.md),
 [Fold bus-stop](F06-fold-bus-stop.md), [Fold travel-session](F07-fold-travel-session.md),
@@ -35,4 +35,30 @@ during charting, nothing left to decide:
 
 ## Resolution
 
-_(not yet resolved)_
+Built all 5 pieces as specified, each with unit tests:
+
+- `local-storage.helper.ts` (`shared/helpers/`) — the shared read/write/remove wrapper
+  item 3 anticipated, used by both services below.
+- `DeviceIdentityService` + `deviceIdInterceptor` (functional `HttpInterceptorFn`,
+  registered via `provideHttpClient(withInterceptors([deviceIdInterceptor]))` in
+  `app.config.ts`).
+- `ActiveSessionService` — persists/clears the active session id under its own storage
+  key. Clearing on `COMPLETED`/`ABANDONED` is exposed as `updateFromState(state)` rather
+  than the service performing its own HTTP read: `GET .../progress`
+  (`TravelSessionProgress` ViewModel) carries no `State` field, only
+  `POST .../events`'s response (`TravelSessionResponse`) does, so the terminal-state
+  check is a plain function a fold ticket calls with whatever state value the response
+  it's already handling contains. Backend enum mirrored 1:1 in
+  `shared/models/travel-session-state.model.ts` (numeric values — `System.Text.Json`
+  serializes the enum as a number).
+- `ConfirmDialogComponent` (`shared/components/confirm-dialog/`) — standalone,
+  Tailwind-only, title/message/confirm/cancel inputs+outputs, no variants. Also
+  dismisses on Escape and backdrop click (frontend/CLAUDE.md's design-system rules
+  require keyboard navigation support on interactive UI).
+- `ErrorNotificationService` — `.notify(message)` over a `Subject<string>` exposed as
+  `errors$`; no interceptor involved, matching the map's note that per-call `catchError`
+  stays as the error-detection point.
+
+Verified: `npm run test` (44/44 passing), `tsc --noEmit`, and `ng build --configuration
+production` all clean. Wiring these into the four pages is F05-F08's job, not this
+ticket's — nothing here touches a page component.
