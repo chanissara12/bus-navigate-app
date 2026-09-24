@@ -54,7 +54,7 @@ The BusRoute (and Direction/Trip if known) the user is currently believed to be 
 One candidate way to get from CurrentLocation/BusStop to Destination: Route, Direction, Boarding Stop, Alighting Stop, Transfer Stops, Estimated Duration, Walking Distance, Waiting Time, Transfer Count, Service Status, Data Confidence, and Reason. Always presented as one of several options, never a single "best" answer.
 
 **RecoveryOption**:
-A TravelOption-shaped candidate generated specifically in response to a wrong-bus/wrong-stop/no-show situation, anchored at a RecoveryPoint rather than the user's original boarding stop.
+A TravelOption-shaped candidate generated specifically in response to a wrong-bus/wrong-stop/no-show situation, anchored at a RecoveryPoint rather than the user's original boarding stop. Confirming one is an actionable correction, not just a suggestion: it replaces CurrentRoute with the chosen option and puts the TravelSession back on a tracked path toward the same Destination — the only exception is a rail-station RecoveryOption, which stays purely informational (Phase 1 has no rail routing to hand the session off to) and can't be confirmed.
 
 **RecoveryPoint**:
 A place the user can rejoin a workable route from their current situation — e.g. next stop, a transfer point, a nearby BTS/MRT station. Never assumed to be back at the original stop where things went wrong.
