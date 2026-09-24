@@ -12,4 +12,14 @@
     <ProjectReference Include="..\BusNavigate.Domain\BusNavigate.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- dotnet ef requires the startup project itself to reference this — Domain's
+         copy has PrivateAssets="all" so it doesn't flow through the ProjectReference
+         above. Design-time only, no runtime effect. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>
