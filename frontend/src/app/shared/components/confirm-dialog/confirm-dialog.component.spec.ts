@@ -87,4 +87,41 @@ describe('ConfirmDialogComponent', () => {
 
         expect(cancelled).not.toHaveBeenCalled();
     });
+
+    it('disables both buttons while confirming', () => {
+        component.open = true;
+        component.confirming = true;
+        fixture.detectChanges();
+
+        expect(fixture.debugElement.query(By.css('[data-testid="confirm-dialog-confirm"]')).nativeElement.disabled).toBe(
+            true
+        );
+        expect(fixture.debugElement.query(By.css('[data-testid="confirm-dialog-cancel"]')).nativeElement.disabled).toBe(
+            true
+        );
+    });
+
+    it('does not emit cancelled on Escape while confirming', () => {
+        component.open = true;
+        component.confirming = true;
+        fixture.detectChanges();
+        const cancelled = jest.fn();
+        component.cancelled.subscribe(cancelled);
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+        expect(cancelled).not.toHaveBeenCalled();
+    });
+
+    it('does not emit cancelled on backdrop click while confirming', () => {
+        component.open = true;
+        component.confirming = true;
+        fixture.detectChanges();
+        const cancelled = jest.fn();
+        component.cancelled.subscribe(cancelled);
+
+        fixture.debugElement.query(By.css('[role="dialog"]')).parent!.nativeElement.click();
+
+        expect(cancelled).not.toHaveBeenCalled();
+    });
 });

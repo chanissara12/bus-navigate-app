@@ -17,13 +17,17 @@ export class ConfirmDialogComponent {
     @Input({ required: true }) message = '';
     @Input() confirmLabel = 'ยืนยัน';
     @Input() cancelLabel = 'ยกเลิก';
+    // True while the parent's confirmed action is in flight (e.g. an HTTP call) —
+    // disables both buttons and blocks Escape/backdrop dismissal so a slow request
+    // can't be double-submitted or cancelled out from under itself.
+    @Input() confirming = false;
 
     @Output() readonly confirmed = new EventEmitter<void>();
     @Output() readonly cancelled = new EventEmitter<void>();
 
     @HostListener('document:keydown.escape')
     onEscape(): void {
-        if (this.open) {
+        if (this.open && !this.confirming) {
             this.cancelled.emit();
         }
     }
@@ -33,6 +37,8 @@ export class ConfirmDialogComponent {
     }
 
     onCancel(): void {
-        this.cancelled.emit();
+        if (!this.confirming) {
+            this.cancelled.emit();
+        }
     }
 }
