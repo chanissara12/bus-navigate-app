@@ -1,17 +1,12 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { PrototypeVariant } from '../../../../shared/components/prototype-switcher/prototype-switcher.component';
+import { ErrorNotificationService } from '../../../../shared/services/error-notification.service';
+import { GeolocationService } from '../../../../shared/services/geolocation.service';
+import { BusStopContextResult, BusStopSummary } from '../../models/bus-stop.model';
+import { BusStopsService } from '../../services/bus-stops.service';
 
-// PROTOTYPE: three variants of the bus-stop lookup/context view, switchable via
-// ?variant=, on the existing /bus-stop route. See .claude/skills/prototype/UI.md and
-// .wayfinder/tickets/T13-bus-stop-ui-layout.md. Remove the switcher and losing
-// variants once a direction is picked — only the winner should reach main.
-const PROTOTYPE_VARIANTS: PrototypeVariant[] = [
-    { key: 'A', label: 'List-first accordion' },
-    { key: 'B', label: 'Split list + grouped detail' },
-    { key: 'C', label: 'Walking-guide focus' }
-];
+const NEARBY_RADIUS_METERS = 1000;
 
 @Component({
     selector: 'app-bus-stop-home',
@@ -20,24 +15,124 @@ const PROTOTYPE_VARIANTS: PrototypeVariant[] = [
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BusStopHomeComponent {
-    readonly prototypeVariants = PROTOTYPE_VARIANTS;
+    private readonly busStopsService = inject(BusStopsService);
+    private readonly errorNotificationService = inject(ErrorNotificationService);
+    private readonly geolocationService = inject(GeolocationService);
+    private readonly destroyRef = inject(DestroyRef);
 
-    constructor(
-        private readonly route: ActivatedRoute,
-        private readonly router: Router
-    ) {}
+    readonly currentPosition = signal<GeolocationCoordinates | undefined>(undefined);
+    readonly locationError = signal<string | undefined>(undefined);
 
-    get variant(): string {
-        const requested = this.route.snapshot.queryParamMap.get('variant');
-        const isKnown = PROTOTYPE_VARIANTS.some((v) => v.key === requested);
-        return isKnown ? (requested as string) : 'A';
+    readonly stops = signal<BusStopSummary[] | undefined>(undefined);
+    readonly stopsLoading = signal(false);
+
+    readonly expandedId = signal<number | undefined>(undefined);
+    readonly expandedContext = signal<BusStopContextResult | undefined>(undefined);
+    readonly expandedLoading = signal(false);
+
+    readonly latestError = signal<string | undefined>(undefined);
+    readonly errorSettled = signal(false);
+
+    readonly landmarkIcon = (landmarkType: number): string => {
+        switch (landmarkType) {
+            case 0: return '🚶';
+            case 1: return '🌉';
+            case 2: return '🏬';
+            case 4: return '🚉';
+            default: return '📍';
+        }
+    };
+
+    readonly landmarkLabel = (landmarkType: number): string => {
+        switch (landmarkType) {
+            case 0: return 'ทางข้าม';
+            case 1: return 'สกายวอล์ก';
+            case 2: return 'ทางเข้าห้าง';
+            case 4: return 'จุดเชื่อมสถานีขนส่ง';
+            default: return 'จุดสังเกต';
+        }
+    };
+
+    constructor() {
+        this.loadCurrentPosition();
+
+        this.errorNotificationService.errors$
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((message) => {
+                this.latestError.set(message);
+                this.errorSettled.set(false);
+                setTimeout(() => this.errorSettled.set(true));
+            });
     }
 
-    onVariantChange(key: string): void {
-        this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: { variant: key },
-            queryParamsHandling: 'merge'
-        });
+    retryLocation(): void {
+        this.loadCurrentPosition();
+    }
+
+    toggle(stop: BusStopSummary): void {
+        if (this.expandedId() === stop.id) {
+            this.expandedId.set(undefined);
+            this.expandedContext.set(undefined);
+            return;
+        }
+
+        this.expandedId.set(stop.id);
+        this.expandedContext.set(undefined);
+        this.expandedLoading.set(true);
+
+        this.busStopsService
+            .getContext(stop.id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (context) => {
+                    if (this.expandedId() === stop.id) {
+                        this.expandedContext.set(context);
+                    }
+                    this.expandedLoading.set(false);
+                },
+                error: (err: Error) => {
+                    this.expandedLoading.set(false);
+                    this.errorNotificationService.notify(err.message);
+                }
+            });
+    }
+
+    dismissError(): void {
+        this.latestError.set(undefined);
+    }
+
+    private loadCurrentPosition(): void {
+        this.locationError.set(undefined);
+        this.stops.set(undefined);
+        this.expandedId.set(undefined);
+        this.expandedContext.set(undefined);
+        this.geolocationService
+            .getCurrentPosition()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (coords) => {
+                    this.currentPosition.set(coords);
+                    this.loadNearbyStops(coords);
+                },
+                error: (err: Error) => this.locationError.set(err.message)
+            });
+    }
+
+    private loadNearbyStops(coords: GeolocationCoordinates): void {
+        this.stopsLoading.set(true);
+        this.busStopsService
+            .findNearby(coords.latitude, coords.longitude, NEARBY_RADIUS_METERS)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (stops) => {
+                    this.stopsLoading.set(false);
+                    this.stops.set(stops);
+                },
+                error: (err: Error) => {
+                    this.stopsLoading.set(false);
+                    this.stops.set(undefined);
+                    this.errorNotificationService.notify(err.message);
+                }
+            });
     }
 }
