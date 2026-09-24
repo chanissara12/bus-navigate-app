@@ -24,7 +24,16 @@ public class TravelSessionsController : ControllerBase
     {
         var userId = HttpContext.GetRequiredUserId();
         var session = await _travelSessionService.CreateAsync(
-            userId, request.DirectionId, request.BoardingStopId, request.AlightingStopId, cancellationToken);
+            userId, request.DirectionId, request.BoardingStopId, request.AlightingStopId,
+            request.WalkingDistanceMeters, cancellationToken);
+        return Ok(ToResponse(session));
+    }
+
+    // GET /api/v1/travel-sessions/{id} — returns the confirmed plan, including destination.
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> Get(int id, CancellationToken cancellationToken)
+    {
+        var session = await _travelSessionService.GetAsync(id, cancellationToken);
         return Ok(ToResponse(session));
     }
 
@@ -50,6 +59,7 @@ public class TravelSessionsController : ControllerBase
 
     private static TravelSessionResponse ToResponse(BusNavigate.Domain.Entities.TravelSession session) => new(
         session.Id, session.State, session.DirectionId, session.BoardingStopId, session.AlightingStopId,
+        session.WalkingDistanceMeters, session.AlightingStop.NameTh, session.AlightingStop.NameEn,
         session.CreatedAt, session.LastActivityAt);
 
     private static TravelSessionEventType ParseEventType(string type) => type switch

@@ -49,15 +49,21 @@ public class TravelSessionService : ITravelSessionService
         };
 
     public async Task<TravelSessionEntity> CreateAsync(
-        int userId, int directionId, int boardingStopId, int alightingStopId, CancellationToken cancellationToken = default)
+        int userId, int directionId, int boardingStopId, int alightingStopId, double walkingDistanceMeters,
+        CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
+        var nextId = (await _dbContext.TravelSessions
+            .MaxAsync(s => (int?)s.Id, cancellationToken) ?? 0) + 1;
+
         var session = new TravelSessionEntity
         {
+            Id = nextId,
             UserId = userId,
             DirectionId = directionId,
             BoardingStopId = boardingStopId,
             AlightingStopId = alightingStopId,
+            WalkingDistanceMeters = walkingDistanceMeters,
             State = TravelSessionState.Planned,
             CreatedAt = now,
             LastActivityAt = now,
@@ -65,14 +71,28 @@ public class TravelSessionService : ITravelSessionService
 
         _dbContext.TravelSessions.Add(session);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return session;
+
+        return await _dbContext.TravelSessions
+            .Include(s => s.AlightingStop)
+            .FirstAsync(s => s.Id == session.Id, cancellationToken);
+    }
+
+    public async Task<TravelSessionEntity> GetAsync(
+        int travelSessionId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.TravelSessions
+            .Include(s => s.AlightingStop)
+            .FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
+            ?? throw new ValidateException($"Travel session {travelSessionId} was not found.");
     }
 
     public async Task<TravelSessionEntity> ApplyEventAsync(
         int travelSessionId, TravelSessionEventType eventType, ConfirmedRecoverySelection? recoverySelection = null,
         CancellationToken cancellationToken = default)
     {
-        var session = await _dbContext.TravelSessions.FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
+        var session = await _dbContext.TravelSessions
+            .Include(s => s.AlightingStop)
+            .FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
             ?? throw new ValidateException($"Travel session {travelSessionId} was not found.");
 
         if (eventType == TravelSessionEventType.ConfirmedRecovery)
@@ -158,6 +178,9 @@ public class TravelSessionService : ITravelSessionService
     // Threshold matching T04's "1 stop to Siam" framing.
     private const int ApproachingDestinationThreshold = 1;
 
+    private static TravelStopSummary ToStopSummary(BusNavigate.Domain.Entities.BusStop stop) =>
+        new(stop.Id, stop.NameTh, stop.NameEn);
+
     public async Task<TravelSessionProgress> GetProgressAsync(
         int travelSessionId, int? currentStopSequence, CancellationToken cancellationToken = default)
     {
@@ -170,21 +193,37 @@ public class TravelSessionService : ITravelSessionService
                 $"Progress is only available while RIDING (session is currently '{session.State}').");
         }
 
-        var routeStopSequences = await _dbContext.RouteStops
-            .Where(rs => rs.DirectionId == session.DirectionId &&
-                (rs.BusStopId == session.BoardingStopId || rs.BusStopId == session.AlightingStopId))
-            .ToDictionaryAsync(rs => rs.BusStopId, rs => rs.SequenceNumber, cancellationToken);
+        var routeStops = await _dbContext.RouteStops
+            .Where(rs => rs.DirectionId == session.DirectionId)
+            .Include(rs => rs.BusStop)
+            .OrderBy(rs => rs.SequenceNumber)
+            .ToListAsync(cancellationToken);
 
-        if (!routeStopSequences.TryGetValue(session.AlightingStopId, out var alightingSequence) ||
-            !routeStopSequences.TryGetValue(session.BoardingStopId, out var boardingSequence))
+        var boardingRouteStop = routeStops.FirstOrDefault(rs => rs.BusStopId == session.BoardingStopId);
+        var alightingRouteStop = routeStops.FirstOrDefault(rs => rs.BusStopId == session.AlightingStopId);
+
+        if (boardingRouteStop is null || alightingRouteStop is null)
         {
             throw new ValidateException("Session's boarding/alighting stop is no longer part of its Direction.");
         }
 
-        var effectiveCurrentSequence = currentStopSequence ?? boardingSequence;
-        var remainingStopCount = Math.Max(0, alightingSequence - effectiveCurrentSequence);
+        var effectiveCurrentSequence = currentStopSequence ?? boardingRouteStop.SequenceNumber;
+        var remainingStopCount = Math.Max(0, alightingRouteStop.SequenceNumber - effectiveCurrentSequence);
+
+        var previousStop = routeStops
+            .Where(rs => rs.SequenceNumber <= effectiveCurrentSequence &&
+                rs.SequenceNumber <= alightingRouteStop.SequenceNumber)
+            .LastOrDefault();
+
+        var nextStop = routeStops
+            .Where(rs => rs.SequenceNumber > effectiveCurrentSequence &&
+                rs.SequenceNumber <= alightingRouteStop.SequenceNumber)
+            .FirstOrDefault();
 
         return new TravelSessionProgress(
+            previousStop is null ? null : ToStopSummary(previousStop.BusStop),
+            nextStop is null ? null : ToStopSummary(nextStop.BusStop),
+            ToStopSummary(alightingRouteStop.BusStop),
             remainingStopCount,
             remainingStopCount <= ApproachingDestinationThreshold,
             DataConfidence.Estimated);

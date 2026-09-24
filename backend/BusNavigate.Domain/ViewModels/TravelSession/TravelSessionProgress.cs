@@ -8,4 +8,12 @@ namespace BusNavigate.Domain.ViewModels.TravelSession;
 // DataConfidence is Estimated, never Scheduled/Realtime. No ETA field — that needs live
 // Trip-schedule matching, a separate feature not built yet (same gap T11 flagged for
 // TravelOption's EstimatedDuration).
-public record TravelSessionProgress(int RemainingStopCount, bool IsApproachingDestination, DataConfidence DataConfidence);
+public record TravelStopSummary(int Id, string NameTh, string NameEn);
+
+public record TravelSessionProgress(
+    TravelStopSummary? PreviousStop,
+    TravelStopSummary? NextStop,
+    TravelStopSummary AlightingStop,
+    int RemainingStopCount,
+    bool IsApproachingDestination,
+    DataConfidence DataConfidence);

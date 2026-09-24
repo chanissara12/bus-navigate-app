@@ -122,7 +122,12 @@ export class TripPlanningHomeComponent {
 
         this.creatingSession.set(true);
         this.travelSessionsService
-            .create(option.directionId, option.boardingStopId, option.alightingStopId)
+            .create(
+                option.directionId,
+                option.boardingStopId,
+                option.alightingStopId,
+                option.walkingDistanceMeters
+            )
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: (session) => {

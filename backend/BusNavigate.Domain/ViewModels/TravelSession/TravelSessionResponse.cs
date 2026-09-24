@@ -10,6 +10,9 @@ public record TravelSessionResponse(
     int DirectionId,
     int BoardingStopId,
     int AlightingStopId,
+    double WalkingDistanceMeters,
+    string AlightingStopNameTh,
+    string AlightingStopNameEn,
     DateTime CreatedAt,
     DateTime LastActivityAt
 );

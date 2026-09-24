@@ -116,6 +116,8 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
 
         modelBuilder.Entity<TravelSession>(entity =>
         {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
             entity.HasOne(e => e.User)
                 .WithMany(u => u.TravelSessions)
                 .HasForeignKey(e => e.UserId)

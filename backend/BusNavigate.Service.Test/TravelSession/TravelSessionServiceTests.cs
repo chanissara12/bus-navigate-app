@@ -32,7 +32,7 @@ public class TravelSessionServiceTests
         dbContext.AddRange(user, busRoute, direction, boardingStop, alightingStop);
         await dbContext.SaveChangesAsync();
 
-        var session = await service.CreateAsync(user.Id, direction.Id, boardingStop.Id, alightingStop.Id);
+        var session = await service.CreateAsync(user.Id, direction.Id, boardingStop.Id, alightingStop.Id, walkingDistanceMeters: 210);
         return session.Id;
     }
 
@@ -65,6 +65,7 @@ public class TravelSessionServiceTests
         // Assert
         var session = await dbContext.TravelSessions.SingleAsync(s => s.Id == sessionId);
         Assert.Equal(TravelSessionState.Planned, session.State);
+        Assert.Equal(210, session.WalkingDistanceMeters);
     }
 
     [Theory]
@@ -312,6 +313,9 @@ public class TravelSessionServiceTests
         // Assert
         Assert.Equal(3, result.RemainingStopCount);
         Assert.False(result.IsApproachingDestination);
+        Assert.Equal("1", result.PreviousStop!.NameTh);
+        Assert.Equal("2", result.NextStop!.NameTh);
+        Assert.Equal("2", result.AlightingStop.NameTh);
         Assert.Equal(DataConfidence.Estimated, result.DataConfidence);
     }
 
@@ -328,6 +332,8 @@ public class TravelSessionServiceTests
         // Assert
         Assert.Equal(1, result.RemainingStopCount);
         Assert.True(result.IsApproachingDestination);
+        Assert.Equal("2", result.NextStop!.NameTh);
+        Assert.Equal("2", result.AlightingStop.NameTh);
     }
 
     [Fact]

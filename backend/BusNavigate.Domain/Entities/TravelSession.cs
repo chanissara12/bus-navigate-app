@@ -28,6 +28,10 @@ public class TravelSession
 
     public BusStop AlightingStop { get; set; } = null!;
 
+    // Walking distance from the planning location to the confirmed boarding stop.
+    // Persisted because the TravelOption is computed and is not available after session creation.
+    public double WalkingDistanceMeters { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     // Updated on every transition and progress poll — the stall sweep abandons any

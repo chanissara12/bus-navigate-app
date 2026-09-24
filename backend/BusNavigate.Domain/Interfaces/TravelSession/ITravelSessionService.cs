@@ -7,7 +7,11 @@ public interface ITravelSessionService
 {
     // Creates a session in PLANNED state for a confirmed plan (T09: POST /travel-sessions).
     Task<TravelSessionEntity> CreateAsync(
-        int userId, int directionId, int boardingStopId, int alightingStopId, CancellationToken cancellationToken = default);
+        int userId, int directionId, int boardingStopId, int alightingStopId, double walkingDistanceMeters,
+        CancellationToken cancellationToken = default);
+
+    // Loads the persisted travel plan so the destination can remain visible throughout the session.
+    Task<TravelSessionEntity> GetAsync(int travelSessionId, CancellationToken cancellationToken = default);
 
     // Applies one state-machine event (T09: POST /travel-sessions/{id}/events). Throws
     // ValidateException if the event isn't a valid transition from the session's current state.

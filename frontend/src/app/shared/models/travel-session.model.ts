@@ -7,6 +7,9 @@ export interface TravelSessionResponse {
     directionId: number;
     boardingStopId: number;
     alightingStopId: number;
+    walkingDistanceMeters: number;
+    alightingStopNameTh: string;
+    alightingStopNameEn: string;
     createdAt: string;
     lastActivityAt: string;
 }

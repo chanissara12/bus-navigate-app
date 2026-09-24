@@ -204,7 +204,12 @@ describe('TripPlanningHomeComponent', () => {
 
         component.onConfirmStartTrip();
 
-        expect(travelSessionsService.create).toHaveBeenCalledWith(option.directionId, option.boardingStopId, option.alightingStopId);
+        expect(travelSessionsService.create).toHaveBeenCalledWith(
+            option.directionId,
+            option.boardingStopId,
+            option.alightingStopId,
+            option.walkingDistanceMeters
+        );
         expect(activeSessionService.setActiveSessionId).toHaveBeenCalledWith(99);
         expect(router.navigate).toHaveBeenCalledWith(['/travel-session', 99]);
         expect(component.confirmDialogOpen()).toBe(false);

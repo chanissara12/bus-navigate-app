@@ -3,6 +3,7 @@ using System;
 using BusNavigate.Domain.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BusNavigate.Domain.Database.Migrations
 {
     [DbContext(typeof(BusNavigateDbContext))]
-    partial class BusNavigateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924103053_AddTravelSessionWalkingDistance")]
+    partial class AddTravelSessionWalkingDistance
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -362,7 +365,10 @@ namespace BusNavigate.Domain.Database.Migrations
             modelBuilder.Entity("BusNavigate.Domain.Entities.TravelSession", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AlightingStopId")
                         .HasColumnType("integer");
@@ -376,6 +382,9 @@ namespace BusNavigate.Domain.Database.Migrations
                     b.Property<int>("DirectionId")
                         .HasColumnType("integer");
 
+                    b.Property<double>("WalkingDistanceMeters")
+                        .HasColumnType("double precision");
+
                     b.Property<DateTime>("LastActivityAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -384,9 +393,6 @@ namespace BusNavigate.Domain.Database.Migrations
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
-
-                    b.Property<double>("WalkingDistanceMeters")
-                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 
