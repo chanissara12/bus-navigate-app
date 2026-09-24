@@ -1,0 +1,36 @@
+<nav
+    class="fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white"
+    *ngIf="activeTab$ | async as activeTab"
+>
+    <a
+        routerLink="/trip-planning"
+        data-testid="nav-tab-trip-planning"
+        class="flex flex-1 cursor-pointer flex-col items-center gap-1 py-2 text-xs font-medium hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-slate-100"
+        [class.text-sky-600]="activeTab === 'trip-planning'"
+        [class.text-slate-500]="activeTab !== 'trip-planning'"
+    >
+        <span aria-hidden="true">🔍</span>
+        <span>ค้นหาเส้นทาง</span>
+    </a>
+    <a
+        routerLink="/bus-stop"
+        data-testid="nav-tab-bus-stop"
+        class="flex flex-1 cursor-pointer flex-col items-center gap-1 py-2 text-xs font-medium hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-slate-100"
+        [class.text-sky-600]="activeTab === 'bus-stop'"
+        [class.text-slate-500]="activeTab !== 'bus-stop'"
+    >
+        <span aria-hidden="true">🚏</span>
+        <span>ป้ายรถ</span>
+    </a>
+    <button
+        type="button"
+        data-testid="nav-tab-travel-session"
+        class="flex flex-1 cursor-pointer flex-col items-center gap-1 py-2 text-xs font-medium hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-slate-100"
+        [class.text-sky-600]="activeTab === 'travel-session'"
+        [class.text-slate-500]="activeTab !== 'travel-session'"
+        (click)="onTravelSessionTabClick()"
+    >
+        <span aria-hidden="true">🚌</span>
+        <span>การเดินทางของฉัน</span>
+    </button>
+</nav>
