@@ -7,6 +7,7 @@ import { TripPlanningVariantAComponent } from './pages/trip-planning-home/protot
 import { TripPlanningVariantBComponent } from './pages/trip-planning-home/prototype/trip-planning-variant-b.component';
 import { TripPlanningVariantCComponent } from './pages/trip-planning-home/prototype/trip-planning-variant-c.component';
 import { PrototypeSwitcherComponent } from '../../shared/components/prototype-switcher/prototype-switcher.component';
+import { LoadingErrorDemoComponent } from '../../shared/components/prototype-loading-error/loading-error-demo.component';
 
 
 @NgModule({
@@ -19,7 +20,8 @@ import { PrototypeSwitcherComponent } from '../../shared/components/prototype-sw
         TripPlanningVariantAComponent,
         TripPlanningVariantBComponent,
         TripPlanningVariantCComponent,
-        PrototypeSwitcherComponent
+        PrototypeSwitcherComponent,
+        LoadingErrorDemoComponent
     ]
 })
 export class TripPlanningModule { }

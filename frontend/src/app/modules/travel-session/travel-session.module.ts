@@ -7,6 +7,7 @@ import { TravelSessionVariantAComponent } from './pages/travel-session-home/prot
 import { TravelSessionVariantBComponent } from './pages/travel-session-home/prototype/travel-session-variant-b.component';
 import { TravelSessionVariantCComponent } from './pages/travel-session-home/prototype/travel-session-variant-c.component';
 import { PrototypeSwitcherComponent } from '../../shared/components/prototype-switcher/prototype-switcher.component';
+import { LoadingErrorDemoComponent } from '../../shared/components/prototype-loading-error/loading-error-demo.component';
 
 
 @NgModule({
@@ -19,7 +20,8 @@ import { PrototypeSwitcherComponent } from '../../shared/components/prototype-sw
         TravelSessionVariantAComponent,
         TravelSessionVariantBComponent,
         TravelSessionVariantCComponent,
-        PrototypeSwitcherComponent
+        PrototypeSwitcherComponent,
+        LoadingErrorDemoComponent
     ]
 })
 export class TravelSessionModule { }
