@@ -32,3 +32,14 @@ A task is complete only when
 - Requested functionality is implemented
 - No unnecessary files are added
 - No unrelated code is modified
+
+## Workflow Rules
+
+- **Never `git commit` automatically.** Finishing an implementation — even with a clean
+  build, passing tests, and a clean `/code-review` — is not authorization to commit.
+  Always stop, summarize the work, and wait for the user to explicitly say to commit in
+  the same conversation before running `git commit`.
+- **Explain the flow after finishing work.** Before asking whether to commit, walk the
+  user through the flow and how the key functions/pieces work together — not just a
+  list of changed files. Cover what triggers the flow, what each piece does, and any
+  non-obvious design decision (e.g. why a value is nullable, why a check is implicit).
