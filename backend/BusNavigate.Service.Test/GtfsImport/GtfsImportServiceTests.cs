@@ -46,7 +46,10 @@ public class GtfsImportServiceTests
     private const string CalendarDates = "service_id,date,exception_type\n" +
         "WEEKDAY,20260413,2\n";
 
-    private static GtfsFeedFiles BuildFeed() => new(Agency, Routes, Trips, Stops, StopTimes, Calendar, CalendarDates);
+    private static GtfsFeedFiles BuildFeed(
+        string agency = Agency,
+        string routes = Routes) =>
+        new(agency, routes, Trips, Stops, StopTimes, Calendar, CalendarDates);
 
     private static (BusNavigateDbContext DbContext, Mock<IGtfsFeedFetcher> Fetcher) CreateSubject()
     {
@@ -64,6 +67,60 @@ public class GtfsImportServiceTests
     private static Service.Implements.GtfsImport.GtfsImportService CreateImportService(
         BusNavigateDbContext dbContext, Mock<IGtfsFeedFetcher> fetcher) =>
         new(dbContext, fetcher.Object, NullLogger<Service.Implements.GtfsImport.GtfsImportService>.Instance);
+
+    [Fact]
+    public async Task ImportAsync_DuplicateAgencyIdWithSameName_DeduplicatesAndImports()
+    {
+        // Arrange
+        const string duplicateAgency =
+            "agency_id,agency_name\n" +
+            "CCT,Company CCT\n" +
+            "CCT,Company CCT\n";
+
+        const string duplicateRoutes =
+            "route_id,agency_id,route_short_name,route_long_name\n" +
+            "R45,CCT,45,Siam - Victory Monument\n";
+
+        var (dbContext, fetcher) = CreateSubject();
+        fetcher.Setup(f => f.FetchLatestAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BuildFeed(duplicateAgency, duplicateRoutes));
+
+        var importService = CreateImportService(dbContext, fetcher);
+
+        // Act
+        await importService.ImportAsync();
+
+        // Assert
+        var route = Assert.Single(dbContext.BusRoutes);
+        Assert.Equal("Company CCT", route.AgencyName);
+    }
+
+    [Fact]
+    public async Task ImportAsync_DuplicateAgencyIdWithDifferentNames_CombinesAgencyNamesAndImports()
+    {
+        // Arrange
+        const string duplicateAgency =
+            "agency_id,agency_name\n" +
+            "CCT,Company A\n" +
+            "CCT,Company B\n";
+
+        const string duplicateRoutes =
+            "route_id,agency_id,route_short_name,route_long_name\n" +
+            "R45,CCT,45,Siam - Victory Monument\n";
+
+        var (dbContext, fetcher) = CreateSubject();
+        fetcher.Setup(f => f.FetchLatestAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BuildFeed(duplicateAgency, duplicateRoutes));
+
+        var importService = CreateImportService(dbContext, fetcher);
+
+        // Act
+        await importService.ImportAsync();
+
+        // Assert
+        var route = Assert.Single(dbContext.BusRoutes);
+        Assert.Equal("Company A / Company B", route.AgencyName);
+    }
 
     [Fact]
     public async Task ImportAsync_FirstImport_CreatesEntitiesWithCorrectForeignKeyWiring()

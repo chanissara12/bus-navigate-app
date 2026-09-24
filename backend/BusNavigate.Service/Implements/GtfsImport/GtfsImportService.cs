@@ -43,7 +43,34 @@ public class GtfsImportService : IGtfsImportService
             : null;
         await using var _ = transaction;
 
-        var agencyNameById = agencies.ToDictionary(a => a.AgencyId, a => a.AgencyName);
+        var duplicateAgencies = agencies
+            .GroupBy(a => a.AgencyId)
+            .Where(g => g.Count() > 1)
+            .ToList();
+
+        foreach (var duplicate in duplicateAgencies)
+        {
+            var agencyNames = duplicate
+                .Select(a => a.AgencyName)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            _logger.LogWarning(
+                "GTFS agency.txt contains duplicate rows for agency_id '{AgencyId}'. " +
+                "Using combined agency names: '{AgencyNames}'.",
+                duplicate.Key,
+                string.Join(" / ", agencyNames));
+        }
+
+        var agencyNameById = agencies
+            .GroupBy(a => a.AgencyId)
+            .ToDictionary(
+                g => g.Key,
+                g => string.Join(
+                    " / ",
+                    g.Select(a => a.AgencyName)
+                        .Distinct(StringComparer.Ordinal)),
+                StringComparer.Ordinal);
 
         var serviceCalendarByExternalId = await UpsertServiceCalendarsAsync(calendars, cancellationToken);
         await UpsertServiceExceptionsAsync(calendarDates, serviceCalendarByExternalId, cancellationToken);
