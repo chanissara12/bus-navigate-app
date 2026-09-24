@@ -57,7 +57,11 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddBusStopContext(this IServiceCollection services)
     {
-        services.AddHttpClient<IStopLandmarkFetcher, StopLandmarkFetcher>();
+        services.AddHttpClient<IStopLandmarkFetcher, StopLandmarkFetcher>(client =>
+        {
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("BusNavigate/1.0 (landmark sync)");
+            client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+        });
         services.AddScoped<IStopLandmarkSyncService, StopLandmarkSyncService>();
         services.AddScoped<IBusStopContextService, BusStopContextService>();
         services.AddScoped<INearbyBusStopSearchService, NearbyBusStopSearchService>();
