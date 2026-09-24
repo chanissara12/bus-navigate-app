@@ -2,7 +2,7 @@
 
 **Parent map:** [Frontend Build-out — Real Backend Integration](../map-frontend.md)
 
-**Status:** open
+**Status:** closed
 **Blocked by:** [Shared frontend infrastructure](F02-shared-frontend-infrastructure.md),
 [App shell & navigation](F03-app-shell-navigation.md),
 [Loading & error UI patterns](F04-loading-error-ui-patterns.md)
@@ -34,4 +34,4 @@ prototype — not a real control). Wire it to the real backend instead of
 
 ## Resolution
 
-_(not yet resolved)_
+Implemented and verified the production travel-session flow. The prototype variants/state selector were removed; the real travel-session backend is wired through the route session id and `ActiveSessionService`; session progress/event handling, wrong-bus recovery, loading/error UI, destination persistence, and walking-distance display are integrated. Walking distance is displayed as an integer using Angular's `number` pipe. Backend and frontend tests pass.
