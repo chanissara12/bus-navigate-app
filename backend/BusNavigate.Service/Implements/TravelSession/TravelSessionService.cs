@@ -69,21 +69,69 @@ public class TravelSessionService : ITravelSessionService
     }
 
     public async Task<TravelSessionEntity> ApplyEventAsync(
-        int travelSessionId, TravelSessionEventType eventType, CancellationToken cancellationToken = default)
+        int travelSessionId, TravelSessionEventType eventType, ConfirmedRecoverySelection? recoverySelection = null,
+        CancellationToken cancellationToken = default)
     {
         var session = await _dbContext.TravelSessions.FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
             ?? throw new ValidateException($"Travel session {travelSessionId} was not found.");
 
-        if (!Transitions.TryGetValue((session.State, eventType), out var nextState))
+        if (eventType == TravelSessionEventType.ConfirmedRecovery)
+        {
+            ApplyConfirmedRecovery(session, recoverySelection);
+        }
+        else if (Transitions.TryGetValue((session.State, eventType), out var nextState))
+        {
+            session.State = nextState;
+        }
+        else
         {
             throw new ValidateException($"Cannot apply event '{eventType}' to a session in state '{session.State}'.");
         }
 
-        session.State = nextState;
         session.LastActivityAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return session;
+    }
+
+    // ConfirmedRecovery's target state depends on the confirmed RecoveryOption
+    // (F01), not a fixed (State, Event) -> State lookup, so it's handled separately
+    // from Transitions. A BusDirection option with IsCurrentBus false is a genuine
+    // route change (walk to a new stop); IsCurrentBus true means nothing about the
+    // route changed, so the session goes straight back to RIDING. An
+    // UnconfirmedRailPointer option has no DirectionId/BoardingStopId to send, so it
+    // is rejected the same way a malformed selection is.
+    private static void ApplyConfirmedRecovery(TravelSessionEntity session, ConfirmedRecoverySelection? selection)
+    {
+        if (session.State != TravelSessionState.Misboarded)
+        {
+            throw new ValidateException(
+                $"Cannot apply event 'ConfirmedRecovery' to a session in state '{session.State}'.");
+        }
+
+        if (selection is null)
+        {
+            throw new ValidateException("ConfirmedRecovery requires the confirmed recovery option's details.");
+        }
+
+        if (selection.IsCurrentBus)
+        {
+            session.State = TravelSessionState.Riding;
+            return;
+        }
+
+        if (selection.DirectionId is not int directionId || selection.BoardingStopId is not int boardingStopId)
+        {
+            // Also the rejection path for an UnconfirmedRailPointer option: it has no
+            // DirectionId/BoardingStopId to send, so it always fails this same check.
+            throw new ValidateException(
+                "ConfirmedRecovery requires DirectionId and BoardingStopId for a non-current-bus option — an " +
+                "UnconfirmedRailPointer option cannot be confirmed.");
+        }
+
+        session.DirectionId = directionId;
+        session.BoardingStopId = boardingStopId;
+        session.State = TravelSessionState.WalkingToStop;
     }
 
     public async Task<int> AbandonStaleSessionsAsync(CancellationToken cancellationToken = default)

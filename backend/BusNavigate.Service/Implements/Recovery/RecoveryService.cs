@@ -45,7 +45,7 @@ public class RecoveryService : IRecoveryService
         var recommended = new List<RecoveryOption>();
         var lastResort = new List<RecoveryOption>();
 
-        foreach (var (direction, distanceMeters) in candidateDirections)
+        foreach (var (direction, distanceMeters, boardingStopId) in candidateDirections)
         {
             var evaluation = await _travelOptionEvaluationService.EvaluateAsync(
                 travelSessionId, direction.Id, cancellationToken);
@@ -55,7 +55,8 @@ public class RecoveryService : IRecoveryService
             // out-of-scope note) — distinct from the Unknown rail pointers below.
             var option = new RecoveryOption(
                 RecoveryOptionKind.BusDirection, FormatLabel(direction), distanceMeters,
-                DataConfidence.Scheduled, evaluation.Reasons);
+                DataConfidence.Scheduled, evaluation.Reasons, direction.Id, boardingStopId,
+                IsCurrentBus: direction.Id == currentDirectionId);
 
             (evaluation.Accepted ? recommended : lastResort).Add(option);
         }
@@ -74,7 +75,7 @@ public class RecoveryService : IRecoveryService
     // not special-cased, just one more candidate with zero walk distance (T06). Every
     // other candidate is a Direction reachable from a BusStop within the walk budget
     // of CurrentLocation.
-    private async Task<List<(Direction Direction, double DistanceMeters)>> FindCandidateDirectionsAsync(
+    private async Task<List<(Direction Direction, double DistanceMeters, int? BoardingStopId)>> FindCandidateDirectionsAsync(
         int? currentDirectionId, decimal currentLatitude, decimal currentLongitude, CancellationToken cancellationToken)
     {
         var stopsWithinRadius = await FindStopsWithinRadiusAsync(currentLatitude, currentLongitude, cancellationToken);
@@ -86,7 +87,7 @@ public class RecoveryService : IRecoveryService
             .Include(rs => rs.Direction).ThenInclude(d => d.BusRoute)
             .ToListAsync(cancellationToken);
 
-        var candidates = new Dictionary<int, (Direction Direction, double DistanceMeters)>();
+        var candidates = new Dictionary<int, (Direction Direction, double DistanceMeters, int? BoardingStopId)>();
 
         if (currentDirectionId is int directionId)
         {
@@ -95,7 +96,9 @@ public class RecoveryService : IRecoveryService
                 .FirstOrDefaultAsync(d => d.Id == directionId, cancellationToken)
                 ?? throw new ValidateException($"Direction {directionId} was not found.");
 
-            candidates[directionId] = (currentDirection, 0);
+            // No BoardingStopId — this candidate is supplied directly as the user's
+            // current Direction, not discovered via a nearby stop (F01).
+            candidates[directionId] = (currentDirection, 0, null);
         }
 
         foreach (var routeStop in routeStops)
@@ -103,7 +106,7 @@ public class RecoveryService : IRecoveryService
             var distance = distanceByStopId[routeStop.BusStopId];
             if (!candidates.TryGetValue(routeStop.DirectionId, out var existing) || distance < existing.DistanceMeters)
             {
-                candidates[routeStop.DirectionId] = (routeStop.Direction, distance);
+                candidates[routeStop.DirectionId] = (routeStop.Direction, distance, routeStop.BusStopId);
             }
         }
 

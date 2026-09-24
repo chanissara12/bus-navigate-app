@@ -34,7 +34,7 @@ public class TravelSessionsController : ControllerBase
         int id, [FromBody] TravelSessionEventRequest request, CancellationToken cancellationToken)
     {
         var eventType = ParseEventType(request.Type);
-        var session = await _travelSessionService.ApplyEventAsync(id, eventType, cancellationToken);
+        var session = await _travelSessionService.ApplyEventAsync(id, eventType, request.RecoverySelection, cancellationToken);
         return Ok(ToResponse(session));
     }
 
@@ -60,6 +60,7 @@ public class TravelSessionsController : ControllerBase
         "alighted" => TravelSessionEventType.Alighted,
         "reached_destination" => TravelSessionEventType.ReachedDestination,
         "reported_wrong_bus" => TravelSessionEventType.ReportedWrongBus,
+        "confirmed_recovery" => TravelSessionEventType.ConfirmedRecovery,
         _ => throw new ValidateException($"Unknown event type '{type}'."),
     };
 }

@@ -2,7 +2,7 @@
 
 **Parent map:** [Frontend Build-out — Real Backend Integration](../map-frontend.md)
 
-**Status:** open
+**Status:** closed
 **Blocked by:** none
 **Blocks:** [Fold recovery into production](F08-fold-recovery.md)
 
@@ -30,4 +30,33 @@ nothing. Fix this per the map's Notes:
 
 ## Resolution
 
-_(not yet resolved)_
+Built per spec, plus one field the ticket assumed already existed:
+
+- `TravelSessionEventType.ConfirmedRecovery` added.
+- `TravelSessionService.ApplyConfirmedRecovery` handles it separately from the fixed
+  `(State, Event) -> State` `Transitions` table, since its target state depends on the
+  confirmed option's data, not just the current state: `MISBOARDED` only; `IsCurrentBus`
+  true → `RIDING` untouched; otherwise requires `DirectionId`/`BoardingStopId` → updates
+  them and moves to `WALKING_TO_STOP` (`AlightingStopId` untouched either way).
+- `RecoveryOption` gained `DirectionId`/`BoardingStopId` **and** `IsCurrentBus` — the
+  ticket's transition rule reads like `IsCurrentBus` already existed on the ViewModel,
+  but it didn't exist anywhere in the codebase before this change (only an implicit
+  `DistanceMeters == 0` signal did). Without a real field there's no way to implement
+  the described branch, so it was added alongside the two the ticket named explicitly.
+  All three are populated only for `Kind = BusDirection` in `RecoveryService`;
+  `BoardingStopId` is null for the current-bus candidate itself (supplied directly, not
+  discovered via the nearby-stop search).
+- `UnconfirmedRailPointer` rejection is implicit, not a `Kind` check: that kind of
+  option has no `DirectionId`/`BoardingStopId` to send in the first place, so it always
+  fails the same "missing DirectionId/BoardingStopId" validation as a malformed
+  request. The exception message calls this out explicitly so it doesn't read as a
+  generic validation failure.
+- Wire shape: `ConfirmedRecoverySelection` (`DirectionId`, `BoardingStopId`,
+  `IsCurrentBus`) added as an optional field on the existing
+  `TravelSessionEventRequest` — still one events endpoint, no new route, per T09's
+  convention.
+
+Verified: `dotnet build`, `dotnet test` (100/100, 8 new), `dotnet format
+--verify-no-changes` all clean. Reviewed via `/code-review` (Standards + Spec) — no
+hard violations; one judgement call (the rejection-by-omission above) addressed by
+clarifying the exception message.

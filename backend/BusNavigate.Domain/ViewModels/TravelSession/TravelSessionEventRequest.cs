@@ -6,4 +6,5 @@ namespace BusNavigate.Domain.ViewModels.TravelSession;
 // ("StartedWalking"); the controller maps between the two explicitly rather than via
 // a JSON naming-policy converter, so an unrecognized string produces the standard
 // ValidateException error shape instead of a raw deserialization failure.
-public record TravelSessionEventRequest(string Type);
+// RecoverySelection is only present when Type is "confirmed_recovery" (F01).
+public record TravelSessionEventRequest(string Type, ConfirmedRecoverySelection? RecoverySelection = null);

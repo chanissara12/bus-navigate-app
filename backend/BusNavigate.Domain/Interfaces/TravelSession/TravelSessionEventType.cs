@@ -11,4 +11,9 @@ public enum TravelSessionEventType
     ReportedWrongBus,
     Alighted,
     ReachedDestination,
+
+    // Confirms one RecoveryOption (F01) — the only event whose target state depends on
+    // event data rather than a fixed (State, Event) -> State lookup; see
+    // TravelSessionService.ApplyConfirmedRecovery.
+    ConfirmedRecovery,
 }

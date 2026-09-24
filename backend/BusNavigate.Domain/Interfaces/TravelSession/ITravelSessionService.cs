@@ -11,8 +11,10 @@ public interface ITravelSessionService
 
     // Applies one state-machine event (T09: POST /travel-sessions/{id}/events). Throws
     // ValidateException if the event isn't a valid transition from the session's current state.
+    // recoverySelection is required for, and only meaningful with, ConfirmedRecovery (F01).
     Task<TravelSessionEntity> ApplyEventAsync(
-        int travelSessionId, TravelSessionEventType eventType, CancellationToken cancellationToken = default);
+        int travelSessionId, TravelSessionEventType eventType, ConfirmedRecoverySelection? recoverySelection = null,
+        CancellationToken cancellationToken = default);
 
     // Stall sweep: transitions any non-terminal session with no activity in the last 2
     // hours to ABANDONED. Returns the number of sessions abandoned.

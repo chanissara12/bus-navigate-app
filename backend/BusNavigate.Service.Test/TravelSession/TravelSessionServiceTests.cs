@@ -2,6 +2,7 @@ using BusNavigate.Domain.Database;
 using BusNavigate.Domain.Entities;
 using BusNavigate.Domain.Exceptions;
 using BusNavigate.Domain.Interfaces.TravelSession;
+using BusNavigate.Domain.ViewModels.TravelSession;
 using Microsoft.EntityFrameworkCore;
 using BusStopEntity = BusNavigate.Domain.Entities.BusStop;
 
@@ -123,6 +124,119 @@ public class TravelSessionServiceTests
         // Act & Assert
         await Assert.ThrowsAsync<ValidateException>(
             () => service.ApplyEventAsync(999, TravelSessionEventType.StartedWalking));
+    }
+
+    private static async Task<(int DirectionId, int BoardingStopId)> SeedRecoveryDirectionAsync(BusNavigateDbContext dbContext)
+    {
+        var busRoute = new BusRoute { ExternalRouteId = $"R-{Guid.NewGuid()}", ShortName = "25", LongName = "Recovery route", DataSource = "test", ImportedAt = DateTime.UtcNow };
+        var direction = new Direction { BusRoute = busRoute, ExternalDirectionKey = $"{Guid.NewGuid()}", DirectionIndex = 0, Headsign = "Recovery" };
+        var boardingStop = new BusStopEntity { ExternalStopId = $"S-{Guid.NewGuid()}", NameTh = "r", NameEn = "r", Latitude = 0, Longitude = 0 };
+
+        dbContext.AddRange(busRoute, direction, boardingStop);
+        await dbContext.SaveChangesAsync();
+
+        return (direction.Id, boardingStop.Id);
+    }
+
+    [Fact]
+    public async Task ApplyEventAsync_ConfirmedRecoveryOfBusDirection_UpdatesDirectionAndBoardingStopAndWalksToStop()
+    {
+        // Arrange
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedSessionAsync(dbContext, service);
+        var session = await dbContext.TravelSessions.SingleAsync(s => s.Id == sessionId);
+        var originalAlightingStopId = session.AlightingStopId;
+        session.State = TravelSessionState.Misboarded;
+        await dbContext.SaveChangesAsync();
+        var (recoveryDirectionId, recoveryBoardingStopId) = await SeedRecoveryDirectionAsync(dbContext);
+
+        // Act
+        var result = await service.ApplyEventAsync(
+            sessionId, TravelSessionEventType.ConfirmedRecovery,
+            new ConfirmedRecoverySelection(recoveryDirectionId, recoveryBoardingStopId, IsCurrentBus: false));
+
+        // Assert
+        Assert.Equal(TravelSessionState.WalkingToStop, result.State);
+        Assert.Equal(recoveryDirectionId, result.DirectionId);
+        Assert.Equal(recoveryBoardingStopId, result.BoardingStopId);
+        Assert.Equal(originalAlightingStopId, result.AlightingStopId);
+    }
+
+    [Fact]
+    public async Task ApplyEventAsync_ConfirmedRecoveryOfCurrentBus_GoesStraightToRidingWithoutChangingPlan()
+    {
+        // Arrange
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedSessionAsync(dbContext, service);
+        var session = await dbContext.TravelSessions.SingleAsync(s => s.Id == sessionId);
+        var originalDirectionId = session.DirectionId;
+        var originalBoardingStopId = session.BoardingStopId;
+        session.State = TravelSessionState.Misboarded;
+        await dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await service.ApplyEventAsync(
+            sessionId, TravelSessionEventType.ConfirmedRecovery,
+            new ConfirmedRecoverySelection(DirectionId: null, BoardingStopId: null, IsCurrentBus: true));
+
+        // Assert
+        Assert.Equal(TravelSessionState.Riding, result.State);
+        Assert.Equal(originalDirectionId, result.DirectionId);
+        Assert.Equal(originalBoardingStopId, result.BoardingStopId);
+    }
+
+    [Theory]
+    [InlineData(TravelSessionState.Planned)]
+    [InlineData(TravelSessionState.Waiting)]
+    [InlineData(TravelSessionState.Riding)]
+    [InlineData(TravelSessionState.Completed)]
+    public async Task ApplyEventAsync_ConfirmedRecoveryFromNonMisboardedState_ThrowsValidateException(TravelSessionState from)
+    {
+        // Arrange
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedSessionAsync(dbContext, service);
+        var session = await dbContext.TravelSessions.SingleAsync(s => s.Id == sessionId);
+        session.State = from;
+        await dbContext.SaveChangesAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidateException>(() => service.ApplyEventAsync(
+            sessionId, TravelSessionEventType.ConfirmedRecovery,
+            new ConfirmedRecoverySelection(1, 1, IsCurrentBus: false)));
+    }
+
+    [Fact]
+    public async Task ApplyEventAsync_ConfirmedRecoveryWithNoSelection_ThrowsValidateException()
+    {
+        // Arrange
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedSessionAsync(dbContext, service);
+        var session = await dbContext.TravelSessions.SingleAsync(s => s.Id == sessionId);
+        session.State = TravelSessionState.Misboarded;
+        await dbContext.SaveChangesAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidateException>(
+            () => service.ApplyEventAsync(sessionId, TravelSessionEventType.ConfirmedRecovery));
+    }
+
+    // Covers both a malformed BusDirection selection and an UnconfirmedRailPointer
+    // selection (F01: "stays unconfirmable") — a rail pointer has no DirectionId/
+    // BoardingStopId to send, so it looks identical to a malformed request here.
+    [Fact]
+    public async Task ApplyEventAsync_ConfirmedRecoveryMissingDirectionOrBoardingStop_ThrowsValidateException()
+    {
+        // Arrange
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedSessionAsync(dbContext, service);
+        var session = await dbContext.TravelSessions.SingleAsync(s => s.Id == sessionId);
+        session.State = TravelSessionState.Misboarded;
+        await dbContext.SaveChangesAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidateException>(() => service.ApplyEventAsync(
+            sessionId, TravelSessionEventType.ConfirmedRecovery,
+            new ConfirmedRecoverySelection(DirectionId: null, BoardingStopId: null, IsCurrentBus: false)));
     }
 
     [Fact]

@@ -72,7 +72,7 @@ public class RecoveryServiceTests
         return session.Id;
     }
 
-    private static async Task<int> SeedDirectionAsync(
+    private static async Task<(int DirectionId, int? FirstStopId)> SeedDirectionAsync(
         BusNavigateDbContext dbContext, string headsign, params (decimal Lat, decimal Lon)[] stopCoordinates)
     {
         var busRoute = new BusRoute
@@ -93,6 +93,7 @@ public class RecoveryServiceTests
         dbContext.AddRange(busRoute, direction);
         await dbContext.SaveChangesAsync();
 
+        int? firstStopId = null;
         for (var i = 0; i < stopCoordinates.Length; i++)
         {
             var (lat, lon) = stopCoordinates[i];
@@ -106,12 +107,13 @@ public class RecoveryServiceTests
             };
             dbContext.BusStops.Add(stop);
             await dbContext.SaveChangesAsync();
+            firstStopId ??= stop.Id;
 
             dbContext.RouteStops.Add(new RouteStop { DirectionId = direction.Id, BusStopId = stop.Id, SequenceNumber = i + 1 });
         }
 
         await dbContext.SaveChangesAsync();
-        return direction.Id;
+        return (direction.Id, firstStopId);
     }
 
     private static async Task SeedPlaceAsync(BusNavigateDbContext dbContext, string name, decimal lat, decimal lon)
@@ -135,7 +137,7 @@ public class RecoveryServiceTests
         // ~200m from Destination (so T05's evaluation accepts it).
         var (dbContext, service) = CreateSubject();
         var sessionId = await SeedTravelSessionAsync(dbContext);
-        await SeedDirectionAsync(
+        var (directionId, _) = await SeedDirectionAsync(
             dbContext, "Good route",
             (CurrentLat + 0.0018m, CurrentLon),
             (DestinationLat + 0.0018m, DestinationLon));
@@ -148,6 +150,10 @@ public class RecoveryServiceTests
         Assert.Equal("Good route → Good route", option.Label);
         Assert.Contains(option.Reasons, r => r.Code == ReasonCode.ReachesDestination);
         Assert.Empty(result.LastResortOptions);
+        Assert.Equal(RecoveryOptionKind.BusDirection, option.Kind);
+        Assert.Equal(directionId, option.DirectionId);
+        Assert.NotNull(option.BoardingStopId);
+        Assert.False(option.IsCurrentBus);
     }
 
     [Fact]
@@ -193,7 +199,7 @@ public class RecoveryServiceTests
         // (it's supplied directly as CONTEXT.md's CurrentRoute, not discovered).
         var (dbContext, service) = CreateSubject();
         var sessionId = await SeedTravelSessionAsync(dbContext);
-        var currentDirectionId = await SeedDirectionAsync(dbContext, "Current wrong bus", (0m, 0m));
+        var (currentDirectionId, _) = await SeedDirectionAsync(dbContext, "Current wrong bus", (0m, 0m));
 
         // Act
         var result = await service.GenerateRecoveryOptionsAsync(sessionId, currentDirectionId, CurrentLat, CurrentLon);
@@ -201,6 +207,9 @@ public class RecoveryServiceTests
         // Assert
         var option = Assert.Single(result.LastResortOptions);
         Assert.Equal(0, option.DistanceMeters);
+        Assert.True(option.IsCurrentBus);
+        Assert.Equal(currentDirectionId, option.DirectionId);
+        Assert.Null(option.BoardingStopId);
     }
 
     [Fact]
@@ -232,6 +241,9 @@ public class RecoveryServiceTests
         Assert.Equal("BTS Siam", pointer.Label);
         Assert.Equal(DataConfidence.Unknown, pointer.DataConfidence);
         Assert.Empty(pointer.Reasons);
+        Assert.Null(pointer.DirectionId);
+        Assert.Null(pointer.BoardingStopId);
+        Assert.False(pointer.IsCurrentBus);
     }
 
     [Fact]
