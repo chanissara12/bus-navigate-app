@@ -5,4 +5,7 @@ namespace BusNavigate.Domain.ViewModels.TravelOptionEvaluation;
 // itself isn't computed by this ticket (T05 is a 1-to-1 accept/reject check against an
 // already-confirmed plan, not a fresh search) and stays out of scope until trip-planning
 // search is implemented.
-public record TravelOptionEvaluationResult(bool Accepted, IReadOnlyList<EvaluationReason> Reasons);
+public record TravelOptionEvaluationResult(
+    bool Accepted,
+    IReadOnlyList<EvaluationReason> Reasons,
+    int? AlightingStopId = null);

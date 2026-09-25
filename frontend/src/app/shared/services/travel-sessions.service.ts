@@ -4,6 +4,7 @@ import { Observable, OperatorFunction, catchError, throwError } from 'rxjs';
 
 import { API_BASE_URL } from '../constants/api.constant';
 import { TravelSessionProgress } from '../models/travel-session-progress.model';
+import { ConfirmedRecoverySelection } from '../models/confirmed-recovery-selection.model';
 import { TravelSessionResponse } from '../models/travel-session.model';
 
 @Injectable({ providedIn: 'root' })
@@ -38,9 +39,16 @@ export class TravelSessionsService {
             .pipe(this.handleError('Failed to load travel session progress'));
     }
 
-    sendEvent(id: number, eventType: string): Observable<TravelSessionResponse> {
+    sendEvent(
+        id: number,
+        eventType: string,
+        recoverySelection?: ConfirmedRecoverySelection
+    ): Observable<TravelSessionResponse> {
         return this.http
-            .post<TravelSessionResponse>(API_BASE_URL + '/travel-sessions/' + id + '/events', { type: eventType })
+            .post<TravelSessionResponse>(API_BASE_URL + '/travel-sessions/' + id + '/events', {
+                type: eventType,
+                ...(recoverySelection !== undefined ? { recoverySelection } : {})
+            })
             .pipe(this.handleError('Failed to update travel session'));
     }
 

@@ -59,7 +59,8 @@ public class TravelSessionsController : ControllerBase
 
     private static TravelSessionResponse ToResponse(BusNavigate.Domain.Entities.TravelSession session) => new(
         session.Id, session.State, session.DirectionId, session.BoardingStopId, session.AlightingStopId,
-        session.WalkingDistanceMeters, session.AlightingStop.NameTh, session.AlightingStop.NameEn,
+        session.WalkingDistanceMeters, session.BoardingStop.NameTh, session.BoardingStop.NameEn,
+        session.AlightingStop.NameTh, session.AlightingStop.NameEn,
         session.CreatedAt, session.LastActivityAt);
 
     private static TravelSessionEventType ParseEventType(string type) => type switch

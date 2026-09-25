@@ -11,6 +11,7 @@ namespace BusNavigate.Domain.ViewModels.TravelSession;
 public record TravelStopSummary(int Id, string NameTh, string NameEn);
 
 public record TravelSessionProgress(
+    string RouteShortName,
     TravelStopSummary? PreviousStop,
     TravelStopSummary? NextStop,
     TravelStopSummary AlightingStop,

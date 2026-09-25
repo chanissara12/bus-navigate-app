@@ -73,6 +73,7 @@ public class TravelSessionService : ITravelSessionService
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return await _dbContext.TravelSessions
+            .Include(s => s.BoardingStop)
             .Include(s => s.AlightingStop)
             .FirstAsync(s => s.Id == session.Id, cancellationToken);
     }
@@ -81,6 +82,7 @@ public class TravelSessionService : ITravelSessionService
         int travelSessionId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.TravelSessions
+            .Include(s => s.BoardingStop)
             .Include(s => s.AlightingStop)
             .FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
             ?? throw new ValidateException($"Travel session {travelSessionId} was not found.");
@@ -91,6 +93,7 @@ public class TravelSessionService : ITravelSessionService
         CancellationToken cancellationToken = default)
     {
         var session = await _dbContext.TravelSessions
+            .Include(s => s.BoardingStop)
             .Include(s => s.AlightingStop)
             .FirstOrDefaultAsync(s => s.Id == travelSessionId, cancellationToken)
             ?? throw new ValidateException($"Travel session {travelSessionId} was not found.");
@@ -111,7 +114,13 @@ public class TravelSessionService : ITravelSessionService
         session.LastActivityAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return session;
+
+        // Recovery can change BoardingStopId after the original navigation was loaded.
+        // Reload the entity with both stop navigations so callers can safely build the response.
+        return await _dbContext.TravelSessions
+            .Include(s => s.BoardingStop)
+            .Include(s => s.AlightingStop)
+            .FirstAsync(s => s.Id == travelSessionId, cancellationToken);
     }
 
     // ConfirmedRecovery's target state depends on the confirmed RecoveryOption
@@ -140,17 +149,20 @@ public class TravelSessionService : ITravelSessionService
             return;
         }
 
-        if (selection.DirectionId is not int directionId || selection.BoardingStopId is not int boardingStopId)
+        if (selection.DirectionId is not int directionId ||
+            selection.BoardingStopId is not int boardingStopId ||
+            selection.AlightingStopId is not int alightingStopId)
         {
             // Also the rejection path for an UnconfirmedRailPointer option: it has no
-            // DirectionId/BoardingStopId to send, so it always fails this same check.
+            // DirectionId/BoardingStopId/AlightingStopId to send, so it always fails this same check.
             throw new ValidateException(
-                "ConfirmedRecovery requires DirectionId and BoardingStopId for a non-current-bus option — an " +
+                "ConfirmedRecovery requires DirectionId, BoardingStopId and AlightingStopId for a non-current-bus option — an " +
                 "UnconfirmedRailPointer option cannot be confirmed.");
         }
 
         session.DirectionId = directionId;
         session.BoardingStopId = boardingStopId;
+        session.AlightingStopId = alightingStopId;
         session.State = TravelSessionState.WalkingToStop;
     }
 
@@ -196,6 +208,8 @@ public class TravelSessionService : ITravelSessionService
         var routeStops = await _dbContext.RouteStops
             .Where(rs => rs.DirectionId == session.DirectionId)
             .Include(rs => rs.BusStop)
+            .Include(rs => rs.Direction)
+                .ThenInclude(d => d.BusRoute)
             .OrderBy(rs => rs.SequenceNumber)
             .ToListAsync(cancellationToken);
 
@@ -221,6 +235,7 @@ public class TravelSessionService : ITravelSessionService
             .FirstOrDefault();
 
         return new TravelSessionProgress(
+            routeStops[0].Direction.BusRoute.ShortName,
             previousStop is null ? null : ToStopSummary(previousStop.BusStop),
             nextStop is null ? null : ToStopSummary(nextStop.BusStop),
             ToStopSummary(alightingRouteStop.BusStop),

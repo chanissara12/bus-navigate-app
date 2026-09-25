@@ -127,16 +127,22 @@ public class TravelSessionServiceTests
             () => service.ApplyEventAsync(999, TravelSessionEventType.StartedWalking));
     }
 
-    private static async Task<(int DirectionId, int BoardingStopId)> SeedRecoveryDirectionAsync(BusNavigateDbContext dbContext)
+    private static async Task<(int DirectionId, int BoardingStopId, int AlightingStopId)> SeedRecoveryDirectionAsync(BusNavigateDbContext dbContext)
     {
         var busRoute = new BusRoute { ExternalRouteId = $"R-{Guid.NewGuid()}", ShortName = "25", LongName = "Recovery route", DataSource = "test", ImportedAt = DateTime.UtcNow };
         var direction = new Direction { BusRoute = busRoute, ExternalDirectionKey = $"{Guid.NewGuid()}", DirectionIndex = 0, Headsign = "Recovery" };
         var boardingStop = new BusStopEntity { ExternalStopId = $"S-{Guid.NewGuid()}", NameTh = "r", NameEn = "r", Latitude = 0, Longitude = 0 };
+        var alightingStop = new BusStopEntity { ExternalStopId = $"S-{Guid.NewGuid()}", NameTh = "recovery-d", NameEn = "recovery-d", Latitude = 0, Longitude = 0 };
 
-        dbContext.AddRange(busRoute, direction, boardingStop);
+        dbContext.AddRange(busRoute, direction, boardingStop, alightingStop);
         await dbContext.SaveChangesAsync();
 
-        return (direction.Id, boardingStop.Id);
+        dbContext.RouteStops.AddRange(
+            new RouteStop { DirectionId = direction.Id, BusStopId = boardingStop.Id, SequenceNumber = 1 },
+            new RouteStop { DirectionId = direction.Id, BusStopId = alightingStop.Id, SequenceNumber = 2 });
+        await dbContext.SaveChangesAsync();
+
+        return (direction.Id, boardingStop.Id, alightingStop.Id);
     }
 
     [Fact]
@@ -149,18 +155,32 @@ public class TravelSessionServiceTests
         var originalAlightingStopId = session.AlightingStopId;
         session.State = TravelSessionState.Misboarded;
         await dbContext.SaveChangesAsync();
-        var (recoveryDirectionId, recoveryBoardingStopId) = await SeedRecoveryDirectionAsync(dbContext);
+        var (recoveryDirectionId, recoveryBoardingStopId, recoveryAlightingStopId) = await SeedRecoveryDirectionAsync(dbContext);
 
         // Act
         var result = await service.ApplyEventAsync(
             sessionId, TravelSessionEventType.ConfirmedRecovery,
-            new ConfirmedRecoverySelection(recoveryDirectionId, recoveryBoardingStopId, IsCurrentBus: false));
+            new ConfirmedRecoverySelection(recoveryDirectionId, recoveryBoardingStopId, IsCurrentBus: false, AlightingStopId: recoveryAlightingStopId));
 
         // Assert
         Assert.Equal(TravelSessionState.WalkingToStop, result.State);
         Assert.Equal(recoveryDirectionId, result.DirectionId);
         Assert.Equal(recoveryBoardingStopId, result.BoardingStopId);
-        Assert.Equal(originalAlightingStopId, result.AlightingStopId);
+        Assert.NotNull(result.BoardingStop);
+        Assert.Equal("r", result.BoardingStop.NameTh);
+        Assert.NotEqual(originalAlightingStopId, result.AlightingStopId);
+        Assert.Equal(recoveryAlightingStopId, result.AlightingStopId);
+        Assert.NotNull(result.AlightingStop);
+        Assert.Equal("recovery-d", result.AlightingStop.NameTh);
+
+        // Regression: after recovery, boarding the replacement bus must use the
+        // replacement direction's alighting stop instead of the old direction's stop.
+        await service.ApplyEventAsync(sessionId, TravelSessionEventType.ArrivedAtStop);
+        await service.ApplyEventAsync(sessionId, TravelSessionEventType.Boarded);
+        var progress = await service.GetProgressAsync(sessionId, currentStopSequence: 1);
+
+        Assert.Equal("recovery-d", progress.AlightingStop.NameTh);
+        Assert.Equal(1, progress.RemainingStopCount);
     }
 
     [Fact]
@@ -311,6 +331,7 @@ public class TravelSessionServiceTests
         var result = await service.GetProgressAsync(sessionId, currentStopSequence: null);
 
         // Assert
+        Assert.Equal("1", result.RouteShortName);
         Assert.Equal(3, result.RemainingStopCount);
         Assert.False(result.IsApproachingDestination);
         Assert.Equal("1", result.PreviousStop!.NameTh);

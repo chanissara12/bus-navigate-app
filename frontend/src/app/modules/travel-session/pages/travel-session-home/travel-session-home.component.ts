@@ -37,6 +37,8 @@ export class TravelSessionHomeComponent {
     readonly state = signal<TravelSessionState>(TravelSessionState.Planned);
     readonly destinationNameTh = signal('');
     readonly destinationNameEn = signal('');
+    readonly boardingStopNameTh = signal('');
+    readonly boardingStopNameEn = signal('');
     readonly walkingDistanceMeters = signal(0);
     readonly progress = signal<TravelSessionProgress | undefined>(undefined);
     readonly loading = signal(true);
@@ -193,6 +195,8 @@ export class TravelSessionHomeComponent {
         this.state.set(session.state);
         this.destinationNameTh.set(session.alightingStopNameTh);
         this.destinationNameEn.set(session.alightingStopNameEn);
+        this.boardingStopNameTh.set(session.boardingStopNameTh);
+        this.boardingStopNameEn.set(session.boardingStopNameEn);
         this.walkingDistanceMeters.set(session.walkingDistanceMeters);
         this.activeSessionService.updateFromState(session.state);
 

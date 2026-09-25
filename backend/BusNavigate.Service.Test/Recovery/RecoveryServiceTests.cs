@@ -153,6 +153,7 @@ public class RecoveryServiceTests
         Assert.Equal(RecoveryOptionKind.BusDirection, option.Kind);
         Assert.Equal(directionId, option.DirectionId);
         Assert.NotNull(option.BoardingStopId);
+        Assert.NotNull(option.AlightingStopId);
         Assert.False(option.IsCurrentBus);
     }
 

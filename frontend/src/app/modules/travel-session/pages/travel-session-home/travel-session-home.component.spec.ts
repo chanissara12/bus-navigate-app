@@ -34,6 +34,8 @@ describe('TravelSessionHomeComponent', () => {
                 boardingStopId: 10,
                 alightingStopId: 30,
                 walkingDistanceMeters: 210,
+                boardingStopNameTh: 'ป้ายขึ้นรถ',
+                boardingStopNameEn: 'Boarding Stop',
                 alightingStopNameTh: 'จุดหมายปลายทาง',
                 alightingStopNameEn: 'Destination',
                 createdAt: '',
@@ -41,6 +43,7 @@ describe('TravelSessionHomeComponent', () => {
             })),
             sendEvent: jest.fn(),
             getProgress: jest.fn().mockReturnValue(of({
+                routeShortName: '8',
                 previousStop: { id: 10, nameTh: 'ป้ายก่อนหน้า', nameEn: 'Previous' },
                 nextStop: { id: 20, nameTh: 'ป้ายถัดไป', nameEn: 'Next' },
                 alightingStop: { id: 30, nameTh: 'จุดลง', nameEn: 'Destination' },
@@ -93,6 +96,15 @@ describe('TravelSessionHomeComponent', () => {
         expect(fixture.nativeElement.textContent).toContain('เดินไปป้ายขึ้นรถประมาณ 210 ม.');
     });
 
+    it('shows the boarding stop while walking to the stop', () => {
+        component.state.set(TravelSessionState.WalkingToStop);
+        fixture.detectChanges();
+
+        expect(fixture.nativeElement.textContent).toContain('กำลังเดินไปป้ายขึ้นรถ');
+        expect(fixture.nativeElement.textContent).toContain('ป้ายขึ้นรถ');
+        expect(fixture.nativeElement.textContent).toContain('เหลือระยะทางประมาณ 210 ม.');
+    });
+
 
     it('opens confirmation for the state action and sends the matching event', () => {
         travelSessionsService.sendEvent.mockReturnValue(of({
@@ -108,6 +120,39 @@ describe('TravelSessionHomeComponent', () => {
         expect(travelSessionsService.sendEvent).toHaveBeenCalledWith(42, 'started_walking');
         expect(component.state()).toBe(TravelSessionState.WalkingToStop);
         expect(component.dialogOpen()).toBe(false);
+    });
+
+    it('shows the bus route number while riding', () => {
+        component.state.set(TravelSessionState.Riding);
+        component.progress.set({
+            routeShortName: '8',
+            previousStop: { id: 10, nameTh: 'ป้ายก่อนหน้า', nameEn: 'Previous' },
+            nextStop: { id: 20, nameTh: 'ป้ายถัดไป', nameEn: 'Next' },
+            alightingStop: { id: 30, nameTh: 'จุดลง', nameEn: 'Destination' },
+            remainingStopCount: 1,
+            isApproachingDestination: true,
+            dataConfidence: 1
+        });
+        fixture.detectChanges();
+
+        expect(fixture.nativeElement.textContent).toContain('สาย 8');
+    });
+
+    it('hides the remaining stop count when it reaches zero', () => {
+        component.state.set(TravelSessionState.Riding);
+        component.progress.set({
+            routeShortName: '8',
+            previousStop: { id: 20, nameTh: 'ป้ายก่อนหน้า', nameEn: 'Previous' },
+            nextStop: null,
+            alightingStop: { id: 30, nameTh: 'จุดลง', nameEn: 'Destination' },
+            remainingStopCount: 0,
+            isApproachingDestination: true,
+            dataConfidence: 1
+        });
+        fixture.detectChanges();
+
+        expect(fixture.nativeElement.textContent).toContain('ถึงจุดลงแล้ว');
+        expect(fixture.nativeElement.textContent).not.toContain('เหลืออีก 0 ป้าย');
     });
 
     it('polls progress after the session enters RIDING', () => {

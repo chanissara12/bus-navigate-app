@@ -4,4 +4,8 @@ namespace BusNavigate.Domain.ViewModels.TravelSession;
 // event so the backend knows which candidate the user picked. DirectionId/
 // BoardingStopId are null for an UnconfirmedRailPointer option (it has none) and for
 // IsCurrentBus (nothing about the route changes, so there's nothing to identify).
-public record ConfirmedRecoverySelection(int? DirectionId, int? BoardingStopId, bool IsCurrentBus);
+public record ConfirmedRecoverySelection(
+    int? DirectionId,
+    int? BoardingStopId,
+    bool IsCurrentBus,
+    int? AlightingStopId = null);

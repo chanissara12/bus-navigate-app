@@ -57,14 +57,16 @@ public class TravelOptionEvaluationService : ITravelOptionEvaluationService
             // rejected candidates by "how close it got" (T06's last-resort ranking).
             return new TravelOptionEvaluationResult(
                 Accepted: false,
-                Reasons: [new EvaluationReason(ReasonCode.DoesNotReachDestination, (decimal)walkDistanceMeters)]);
+                Reasons: [new EvaluationReason(ReasonCode.DoesNotReachDestination, (decimal)walkDistanceMeters)],
+                AlightingStopId: nearestRouteStop.BusStopId);
         }
 
         if (extraTransfers > 1)
         {
             return new TravelOptionEvaluationResult(
                 Accepted: false,
-                Reasons: [new EvaluationReason(ReasonCode.ExtraTransferCount, extraTransfers)]);
+                Reasons: [new EvaluationReason(ReasonCode.ExtraTransferCount, extraTransfers)],
+                AlightingStopId: nearestRouteStop.BusStopId);
         }
 
         List<EvaluationReason> reasons =
@@ -76,6 +78,9 @@ public class TravelOptionEvaluationService : ITravelOptionEvaluationService
             new EvaluationReason(ReasonCode.WithinWalkBudget, (decimal)walkDistanceMeters),
         ];
 
-        return new TravelOptionEvaluationResult(Accepted: true, Reasons: reasons);
+        return new TravelOptionEvaluationResult(
+            Accepted: true,
+            Reasons: reasons,
+            AlightingStopId: nearestRouteStop.BusStopId);
     }
 }

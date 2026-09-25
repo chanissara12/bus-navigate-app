@@ -55,7 +55,7 @@ public class RecoveryService : IRecoveryService
             // out-of-scope note) — distinct from the Unknown rail pointers below.
             var option = new RecoveryOption(
                 RecoveryOptionKind.BusDirection, FormatLabel(direction), distanceMeters,
-                DataConfidence.Scheduled, evaluation.Reasons, direction.Id, boardingStopId,
+                DataConfidence.Scheduled, evaluation.Reasons, direction.Id, boardingStopId, evaluation.AlightingStopId,
                 IsCurrentBus: direction.Id == currentDirectionId);
 
             (evaluation.Accepted ? recommended : lastResort).Add(option);

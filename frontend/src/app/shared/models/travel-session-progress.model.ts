@@ -7,6 +7,7 @@ export interface TravelStopSummary {
 }
 
 export interface TravelSessionProgress {
+    routeShortName: string;
     previousStop: TravelStopSummary | null;
     nextStop: TravelStopSummary | null;
     alightingStop: TravelStopSummary;

@@ -21,5 +21,6 @@ public record RecoveryOption(
     IReadOnlyList<EvaluationReason> Reasons,
     int? DirectionId = null,
     int? BoardingStopId = null,
+    int? AlightingStopId = null,
     bool IsCurrentBus = false
 );
