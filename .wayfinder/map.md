@@ -62,6 +62,11 @@ treatment. Unlike T12→T13's convergence on one shared layout family, T14 and T
 urgency drove an independent pick, and forcing consistency here would have meant
 picking the wrong layout for one of the two screens.
 
+**Amendment 6:** [T16](tickets/T16-route-map-visualization.md) opened to graduate the
+"Not yet specified" route-map-visualization item below into an actual ticket — not
+resolved yet. Explicitly scoped to decide from current requirements/data only, not as
+a port of this repo's pre-rewrite MVP map feature.
+
 ## Destination
 
 A locked spec — data model, API contracts, and frontend/backend module boundaries —
@@ -224,17 +229,9 @@ included; components are expected to emerge during implementation.
 
 ## Not yet specified
 
-- Whether to add route-map visualization (drawing the bus route / walking path on a
-  map) to this Phase 1 destination, or hold it as a fast-follow after Phase 1 ships.
-  Deliberately not ticketed now — the current destination excludes UI/wireframe design,
-  and adding map rendering now would also require pulling in GTFS `shapes.txt` (route
-  geometry), which no ticket currently ingests. Retrofitting later is low-cost (an
-  additive `RouteShape` entity + an extra response field — no rework of `BusRoute`/
-  `Direction`/`RouteStop`/`Trip` or any decision algorithm in T05/T06), so this is
-  intentionally deferred rather than resolved. Note: the pre-rewrite `main` branch had
-  a fully-built map feature (route drawing, walking-path road-snapping, footbridges,
-  map background layer) — worth revisiting as a reference if/when this graduates to a
-  ticket.
+- ~~Whether to add route-map visualization~~ — graduated to
+  [T16](tickets/T16-route-map-visualization.md) (see Amendment 6 above); no longer an
+  open question here, tracked on that ticket instead.
 - Whether to add full BTS/MRT route/schedule data (not just station location) to
   recovery/trip-planning. Bigger than the map-visualization fog item above: this would
   require its own T01-equivalent research effort (BTSC/BEM licensing — separate from
