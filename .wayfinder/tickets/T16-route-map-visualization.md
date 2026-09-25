@@ -2,7 +2,7 @@
 
 **Parent map:** [Phase 1 Spec — Public Transit Decision & Recovery Assistant](../map.md)
 
-**Status:** open
+**Status:** closed
 **Blocked by:** none
 **Blocks:** none (a future fold/implementation ticket, once this resolves)
 
@@ -48,4 +48,90 @@ Needs both research and design decisions:
 
 ## Resolution
 
-_(not yet resolved)_
+Research findings: [.wayfinder/research/route-map-visualization.md](../research/route-map-visualization.md)
+(Namtang GTFS does publish `shapes.txt` — 3.9M points across 4,689 trips, keyed by
+`shape_id` at the `trip_id` level; Leaflet recommended over MapLibre GL for Phase 1's
+simpler needs; OpenFreeMap recommended as the default basemap; walking-routing
+providers all carry real cost/licensing constraints). Design decisions below were
+reached via grilling on top of that research, per this repo's usual process.
+
+**Scope:** all three fold pages need it, not just one — `trip-planning`,
+`travel-session`, and `recovery`. Each gets a map card showing the relevant route(s);
+this widens the destination beyond the single-page pattern F05-F08 each used, but the
+three pages share one map component/API surface, so it's one implementation effort,
+not three.
+
+**Data model:** shape geometry attaches to `Direction`, not `Trip` — despite GTFS
+associating `shape_id` with `trip_id`, both `TravelOption` and `RecoveryOption` already
+key off `DirectionId`, and `Direction` already has a "pick the most-common value among
+its trips" dedup pattern for `Headsign` (`UpsertDirectionsAsync`); the same pattern
+applies to `shape_id`. Stored as a plain `RouteShapePoint`-style entity (ordered
+`DirectionId`/`Sequence`/`Latitude`/`Longitude` rows) — no PostGIS/NetTopologySuite;
+nothing else in the schema uses a spatial type, and nothing in this requirement (render
+a line on a map) needs one. Points are simplified once at import time (fixed-tolerance
+Douglas-Peucker, ~10-20m) rather than per-request/per-zoom — matches Phase 1's existing
+bias toward fixed, non-adaptive behavior over live vehicle tracking or ETA computation.
+
+**GTFS shapes import is its own service, not folded into `GtfsImportService`, and is
+triggered automatically, not manually.** `shapes.txt` is ~155MB / 3.9M rows against a
+feed where every other file is under 165K rows — importing it inline would put a large,
+untested load on `GtfsImportService.ImportAsync`, which has already broken production
+once (a duplicate-agency-key crash, fixed separately). Instead: a new service (e.g.
+`IRouteShapeImportService`) runs as a third step in
+`WeeklyDataSyncBackgroundService.RunSyncAsync`, in its own `try/catch` exactly like the
+existing GTFS-import → landmark-sync sequence (same pattern T08 already established:
+reuse the one weekly job, don't add a new schedule). That third step first does a cheap
+version/hash check against the feed (Transitland already exposes a versioned feed URL
+per the research) and only runs the actual 3.9M-row import when the version actually
+changed — so it's both automatic (no one has to remember to trigger it) and cheap on
+every run where nothing changed.
+
+**API contract:** a new `GET /api/v1/directions/{id}/shape` endpoint (no
+`DirectionsController` exists yet) returning the simplified point list — a separate
+resource, not embedded in `TravelOption`/`RecoveryOption`/`TravelSessionResponse`,
+fetched lazily only when a map is actually shown, keeping those list responses from
+growing for users who never open a map.
+
+**Basemap/library:** Leaflet, with the tile/style provider URL configuration-driven
+(same pattern as `StopLandmarkSync:OverpassUrl`) defaulting to OpenFreeMap (no API key,
+commercial use allowed, no SLA — acceptable for Phase 1, swappable to CARTO or
+self-hosted later via config alone if OpenFreeMap's lack of SLA becomes a problem).
+
+**Walking path:** rendered as a clearly-labeled approximate dashed connector, not a
+real routed/road-snapped path — every routing provider researched (OpenRouteService,
+GraphHopper, OSRM) has either a non-commercial free tier or a real metered/self-hosted
+cost, which is a budget decision out of this ticket's scope. A future ticket can
+replace the connector with real routing without touching the `RouteShapePoint` model.
+
+**Live user position:** all three pages show a live-updating "you are here" marker via
+a new `GeolocationService.watchPosition()` method (the existing `getCurrentPosition()`
+stays as-is for flows that only need a one-shot read, e.g. the initial recovery-options
+request) — consistent UX across all three maps, purely client-side, not related to
+(and not blocked by) the explicitly out-of-scope Phase 2/3 "real-time vehicle
+tracking."
+
+**Per-page UI shape (decided at the design level; exact layout still goes through this
+project's `/prototype` workflow before implementation, same as T12-T15):**
+- **trip-planning & recovery:** one persistent map card pinned above the results list,
+  not a per-card collapsible/accordion. Tapping a result card (a new interaction,
+  separate from trip-planning's existing "เริ่มเดินทาง" button / recovery's existing
+  "เลือกอันนี้" confirm action) reloads the map's route line in place — one Leaflet
+  instance reused via `setLatLngs()`/`fitBounds()`, not destroyed and recreated per
+  selection. Defaults to the first recommended option shown immediately on load, no
+  empty state.
+- **travel-session:** shown immediately, no expand/collapse interaction needed — it's
+  the only card on the page, so there's no multi-instance cost to avoid. Shows only the
+  session's route + the live user-position marker; no additional passed-stop
+  highlighting in this ticket (deferred — `RemainingStopCount` from the existing
+  progress endpoint could feed that later without any new backend work).
+
+**Explicitly out of scope / deferred, not decided here:**
+- Real road-following walking routes (needs a budgeted routing provider).
+- Passed/remaining-stop highlighting on the travel-session map.
+- The exact visual layout of each map card (goes through `/prototype`, not decided by
+  grilling).
+
+**Not yet done:** no code written. A future fold/implementation ticket picks this up —
+covers the `RouteShapePoint` entity + migration, `IRouteShapeImportService` +
+`WeeklyDataSyncBackgroundService` wiring, `DirectionsController`, the shared Leaflet map
+component, and the three pages' integration.
