@@ -1,7 +1,10 @@
 # [wayfinder:map] Frontend Build-out — Real Backend Integration
 
-**STATUS: CHARTED** — destination and full ticket set decided via grilling
-(2026-09-24); no ticket resolved yet.
+**STATUS: COMPLETE** — all 8 tickets (F01-F08) closed. All four pages
+(`trip-planning`, `bus-stop`, `travel-session`, `recovery`) are folded into
+production, wired to the real backend, and connected end-to-end (plan a trip →
+create a `TravelSession` → track it → recover from a wrong bus). See each ticket's
+own Resolution for implementation detail — not repeated here.
 
 ## Destination
 
@@ -81,7 +84,31 @@ Destination is itself an executable outcome, not another spec document (see Note
 
 ## Decisions so far
 
-_(none yet — this map was just charted)_
+- [F01](tickets/F01-recovery-confirmation-mechanism.md) — added the missing
+  `ConfirmedRecovery` backend transition: `MISBOARDED` → `WALKING_TO_STOP` for a
+  route-changing `BusDirection` option, straight to `RIDING` when `IsCurrentBus` is
+  true; `UnconfirmedRailPointer` options stay unconfirmable.
+- [F02](tickets/F02-shared-frontend-infrastructure.md) — shared infra all later
+  tickets build on: `DeviceIdentityService` (+ `X-Device-Id` interceptor),
+  `ActiveSessionService`, `ErrorNotificationService`, `ConfirmDialogComponent`.
+- [F03](tickets/F03-app-shell-navigation.md) — bottom-tab shell (trip-planning,
+  bus-stop, travel-session) plus `/travel-session/:id` and `/recovery/:id` routing
+  with session-id guard.
+- [F04](tickets/F04-loading-error-ui-patterns.md) — decided the skeleton-loading +
+  contextual-error-banner pattern (via `/prototype`) that every fold ticket below
+  applies.
+- [F05](tickets/F05-fold-trip-planning.md) — folded T12's Variant A into
+  `trip-planning-home`; real places/travel-options search, session creation on
+  "เริ่มเดินทาง". Also fixed a real CORS/HTTPS-redirect gap found while verifying
+  (`Program.cs`).
+- [F06](tickets/F06-fold-bus-stop.md) — folded T13's Variant A (list-first
+  accordion) into `bus-stop-home`; nearby list + tap-to-expand landmark context.
+- [F07](tickets/F07-fold-travel-session.md) — folded T14's Variant A into
+  `travel-session-home`; progress polling, state-advance action, report-wrong-bus
+  CTA into `recovery`.
+- [F08](tickets/F08-fold-recovery.md) — folded T15's Variant C (tiered urgency
+  stack) into `recovery-home`; recommended/last-resort/rail-pointer tiers, confirm
+  flow wired to F01's `ConfirmedRecovery` event.
 
 ## Not yet specified
 
