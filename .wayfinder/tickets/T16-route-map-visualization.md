@@ -103,6 +103,19 @@ GraphHopper, OSRM) has either a non-commercial free tier or a real metered/self-
 cost, which is a budget decision out of this ticket's scope. A future ticket can
 replace the connector with real routing without touching the `RouteShapePoint` model.
 
+**Amendment:** the dashed connector should bias through a known road-crossing point
+when one exists, using data already in the database — no new provider/cost involved.
+`StopLandmark` (F06/T08) already stores `LandmarkType.Crossing` and `Footbridge`
+points near each stop, sourced from Overpass. When drawing the connector between the
+user's position and a boarding stop, check that stop's already-fetched landmark list
+for a `Crossing`/`Footbridge` point that plausibly lies between the two ends (i.e.
+routing through it isn't a large detour); if one exists, render a 2-segment dashed
+line (user → landmark → stop) instead of a single straight segment; otherwise fall
+back to the direct line. Still labeled as approximate either way — this is a waypoint
+bias using existing point data, not real road-snapped routing, and doesn't change the
+"no routing provider in this ticket" decision above. The exact detour-ratio threshold
+for "plausibly between" is an implementation detail, not decided here.
+
 **Live user position:** all three pages show a live-updating "you are here" marker via
 a new `GeolocationService.watchPosition()` method (the existing `getCurrentPosition()`
 stays as-is for flows that only need a one-shot read, e.g. the initial recovery-options
