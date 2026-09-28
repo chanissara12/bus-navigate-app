@@ -62,6 +62,15 @@ A place the user can rejoin a workable route from their current situation — e.
 **Data Confidence**:
 A shared provenance label (`Realtime` / `Estimated` / `Scheduled` / `Unknown`) attached to any time-sensitive fact (ETA, stop identification, service status) so the UI never presents an estimate as verified fact.
 
+### Live vehicle tracking (Phase 2)
+
+**RealtimeVehicle**:
+A live position report for one physical vehicle currently operating somewhere on a Direction, distinct from Trip (Trip is immutable schedule data — a RealtimeVehicle is the live, uncertain counterpart). Whether a RealtimeVehicle report arrives already matched to a specific Trip, or only to a Route+Direction with raw position, is an open question for the data-source research ticket to answer — not assumed here.
+_Avoid_: Vehicle alone (ambiguous with the generic PROPOSAL.md term) — RealtimeVehicle always implies a live position report, not a static fleet record.
+
+**RouteDeviation**:
+A per-vehicle signal that a RealtimeVehicle's actual position/stops-served no longer matches its Direction's expected RouteStop sequence. Deliberately **not** the same channel as TransitAlert: a RouteDeviation is raw, noisy, and scoped to the riders currently on or waiting for that specific vehicle (delivered as a Proactive Notification to them), never written to TransitAlert automatically. TransitAlert stays human-curated only (see Service status below) — promoting a RouteDeviation to a TransitAlert, if ever, is a deliberate human act, not an automatic escalation. This preserves the reasoning behind [Service Status data model & rules](.wayfinder/tickets/T07-service-status.md)'s rejection of GTFS-diff auto-detection.
+
 ### Service status
 
 **ServiceCalendar**:
@@ -71,17 +80,18 @@ The recurring weekly/day-type pattern a Trip runs under (e.g. weekday vs. weeken
 A dated override to ServiceCalendar for a specific Trip or Direction (e.g. no service on a public holiday).
 
 **TransitAlert**:
-A human-facing status flag for a BusRoute/Direction — one of Normal, Delayed, Temporarily Suspended, Not Operating Today, Route Changed, Cancelled, Unknown (see Section 11 of PROPOSAL.md). Phase 1 covers only scheduled/announced status, not live in-trip deviation detection (that's Dynamic Route Change, Phase 2).
+A human-facing status flag for a BusRoute/Direction — one of Normal, Delayed, Temporarily Suspended, Not Operating Today, Route Changed, Cancelled, Unknown (see Section 11 of PROPOSAL.md). Manual/human-curated only, by design (see [T07](.wayfinder/tickets/T07-service-status.md)) — never auto-written from live vehicle data. Contrast with RouteDeviation (Phase 2), a separate, per-vehicle, non-authoritative signal that never promotes itself into a TransitAlert automatically.
 
 ### People
 
 **User**:
-The person using the app. Phase 1 needs User identity only to own a TravelSession (anonymous/device-scoped — no login); no preference/report modeling yet.
+The person using the app. Phase 1 needs User identity only to own a TravelSession (anonymous/device-scoped — no login); Phase 2 adds UserPreference, still against the same anonymous/device-scoped identity — no login/signup introduced.
+
+**UserPreference**:
+A set of standing routing constraints for a User (e.g. minimize walking, minimize transfers, avoid stairs) that **re-ranks** TravelOption/RecoveryOption ordering only — it never removes an option from the list. Composes with, but is distinct from, a TravelOption's Reason (Reason explains one option's own factors; UserPreference is the per-user lens used to order options that already exist). The one exception to "never removes an option" already in the system is walk-budget reachability, which is a physical hard constraint, not a preference.
 
 ## Out of scope for Phase 1 (fog, not modeled yet)
 
-- **Vehicle / RealtimeVehicle** — live vehicle position; Phase 1 "Can I take this bus?" reasons from Trip schedule data only, no live tracking.
-- **UserPreference** — accessibility/routing constraints; Phase 2.
 - **UserReport** — crowdsourced corrections; Phase 2.
 - Turn-by-turn **WalkingRoute** geometry — Phase 1 only needs a walking distance/time estimate on TravelOption, not turn-by-turn directions.
 - OCR/photo-based stop or route recognition — Phase 2/3.
