@@ -5,6 +5,7 @@ using BusNavigate.Domain.Interfaces.ServiceStatus;
 using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
 using BusNavigate.Domain.Interfaces.TravelSession;
 using BusNavigate.Domain.Interfaces.TripPlanning;
+using BusNavigate.Domain.Interfaces.UserPreference;
 using BusNavigate.Service.Implements.BusStop;
 using BusNavigate.Service.Implements.GtfsImport;
 using BusNavigate.Service.Implements.Recovery;
@@ -12,6 +13,7 @@ using BusNavigate.Service.Implements.ServiceStatus;
 using BusNavigate.Service.Implements.TravelOptionEvaluation;
 using BusNavigate.Service.Implements.TravelSession;
 using BusNavigate.Service.Implements.TripPlanning;
+using BusNavigate.Service.Implements.UserPreference;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BusNavigate.Service.Extensions;
@@ -75,6 +77,13 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IPlaceSearchService, PlaceSearchService>();
         services.AddScoped<ITravelOptionSearchService, TravelOptionSearchService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddUserPreference(this IServiceCollection services)
+    {
+        services.AddScoped<IUserPreferenceService, UserPreferenceService>();
 
         return services;
     }

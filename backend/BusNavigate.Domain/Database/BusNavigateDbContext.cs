@@ -35,6 +35,8 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
 
     public DbSet<RouteShapeImportState> RouteShapeImportStates => Set<RouteShapeImportState>();
 
+    public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -183,6 +185,15 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
         modelBuilder.Entity<RouteShapeImportState>(entity =>
         {
             entity.HasKey(e => e.Id);
+        });
+
+        modelBuilder.Entity<UserPreference>(entity =>
+        {
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

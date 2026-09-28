@@ -28,6 +28,8 @@ builder.Services.AddServiceStatus();
 
 builder.Services.AddTripPlanning();
 
+builder.Services.AddUserPreference();
+
 // Frontend build-out map (2026-09-24 discovery): the Angular dev server (localhost:4200)
 // and this API (localhost:5261/7057) are different origins with nothing else bridging
 // them (no dev proxy) — without a CORS policy every request is blocked by the browser
