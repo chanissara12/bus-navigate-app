@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 
 // Generic confirm/cancel dialog, no variants — every state-changing action (T04 event
@@ -7,7 +7,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Input, 
 @Component({
     selector: 'app-confirm-dialog',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './confirm-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

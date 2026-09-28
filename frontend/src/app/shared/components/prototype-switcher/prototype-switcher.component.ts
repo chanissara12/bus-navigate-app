@@ -1,6 +1,6 @@
 // PROTOTYPE ONLY — throwaway UI-variant switcher. Do not fold into production code;
 // see .claude/skills/prototype/UI.md. Hidden automatically outside dev builds.
-import { CommonModule } from '@angular/common';
+
 import { Component, HostListener, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 
 import { environment } from '../../../../environments/environment';
@@ -13,7 +13,7 @@ export interface PrototypeVariant {
 @Component({
     selector: 'app-prototype-switcher',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './prototype-switcher.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
