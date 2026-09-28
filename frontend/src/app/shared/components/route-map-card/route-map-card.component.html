@@ -1,0 +1,95 @@
+<section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div class="flex items-center justify-between px-4 py-3">
+    <div>
+      <h2 class="text-sm font-semibold text-slate-900">แผนที่เส้นทาง</h2>
+      <p class="text-xs text-slate-500">ตำแหน่งของคุณอัปเดตตาม GPS</p>
+    </div>
+  </div>
+
+  <div class="relative h-72 w-full">
+    <div #mapHost class="h-full w-full"></div>
+
+    @if (loading()) {
+      <div
+        class="absolute inset-0 z-[1000] flex items-center justify-center bg-white/70 backdrop-blur-sm"
+        aria-label="กำลังโหลดแผนที่"
+        >
+        <div class="rounded-lg bg-white px-4 py-2 text-sm text-slate-600 shadow-sm">
+          กำลังโหลดแผนที่…
+        </div>
+      </div>
+    }
+
+    @if (error()) {
+      <div
+        class="absolute inset-x-4 top-4 z-[1000] rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+        role="alert"
+        >
+        {{ error() }}
+      </div>
+    }
+  </div>
+
+  <div class="grid grid-cols-2 gap-2 border-t border-slate-100 px-4 py-3 text-xs text-slate-600">
+    <div>
+      <span class="text-slate-400">ความแม่นยำ GPS</span>
+      @if (gpsAccuracyMeters() !== undefined) {
+        <strong class="ml-1 text-slate-800">±{{ gpsAccuracyMeters() | number:'1.0-0' }} ม.</strong>
+        <span class="ml-1 text-slate-500">({{ gpsStatus() }})</span>
+      } @else {
+        <strong class="ml-1 text-slate-500">กำลังค้นหา…</strong>
+      }
+    </div>
+    <div>
+      <span class="text-slate-400">ระยะทางที่ต้องนั่งโดยประมาณ</span>
+      <strong class="ml-1 text-slate-800">{{ routeDistanceKm() }} กม.</strong>
+    </div>
+    <div>
+      <span class="text-slate-400">จุดข้อมูลเส้นทาง</span>
+      <strong class="ml-1 text-slate-800">{{ routePointCount() }} จุด</strong>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-x-4 gap-y-2 px-4 py-3 text-xs text-slate-600 sm:grid-cols-3">
+    <div class="flex items-center gap-2 sm:col-span-3">
+      <span class="h-1.5 w-7 rounded-full bg-slate-400"></span>
+      <span>เส้นทางรถเมล์ทั้งสาย</span>
+    </div>
+    <div class="flex items-center gap-2 sm:col-span-3">
+      <span class="h-1.5 w-7 rounded-full bg-blue-600"></span>
+      <span>ช่วงที่ต้องนั่งจากป้ายขึ้นถึงป้ายลง</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="h-3 w-3 rounded-full border-2 border-teal-700 bg-teal-400"></span>
+      <span>ต้นทางของเส้นทาง</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="h-3 w-3 rounded-full border-2 border-green-700 bg-green-500"></span>
+      <span>ป้ายขึ้นรถ</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="h-3 w-3 rounded-full border-2 border-orange-700 bg-orange-400"></span>
+      <span>ป้ายลงรถ</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="h-3 w-3 rounded-full border-2 border-fuchsia-700 bg-fuchsia-400"></span>
+      <span>ปลายทางของเส้นทาง</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="h-3 w-3 rounded-full border-2 border-red-700 bg-red-500"></span>
+      <span>จุดหมายของคุณ</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="h-3 w-3 rounded-full border-2 border-yellow-800 bg-yellow-300"></span>
+      <span>ตำแหน่งปัจจุบัน</span>
+    </div>
+    <div class="flex items-center gap-2 sm:col-span-3">
+      <span class="h-1.5 w-7 border-t-2 border-dashed border-violet-600"></span>
+      <span>เส้นทางที่ต้องเดิน</span>
+    </div>
+  </div>
+
+  <div class="px-4 py-2 text-[11px] text-slate-500">
+    แตะจุดบนแผนที่เพื่อดูรายละเอียด · © OpenStreetMap contributors
+  </div>
+</section>
