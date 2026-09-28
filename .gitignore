@@ -6,6 +6,9 @@
 .DS_Store
 Thumbs.db
 
+# Agent Bridge mailbox — transient inter-agent message queue, not source
+.agent-bridge/
+
 # ฟีด GTFS ไม่ commit (41.8 MB ต่อเวอร์ชัน โหลดใหม่ได้จาก namtang-api.otp.go.th)
 *.zip
 gtfs/
