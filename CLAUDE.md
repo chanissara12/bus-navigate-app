@@ -47,3 +47,14 @@ A task is complete only when
   research (investigating an approach, gathering facts, comparing options — not
   implementation), invoke the `bridge` skill to hand the ticket off to ChatGPT via the
   Agent Bridge mailbox instead of researching it yourself.
+
+## Agent skills
+
+### Issue tracker
+
+Local markdown under `.scratch/` (specs/tickets) and `.wayfinder/` (Wayfinder maps,
+already in use). See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` at repo root. See `docs/agents/domain.md`.
