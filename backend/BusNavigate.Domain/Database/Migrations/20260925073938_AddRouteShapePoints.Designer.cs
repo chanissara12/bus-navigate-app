@@ -3,6 +3,7 @@ using System;
 using BusNavigate.Domain.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BusNavigate.Domain.Database.Migrations
 {
     [DbContext(typeof(BusNavigateDbContext))]
-    partial class BusNavigateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260925073938_AddRouteShapePoints")]
+    partial class AddRouteShapePoints
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -174,44 +177,6 @@ namespace BusNavigate.Domain.Database.Migrations
                     b.ToTable("Places");
                 });
 
-            modelBuilder.Entity("BusNavigate.Domain.Entities.RouteShapeImportState", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FeedVersion")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("ImportedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("RouteShapeImportStates");
-                });
-
-            modelBuilder.Entity("BusNavigate.Domain.Entities.RouteShapePoint", b =>
-                {
-                    b.Property<int>("DirectionId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Sequence")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("Latitude")
-                        .HasPrecision(9, 6)
-                        .HasColumnType("numeric(9,6)");
-
-                    b.Property<decimal>("Longitude")
-                        .HasPrecision(9, 6)
-                        .HasColumnType("numeric(9,6)");
-
-                    b.HasKey("DirectionId", "Sequence");
-
-                    b.ToTable("RouteShapePoints");
-                });
-
             modelBuilder.Entity("BusNavigate.Domain.Entities.RouteStop", b =>
                 {
                     b.Property<int>("Id")
@@ -334,12 +299,6 @@ namespace BusNavigate.Domain.Database.Migrations
 
                     b.Property<int>("LandmarkType")
                         .HasColumnType("integer");
-
-                    b.Property<decimal>("Latitude")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("Longitude")
-                        .HasColumnType("numeric");
 
                     b.Property<string>("NameEn")
                         .IsRequired()
@@ -537,17 +496,6 @@ namespace BusNavigate.Domain.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("BusRoute");
-                });
-
-            modelBuilder.Entity("BusNavigate.Domain.Entities.RouteShapePoint", b =>
-                {
-                    b.HasOne("BusNavigate.Domain.Entities.Direction", "Direction")
-                        .WithMany()
-                        .HasForeignKey("DirectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Direction");
                 });
 
             modelBuilder.Entity("BusNavigate.Domain.Entities.RouteStop", b =>

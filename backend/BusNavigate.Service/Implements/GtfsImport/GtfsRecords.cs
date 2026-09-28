@@ -6,7 +6,7 @@ public record GtfsAgency(string AgencyId, string AgencyName);
 
 public record GtfsRoute(string RouteId, string ShortName, string LongName, string AgencyId);
 
-public record GtfsTrip(string TripId, string RouteId, string ServiceId, int DirectionId, string TripHeadsign);
+public record GtfsTrip(string TripId, string RouteId, string ServiceId, int DirectionId, string TripHeadsign, string? ShapeId);
 
 // Note: standard GTFS stops.txt only has one stop_name column. Namtang's feed is
 // documented (T03) as providing both Thai and English names — this parser reads

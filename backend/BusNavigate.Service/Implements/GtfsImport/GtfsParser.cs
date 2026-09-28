@@ -64,7 +64,8 @@ public static class GtfsParser
                 routeId,
                 serviceId,
                 directionId,
-                table.Get(i, "trip_headsign") ?? string.Empty
+                table.Get(i, "trip_headsign") ?? string.Empty,
+                table.Get(i, "shape_id")
             ));
         }
 

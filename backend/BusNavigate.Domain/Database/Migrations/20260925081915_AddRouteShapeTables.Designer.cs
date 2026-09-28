@@ -3,6 +3,7 @@ using System;
 using BusNavigate.Domain.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BusNavigate.Domain.Database.Migrations
 {
     [DbContext(typeof(BusNavigateDbContext))]
-    partial class BusNavigateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260925081915_AddRouteShapeTables")]
+    partial class AddRouteShapeTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -334,12 +337,6 @@ namespace BusNavigate.Domain.Database.Migrations
 
                     b.Property<int>("LandmarkType")
                         .HasColumnType("integer");
-
-                    b.Property<decimal>("Latitude")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("Longitude")
-                        .HasColumnType("numeric");
 
                     b.Property<string>("NameEn")
                         .IsRequired()

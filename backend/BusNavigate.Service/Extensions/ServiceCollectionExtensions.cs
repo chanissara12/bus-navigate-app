@@ -22,6 +22,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpClient<IGtfsFeedFetcher, GtfsFeedFetcher>();
         services.AddScoped<IGtfsImportService, GtfsImportService>();
+        services.AddScoped<IRouteShapeImportService, RouteShapeImportService>();
+        services.AddScoped<IRouteShapeService, RouteShapeService>();
 
         return services;
     }

@@ -42,9 +42,9 @@ public class GtfsParserTests
     public void ParseTrips_MapsFieldsIncludingDirectionId()
     {
         // Arrange
-        const string csv = "trip_id,route_id,service_id,trip_headsign,direction_id\n" +
-            "T1,R45,WEEKDAY,Siam,0\n" +
-            "T2,R45,WEEKDAY,Victory Monument,1\n";
+        const string csv = "trip_id,route_id,service_id,trip_headsign,direction_id,shape_id\n" +
+            "T1,R45,WEEKDAY,Siam,0,SHAPE-A\n" +
+            "T2,R45,WEEKDAY,Victory Monument,1,SHAPE-B\n";
 
         // Act
         var result = GtfsParser.ParseTrips(csv);
@@ -53,7 +53,9 @@ public class GtfsParserTests
         Assert.Equal(2, result.Count);
         Assert.Equal(0, result[0].DirectionId);
         Assert.Equal("Siam", result[0].TripHeadsign);
+        Assert.Equal("SHAPE-A", result[0].ShapeId);
         Assert.Equal(1, result[1].DirectionId);
+        Assert.Equal("SHAPE-B", result[1].ShapeId);
     }
 
     [Fact]

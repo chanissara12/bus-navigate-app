@@ -55,5 +55,14 @@ public class WeeklyDataSyncBackgroundService : BackgroundService
         {
             _logger.LogError(ex, "Stop landmark sync run failed");
         }
+
+        try
+        {
+            await scope.ServiceProvider.GetRequiredService<IRouteShapeImportService>().ImportAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "Route shape import run failed");
+        }
     }
 }

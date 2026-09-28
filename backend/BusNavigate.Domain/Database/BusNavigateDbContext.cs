@@ -31,6 +31,10 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
 
     public DbSet<StopLandmark> StopLandmarks => Set<StopLandmark>();
 
+    public DbSet<RouteShapePoint> RouteShapePoints => Set<RouteShapePoint>();
+
+    public DbSet<RouteShapeImportState> RouteShapeImportStates => Set<RouteShapeImportState>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -163,6 +167,22 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
                 .WithMany()
                 .HasForeignKey(e => e.BusStopId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RouteShapePoint>(entity =>
+        {
+            entity.HasKey(e => new { e.DirectionId, e.Sequence });
+            entity.Property(e => e.Latitude).HasPrecision(9, 6);
+            entity.Property(e => e.Longitude).HasPrecision(9, 6);
+            entity.HasOne(e => e.Direction)
+                .WithMany()
+                .HasForeignKey(e => e.DirectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RouteShapeImportState>(entity =>
+        {
+            entity.HasKey(e => e.Id);
         });
     }
 }
