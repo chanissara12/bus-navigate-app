@@ -25,6 +25,10 @@ public class StopLandmark
 
     public int DistanceMeters { get; set; }
 
+    public decimal Latitude { get; set; }
+
+    public decimal Longitude { get; set; }
+
     public string ExternalOsmId { get; set; } = string.Empty;
 
     public DateTime UpdatedAt { get; set; }

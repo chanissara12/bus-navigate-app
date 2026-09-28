@@ -24,4 +24,6 @@ export interface StopLandmark {
     nameEn: string;
     description: string | null;
     distanceMeters: number;
+    latitude: number;
+    longitude: number;
 }
