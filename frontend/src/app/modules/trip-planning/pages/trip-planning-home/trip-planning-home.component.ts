@@ -46,6 +46,7 @@ export class TripPlanningHomeComponent {
     // undefined = no search run yet; [] = searched, nothing found.
     readonly travelOptions = signal<TravelOption[] | undefined>(undefined);
     readonly travelOptionsLoading = signal(false);
+    readonly mapOption = signal<TravelOption | undefined>(undefined);
 
     readonly pendingOption = signal<TravelOption | undefined>(undefined);
     readonly confirmDialogOpen = signal(false);
@@ -99,6 +100,7 @@ export class TripPlanningHomeComponent {
         this.destinationQuery.set(value);
         this.selectedDestination.set(undefined);
         this.travelOptions.set(undefined);
+        this.mapOption.set(undefined);
         this.destinationQueryChanges.next(value);
     }
 
@@ -107,6 +109,10 @@ export class TripPlanningHomeComponent {
         this.destinationQuery.set(place.nameTh);
         this.destinationResults.set([]);
         this.searchTravelOptions(place);
+    }
+
+    selectMapOption(option: TravelOption): void {
+        this.mapOption.set(option);
     }
 
     startTrip(option: TravelOption): void {
@@ -179,6 +185,7 @@ export class TripPlanningHomeComponent {
                 next: (options) => {
                     this.travelOptionsLoading.set(false);
                     this.travelOptions.set(options);
+                    this.mapOption.set(options[0]);
                 },
                 error: (err: Error) => {
                     this.travelOptionsLoading.set(false);

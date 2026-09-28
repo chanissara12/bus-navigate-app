@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, switchMap, timer } from 'rxjs';
 
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { RouteMapCardComponent } from '../../../../shared/components/route-map-card/route-map-card.component';
 import { TravelSessionProgress } from '../../../../shared/models/travel-session-progress.model';
 import { TravelSessionResponse } from '../../../../shared/models/travel-session.model';
 import { TravelSessionState } from '../../../../shared/models/travel-session-state.model';
@@ -17,7 +18,7 @@ const PROGRESS_POLL_INTERVAL_MS = 20_000;
 @Component({
     selector: 'app-travel-session-home',
     standalone: true,
-    imports: [CommonModule, ConfirmDialogComponent],
+    imports: [CommonModule, ConfirmDialogComponent, RouteMapCardComponent],
     templateUrl: './travel-session-home.component.html',
     styleUrl: './travel-session-home.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -35,6 +36,9 @@ export class TravelSessionHomeComponent {
 
     readonly sessionId = signal<number | undefined>(undefined);
     readonly state = signal<TravelSessionState>(TravelSessionState.Planned);
+    readonly directionId = signal<number | undefined>(undefined);
+    readonly alightingStopId = signal<number | undefined>(undefined);
+    readonly boardingStopId = signal<number | undefined>(undefined);
     readonly destinationNameTh = signal('');
     readonly destinationNameEn = signal('');
     readonly boardingStopNameTh = signal('');
@@ -192,6 +196,9 @@ export class TravelSessionHomeComponent {
     }
 
     private applySessionResponse(session: TravelSessionResponse): void {
+        this.directionId.set(session.directionId);
+        this.boardingStopId.set(session.boardingStopId);
+        this.alightingStopId.set(session.alightingStopId);
         this.state.set(session.state);
         this.destinationNameTh.set(session.alightingStopNameTh);
         this.destinationNameEn.set(session.alightingStopNameEn);

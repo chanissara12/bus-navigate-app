@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { RouteMapCardComponent } from '../../shared/components/route-map-card/route-map-card.component';
 import { RecoveryRoutingModule } from './recovery-routing.module';
 import { RecoveryHomeComponent } from './pages/recovery-home/recovery-home.component';
 
@@ -12,7 +13,8 @@ import { RecoveryHomeComponent } from './pages/recovery-home/recovery-home.compo
     imports: [
         CommonModule,
         RecoveryRoutingModule,
-        ConfirmDialogComponent
+        ConfirmDialogComponent,
+        RouteMapCardComponent
     ]
 })
 export class RecoveryModule { }

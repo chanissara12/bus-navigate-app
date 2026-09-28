@@ -42,6 +42,7 @@ export class RecoveryHomeComponent {
     readonly confirming = signal(false);
     readonly dialogOpen = signal(false);
     readonly selectedOption = signal<RecoveryOption | undefined>(undefined);
+    readonly mapOption = signal<RecoveryOption | undefined>(undefined);
     readonly lastResortExpanded = signal(false);
     readonly latestError = signal<string | undefined>(undefined);
 
@@ -59,6 +60,12 @@ export class RecoveryHomeComponent {
 
     toggleLastResort(): void {
         this.lastResortExpanded.update((expanded) => !expanded);
+    }
+
+    selectMapOption(option: RecoveryOption): void {
+        if (option.kind === RecoveryOptionKind.BusDirection && option.directionId !== null) {
+            this.mapOption.set(option);
+        }
     }
 
     openConfirmation(option: RecoveryOption): void {
@@ -183,6 +190,7 @@ export class RecoveryHomeComponent {
     private applyOptions(result: RecoveryOptionsResult): void {
         this.recommendedOptions.set(result.recommendedOptions);
         this.lastResortOptions.set(result.lastResortOptions);
+        this.mapOption.set(result.recommendedOptions.find((option) => option.kind === RecoveryOptionKind.BusDirection));
         this.unconfirmedRailPointers.set(result.unconfirmedRailPointers);
         this.lastResortExpanded.set(false);
     }

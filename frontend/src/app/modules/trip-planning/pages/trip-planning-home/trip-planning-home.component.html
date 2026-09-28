@@ -1,137 +1,173 @@
-<div class="max-w-xl mx-auto px-4 py-6 pb-24">
-    <div class="rounded-2xl bg-white shadow-sm border border-slate-200 p-4 mb-4">
-        <label class="block text-xs font-medium text-slate-500 mb-1">ตำแหน่งปัจจุบัน</label>
+<div class="max-w-xl px-4 py-6 pb-24 mx-auto">
+  <div class="p-4 mb-4 bg-white border shadow-sm rounded-2xl border-slate-200">
+    <label class="block mb-1 text-xs font-medium text-slate-500">ตำแหน่งปัจจุบัน</label>
 
-        <div *ngIf="!currentPosition() && !locationError()" class="h-9 w-full rounded-lg bg-slate-100 animate-pulse"></div>
+    @if (!currentPosition() && !locationError()) {
+      <div class="w-full rounded-lg h-9 bg-slate-100 animate-pulse"></div>
+    }
 
-        <div *ngIf="currentPosition()" class="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 mb-3 text-sm text-slate-700">
-            <span>📍</span>
-            <span>ตำแหน่งของฉัน</span>
-        </div>
+    @if (currentPosition()) {
+      <div class="flex items-center gap-2 px-3 py-2 mb-3 text-sm rounded-lg bg-slate-50 text-slate-700">
+        <span>📍</span>
+        <span>ตำแหน่งของฉัน</span>
+      </div>
+    }
 
-        <div
-            *ngIf="locationError() as locErr"
-            class="flex items-center justify-between gap-2 rounded-lg bg-red-50 px-3 py-2 mb-3 text-sm text-red-700"
+    @if (locationError(); as locErr) {
+      <div
+        class="flex items-center justify-between gap-2 px-3 py-2 mb-3 text-sm text-red-700 rounded-lg bg-red-50"
         >
-            <span>⚠️ {{ locErr }}</span>
-            <button type="button" class="cursor-pointer font-medium text-red-800 underline" (click)="retryLocation()">ลองใหม่</button>
+        <span>⚠️ {{ locErr }}</span>
+        <button type="button" class="font-medium text-red-800 underline cursor-pointer" (click)="retryLocation()">ลองใหม่</button>
+      </div>
+    }
+
+    <label class="block mb-1 text-xs font-medium text-slate-500">ปลายทาง</label>
+    <input
+      type="text"
+      [value]="destinationQuery()"
+      (input)="onDestinationInput($any($event.target).value)"
+      [disabled]="!currentPosition()"
+      placeholder="พิมพ์ชื่อสถานที่หรือป้ายรถ"
+      class="w-full px-3 py-2 text-sm border rounded-lg border-sky-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-slate-100 disabled:cursor-not-allowed"
+      />
+
+      @if (destinationSearchLoading()) {
+        <div class="flex flex-col gap-1 mt-2">
+          @for (_ of [1, 2]; track _) {
+            <div class="h-8 rounded-lg bg-slate-100 animate-pulse"></div>
+          }
         </div>
+      }
 
-        <label class="block text-xs font-medium text-slate-500 mb-1">ปลายทาง</label>
-        <input
-            type="text"
-            [value]="destinationQuery()"
-            (input)="onDestinationInput($any($event.target).value)"
-            [disabled]="!currentPosition()"
-            placeholder="พิมพ์ชื่อสถานที่หรือป้ายรถ"
-            class="w-full rounded-lg border border-sky-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-slate-100 disabled:cursor-not-allowed"
-        />
-
-        <div *ngIf="destinationSearchLoading()" class="mt-2 flex flex-col gap-1">
-            <div *ngFor="let _ of [1, 2]" class="h-8 rounded-lg bg-slate-100 animate-pulse"></div>
-        </div>
-
+      @if (!destinationSearchLoading() && destinationResults().length > 0) {
         <div
-            *ngIf="!destinationSearchLoading() && destinationResults().length > 0"
-            class="mt-2 flex flex-col divide-y divide-slate-100 rounded-lg border border-slate-200 overflow-hidden"
-        >
+          class="flex flex-col mt-2 overflow-hidden border divide-y rounded-lg divide-slate-100 border-slate-200"
+          >
+          @for (place of destinationResults(); track place) {
             <button
-                *ngFor="let place of destinationResults()"
-                type="button"
-                data-testid="destination-result"
-                class="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-50"
-                (click)="selectDestination(place)"
-            >
-                <span>{{ place.type === 0 ? '🚏' : '📍' }}</span>
-                <span>{{ place.nameTh }}</span>
+              type="button"
+              data-testid="destination-result"
+              class="flex items-center gap-2 px-3 py-2 text-sm text-left cursor-pointer hover:bg-slate-50"
+              (click)="selectDestination(place)"
+              >
+              <span>{{ place.type === 0 ? '🚏' : '📍' }}</span>
+              <span>{{ place.nameTh }}</span>
             </button>
+          }
         </div>
+      }
     </div>
 
     <!-- F04's decided pattern: contextual banner near the action that failed, single
-         message, manual dismiss, brief slide-down entrance. -->
-    <div
-        *ngIf="latestError() as err"
-        class="mb-4 flex items-start gap-3 rounded-xl border-2 border-red-400 bg-red-50 px-4 py-3 shadow-md transition-all duration-300 ease-out"
+    message, manual dismiss, brief slide-down entrance. -->
+    @if (latestError(); as err) {
+      <div
+        class="flex items-start gap-3 px-4 py-3 mb-4 transition-all duration-300 ease-out border-2 border-red-400 shadow-md rounded-xl bg-red-50"
         [class.opacity-0]="!errorSettled()"
         [class.-translate-y-2]="!errorSettled()"
-    >
+        >
         <span class="text-2xl leading-none">🚫</span>
         <div class="flex-1">
-            <div class="text-sm font-bold text-red-800">เกิดข้อผิดพลาด</div>
-            <div class="text-sm text-red-700">{{ err }}</div>
+          <div class="text-sm font-bold text-red-800">เกิดข้อผิดพลาด</div>
+          <div class="text-sm text-red-700">{{ err }}</div>
         </div>
-        <button type="button" class="cursor-pointer text-red-600 font-bold px-1" (click)="dismissError()" aria-label="Dismiss error">
-            ×
+        <button type="button" class="px-1 font-bold text-red-600 cursor-pointer" (click)="dismissError()" aria-label="Dismiss error">
+          ×
         </button>
-    </div>
+      </div>
+    }
 
-    <ng-container *ngIf="selectedDestination()">
-        <h2 class="text-sm font-semibold text-slate-500 mb-3">
-            เส้นทางที่แนะนำ<ng-container *ngIf="travelOptions() as options">&nbsp;({{ options.length }})</ng-container>
-        </h2>
-
-        <div *ngIf="travelOptionsLoading()" class="flex flex-col gap-3">
-            <div *ngFor="let _ of [1, 2, 3]" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm animate-pulse">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                        <div class="h-8 w-8 rounded-full bg-slate-200"></div>
-                        <div class="h-3 w-32 rounded bg-slate-200"></div>
-                    </div>
-                    <div class="h-4 w-14 rounded-full bg-slate-200"></div>
-                </div>
-                <div class="h-3 w-40 rounded bg-slate-200"></div>
+    @if (selectedDestination()) {
+      <h2 class="mb-3 text-sm font-semibold text-slate-500">
+        เส้นทางที่แนะนำ@if (travelOptions(); as options) {
+        &nbsp;({{ options.length }})
+      }
+    </h2>
+    @if (mapOption(); as selectedMapOption) {
+      <app-route-map-card
+        class="block mb-4"
+        [directionId]="selectedMapOption.directionId"
+        [boardingStopId]="selectedMapOption.boardingStopId"
+        [alightingStopId]="selectedMapOption.alightingStopId"
+        [destination]="selectedDestination()"
+        [showWalkingConnectors]="true"
+      ></app-route-map-card>
+    }
+    @if (travelOptionsLoading()) {
+      <div class="flex flex-col gap-3">
+        @for (_ of [1, 2, 3]; track _) {
+          <div class="p-4 bg-white border shadow-sm rounded-2xl border-slate-200 animate-pulse">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-slate-200"></div>
+                <div class="w-32 h-3 rounded bg-slate-200"></div>
+              </div>
+              <div class="h-4 rounded-full w-14 bg-slate-200"></div>
             </div>
-        </div>
-
-        <div
-            *ngIf="!travelOptionsLoading() && travelOptions() && travelOptions()?.length === 0"
-            class="text-sm text-slate-500 text-center py-8"
+            <div class="w-40 h-3 rounded bg-slate-200"></div>
+          </div>
+        }
+      </div>
+    }
+    @if (!travelOptionsLoading() && travelOptions() && travelOptions()?.length === 0) {
+      <div
+        class="py-8 text-sm text-center text-slate-500"
         >
-            ไม่พบเส้นทางไปยังจุดหมายนี้
-        </div>
-
-        <div *ngIf="!travelOptionsLoading() && travelOptions() && travelOptions()!.length > 0" class="flex flex-col gap-3">
-            <article *ngFor="let option of travelOptions()" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-sky-600 text-white text-sm font-bold">
-                            {{ option.routeShortName }}
-                        </span>
-                        <span class="text-sm font-medium text-slate-900">{{ option.headsign }}</span>
-                    </div>
-                    <span class="rounded-full px-2 py-0.5 text-xs font-medium" [ngClass]="statusClasses(option.serviceStatus)">
-                        {{ statusLabel(option.serviceStatus) }}
-                    </span>
-                </div>
-
-                <div class="text-sm text-slate-600 space-y-1 mb-3">
-                    <div>🚏 ขึ้นที่ {{ option.boardingStopNameTh }}</div>
-                    <div>🏁 ลงที่ {{ option.alightingStopNameTh }}</div>
-                    <div>🚶 เดิน {{ option.walkingDistanceMeters }} ม.</div>
-                </div>
-
-                <button
-                    type="button"
-                    data-testid="start-trip"
-                    class="w-full rounded-lg bg-sky-600 text-white text-sm font-medium py-2 cursor-pointer hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-sky-800"
-                    (click)="startTrip(option)"
-                >
-                    เริ่มเดินทาง
-                </button>
-            </article>
-        </div>
-    </ng-container>
+        ไม่พบเส้นทางไปยังจุดหมายนี้
+      </div>
+    }
+    @if (!travelOptionsLoading() && travelOptions() && travelOptions()!.length > 0) {
+      <div class="flex flex-col gap-3">
+        @for (option of travelOptions(); track option) {
+          <article
+            class="p-4 bg-white border shadow-sm cursor-pointer rounded-2xl hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-sky-100"
+            [ngClass]="mapOption()?.directionId === option.directionId ? 'border-sky-500 ring-1 ring-sky-200' : 'border-slate-200'"
+            role="button"
+            tabindex="0"
+            (click)="selectMapOption(option)"
+            (keydown.enter)="selectMapOption(option)"
+            (keydown.space)="selectMapOption(option); $event.preventDefault()"
+            >
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="flex items-center justify-center w-8 h-8 text-sm font-bold text-white rounded-full bg-sky-600">
+                  {{ option.routeShortName }}
+                </span>
+                <span class="text-sm font-medium text-slate-900">{{ option.headsign }}</span>
+              </div>
+              <span class="rounded-full px-2 py-0.5 text-xs font-medium" [ngClass]="statusClasses(option.serviceStatus)">
+                {{ statusLabel(option.serviceStatus) }}
+              </span>
+            </div>
+            <div class="mb-3 space-y-1 text-sm text-slate-600">
+              <div>🚏 ขึ้นที่ {{ option.boardingStopNameTh }}</div>
+              <div>🏁 ลงที่ {{ option.alightingStopNameTh }}</div>
+              <div>🚶 เดิน {{ option.walkingDistanceMeters | number:'1.0-0' }} ม.</div>
+            </div>
+            <button
+              type="button"
+              data-testid="start-trip"
+              class="w-full py-2 text-sm font-medium text-white rounded-lg cursor-pointer bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-sky-800"
+              (click)="$event.stopPropagation(); startTrip(option)"
+              >
+              เริ่มเดินทาง
+            </button>
+          </article>
+        }
+      </div>
+    }
+  }
 </div>
 
 <app-confirm-dialog
-    [open]="confirmDialogOpen()"
-    [confirming]="creatingSession()"
-    title="ยืนยันการเริ่มเดินทาง"
+  [open]="confirmDialogOpen()"
+  [confirming]="creatingSession()"
+  title="ยืนยันการเริ่มเดินทาง"
     [message]="
         pendingOption() ? 'เริ่มเดินทางด้วยสาย ' + pendingOption()!.routeShortName + ' ไปยัง ' + pendingOption()!.headsign + '?' : ''
     "
-    confirmLabel="เริ่มเดินทาง"
-    (confirmed)="onConfirmStartTrip()"
-    (cancelled)="onCancelStartTrip()"
+  confirmLabel="เริ่มเดินทาง"
+  (confirmed)="onConfirmStartTrip()"
+  (cancelled)="onCancelStartTrip()"
 ></app-confirm-dialog>

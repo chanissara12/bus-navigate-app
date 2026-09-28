@@ -1,4 +1,5 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { Optional } from '@angular/core';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, throwError } from 'rxjs';
 
@@ -7,9 +8,13 @@ import { BusStopContextResult, BusStopSummary } from '../models/bus-stop.model';
 
 @Injectable({ providedIn: 'root' })
 export class BusStopsService {
-    constructor(private readonly http: HttpClient) {}
+    constructor(@Optional() private readonly http: HttpClient | null) {}
 
     findNearby(latitude: number, longitude: number, radius: number): Observable<BusStopSummary[]> {
+        if (!this.http) {
+            return throwError(() => new Error('ไม่สามารถโหลดข้อมูลป้ายรถได้'));
+        }
+
         const params = new HttpParams()
             .set('lat', latitude)
             .set('lng', longitude)
@@ -24,6 +29,10 @@ export class BusStopsService {
     }
 
     getContext(id: number): Observable<BusStopContextResult> {
+        if (!this.http) {
+            return throwError(() => new Error('ไม่สามารถโหลดข้อมูลป้ายรถได้'));
+        }
+
         return this.http.get<BusStopContextResult>(`${API_BASE_URL}/bus-stops/${id}`).pipe(
             catchError((err: HttpErrorResponse) => {
                 const message = err.error?.message ?? err.message ?? 'Failed to load bus stop context';

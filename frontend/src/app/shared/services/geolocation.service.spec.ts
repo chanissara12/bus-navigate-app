@@ -30,6 +30,45 @@ describe('GeolocationService', () => {
         });
     });
 
+    it('emits updates from watchPosition and clears the watch on unsubscribe', () => {
+        const coords = { latitude: 13.75, longitude: 100.5 } as GeolocationCoordinates;
+        let success: PositionCallback | undefined;
+        let clearedWatchId: number | undefined;
+
+        Object.defineProperty(navigator, 'geolocation', {
+            configurable: true,
+            value: {
+                watchPosition: (onSuccess: PositionCallback) => {
+                    success = onSuccess;
+                    return 42;
+                },
+                clearWatch: (watchId: number) => {
+                    clearedWatchId = watchId;
+                }
+            }
+        });
+
+        const results: GeolocationCoordinates[] = [];
+        const subscription = service.watchPosition().subscribe((result) => results.push(result));
+
+        success?.({ coords } as GeolocationPosition);
+        subscription.unsubscribe();
+
+        expect(results).toEqual([coords]);
+        expect(clearedWatchId).toBe(42);
+    });
+
+    it('errors with a friendly message when watchPosition is unsupported', (done) => {
+        Object.defineProperty(navigator, 'geolocation', { configurable: true, value: undefined });
+
+        service.watchPosition().subscribe({
+            error: (err: Error) => {
+                expect(err.message).toBe('อุปกรณ์นี้ไม่รองรับการระบุตำแหน่ง');
+                done();
+            }
+        });
+    });
+
     it('errors with a friendly message when the browser denies permission', (done) => {
         Object.defineProperty(navigator, 'geolocation', {
             configurable: true,
