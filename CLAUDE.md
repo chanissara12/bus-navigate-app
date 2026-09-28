@@ -43,3 +43,7 @@ A task is complete only when
   user through the flow and how the key functions/pieces work together — not just a
   list of changed files. Cover what triggers the flow, what each piece does, and any
   non-obvious design decision (e.g. why a value is nullable, why a check is implicit).
+- **Route research tickets through the `bridge` skill.** When a ticket's work is
+  research (investigating an approach, gathering facts, comparing options — not
+  implementation), invoke the `bridge` skill to hand the ticket off to ChatGPT via the
+  Agent Bridge mailbox instead of researching it yourself.
