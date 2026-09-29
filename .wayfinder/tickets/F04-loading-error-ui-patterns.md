@@ -15,7 +15,7 @@ was settled structurally, not visually. Needs an actual `/prototype` pass (per t
 map's Notes), not just conversation:
 
 - Skeleton-loading treatment for each of the 4 pages' fetched-data views (list results,
-  stop detail, session card, recovery options) — per `frontend/CLAUDE.md`'s
+  stop detail, session card, recovery options) — per `BusNavigate/BusNavigate.WebApi/ClientApp/CLAUDE.md`'s
   loading-indicator rules, fetched data gets a skeleton, not a spinner.
 - Error-banner UI subscribing to `ErrorNotificationService`
   ([F02](F02-shared-frontend-infrastructure.md)) — where it renders (global banner in

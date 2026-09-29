@@ -39,7 +39,7 @@ design included.
     `RouteDeviation` is delivered only as a Proactive Notification to the riders
     currently on/waiting for that specific vehicle.
   - Proactive Notification is scoped to **Web Push only** — this architecture has no
-    native app (`frontend/` is Angular web only per `frontend/CLAUDE.md`).
+    native app (`ClientApp/` is Angular web only per `BusNavigate/BusNavigate.WebApi/ClientApp/CLAUDE.md`).
 
 ## Decisions so far
 

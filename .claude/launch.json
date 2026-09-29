@@ -2,9 +2,9 @@
     "version": "0.0.1",
     "configurations": [
         {
-            "name": "frontend",
+            "name": "clientapp",
             "runtimeExecutable": "npm",
-            "runtimeArgs": ["start", "--prefix", "frontend"],
+            "runtimeArgs": ["start", "--prefix", "BusNavigate/BusNavigate.WebApi/ClientApp"],
             "port": 4200
         }
     ]

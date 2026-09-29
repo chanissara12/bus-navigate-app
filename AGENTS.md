@@ -9,8 +9,10 @@ first — no exceptions for small changes.
 
 | Path prefix | Read this file first |
 | --- | --- |
-| `frontend/**` | `frontend/AGENTS.md` |
-| `backend/**` | `backend/AGENTS.md` |
+| `<Project>/<Project>.WebApi/ClientApp/**` | `<Project>/<Project>.WebApi/ClientApp/AGENTS.md` |
+| `<Project>/**` (everything else) | `<Project>/AGENTS.md` |
+
+`<Project>` is the solution name, which is also the name of the backend root folder.
 
 ## Security Rules
 

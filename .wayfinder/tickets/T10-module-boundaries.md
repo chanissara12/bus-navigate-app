@@ -44,7 +44,7 @@ plain `StopLandmark` list with no photos and no complex logic; `GET /bus-stops/{
 already returns it as part of the stop-detail response per T09, so it doesn't carry
 enough independent complexity to justify its own module.
 
-### Frontend (`frontend/src/app/modules/`)
+### Frontend (`BusNavigate/BusNavigate.WebApi/ClientApp/src/app/modules/`)
 
 - `trip-planning/` — destination/stop search, `TravelOption[]` generation, "can I take
   this bus?" UI

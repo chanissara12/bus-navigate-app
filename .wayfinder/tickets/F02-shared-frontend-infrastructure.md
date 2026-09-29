@@ -53,7 +53,7 @@ Built all 5 pieces as specified, each with unit tests:
   serializes the enum as a number).
 - `ConfirmDialogComponent` (`shared/components/confirm-dialog/`) — standalone,
   Tailwind-only, title/message/confirm/cancel inputs+outputs, no variants. Also
-  dismisses on Escape and backdrop click (frontend/CLAUDE.md's design-system rules
+  dismisses on Escape and backdrop click (BusNavigate/BusNavigate.WebApi/ClientApp/CLAUDE.md's design-system rules
   require keyboard navigation support on interactive UI).
 - `ErrorNotificationService` — `.notify(message)` over a `Subject<string>` exposed as
   `errors$`; no interceptor involved, matching the map's note that per-call `catchError`

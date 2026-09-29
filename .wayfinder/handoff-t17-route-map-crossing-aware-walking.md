@@ -56,14 +56,14 @@ This remains an **approximate map visualization**, not road-snapped pedestrian r
 
 ## Important files
 
-- `frontend/src/app/shared/components/route-map-card/route-map-card.component.ts`
-- `frontend/src/app/shared/services/geolocation.service.ts`
-- `backend/BusNavigate.Domain/Entities/StopLandmark.cs`
-- `backend/BusNavigate.Domain/ViewModels/BusStop/StopLandmarkInfo.cs`
-- `backend/BusNavigate.Service/Implements/BusStop/StopLandmarkSyncService.cs`
-- `backend/BusNavigate.Service/Implements/BusStop/BusStopContextService.cs`
+- `BusNavigate/BusNavigate.WebApi/ClientApp/src/app/shared/components/route-map-card/route-map-card.component.ts`
+- `BusNavigate/BusNavigate.WebApi/ClientApp/src/app/shared/services/geolocation.service.ts`
+- `BusNavigate/BusNavigate.Domain/Entities/StopLandmark.cs`
+- `BusNavigate/BusNavigate.Domain/ViewModels/BusStop/StopLandmarkInfo.cs`
+- `BusNavigate/BusNavigate.Service/Implements/BusStop/StopLandmarkSyncService.cs`
+- `BusNavigate/BusNavigate.Service/Implements/BusStop/BusStopContextService.cs`
 - `.wayfinder/tickets/T17-route-map-crossing-aware-walking.md`
-- `backend/BusNavigate.Domain/Database/Migrations/20260925104234_AddStopLandmarkCoordinatesV2.cs`
+- `BusNavigate/BusNavigate.Domain/Database/Migrations/20260925104234_AddStopLandmarkCoordinatesV2.cs`
 
 ## Verification
 

@@ -88,8 +88,8 @@ accidentally imply a map exists.
 
 **Not yet folded into production code.** The prototype (all three variants + the
 `?variant=` switcher) currently lives on the `test` branch at
-`frontend/src/app/modules/trip-planning/pages/trip-planning-home/prototype/` and
-`frontend/src/app/shared/components/prototype-switcher/`. Per the project's prototype
+`BusNavigate/BusNavigate.WebApi/ClientApp/src/app/modules/trip-planning/pages/trip-planning-home/prototype/` and
+`BusNavigate/BusNavigate.WebApi/ClientApp/src/app/shared/components/prototype-switcher/`. Per the project's prototype
 workflow, the next step is: fold variant A's markup into
 `trip-planning-home.component`, drop variants B/C and the switcher from the mainline,
 and move the full prototype set to a throwaway branch as the primary source. That
@@ -102,5 +102,5 @@ follow-up hasn't been done yet — this ticket only captures the layout decision
   against real device widths).
 - Loading/skeleton state for the result list and detail panel once `POST
   /travel-options` is wired to the real API instead of mock data — per
-  `frontend/CLAUDE.md`'s loading-indicator rules, fetched data needs a skeleton, not
+  `BusNavigate/BusNavigate.WebApi/ClientApp/CLAUDE.md`'s loading-indicator rules, fetched data needs a skeleton, not
   a spinner, but the concrete skeleton layout wasn't prototyped.

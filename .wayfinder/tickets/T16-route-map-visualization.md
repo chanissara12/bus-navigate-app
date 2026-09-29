@@ -32,7 +32,7 @@ Needs both research and design decisions:
   - Map rendering choice: what's actually usable for a public Bangkok-focused app —
     tile provider licensing/cost (OSM tile usage policy, Mapbox/MapTiler free-tier
     limits at expected traffic), and a library choice for Angular (e.g. Leaflet vs.
-    MapLibre GL) that fits `frontend/CLAUDE.md`'s stack (no new state-management
+    MapLibre GL) that fits `BusNavigate/BusNavigate.WebApi/ClientApp/CLAUDE.md`'s stack (no new state-management
     library, Tailwind-first UI).
   - Walking-path rendering (trip-planning's walk-to-stop / recovery's walk segments):
     confirm whether this needs road-snapping (as the old MVP had) or can be a straight

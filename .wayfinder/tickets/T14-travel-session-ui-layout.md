@@ -66,7 +66,7 @@ existed.
 **Not yet folded into production code.** The prototype (all three variants + the
 `?variant=` switcher + the demo-only state selector) currently lives on the `test`
 branch at
-`frontend/src/app/modules/travel-session/pages/travel-session-home/prototype/`. Per
+`BusNavigate/BusNavigate.WebApi/ClientApp/src/app/modules/travel-session/pages/travel-session-home/prototype/`. Per
 the project's prototype workflow, the next step is: fold variant A's markup into
 `travel-session-home.component`, drop variants B/C and both prototype-only controls
 (the variant switcher and the state selector) from the mainline, and move the full

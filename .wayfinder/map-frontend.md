@@ -34,9 +34,9 @@ Destination is itself an executable outcome, not another spec document (see Note
   API calls, writing the backend change), not deciding what to do. Still resolve
   one ticket per session per the usual rule, and still record the resolution
   (what was actually built/changed) on close.
-- Frontend conventions: [frontend/CLAUDE.md](../frontend/CLAUDE.md) (Jest tests, Tailwind-only
+- Frontend conventions: [BusNavigate/BusNavigate.WebApi/ClientApp/CLAUDE.md](../BusNavigate/BusNavigate.WebApi/ClientApp/CLAUDE.md) (Jest tests, Tailwind-only
   styling, loading-indicator classification rules, RxJS/OnPush rules).
-- Backend conventions: [backend/CLAUDE.md](../backend/CLAUDE.md) (XUnit/Moq, explicit
+- Backend conventions: [BusNavigate/CLAUDE.md](../BusNavigate/CLAUDE.md) (XUnit/Moq, explicit
   constructors, `ValidateException` for business-rule rejections).
 - Call `/prototype` for [Loading & error UI patterns](tickets/F04-loading-error-ui-patterns.md)
   — the one remaining "what should it look like" question. Everything else was settled

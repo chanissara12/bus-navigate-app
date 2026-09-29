@@ -92,7 +92,7 @@ Also resolve, now that the pieces exist to decide it:
   T07, never merged
 
 All request/response DTOs live under each feature's
-`BusNavigate.Domain/ViewModels/<Feature>/` per backend/CLAUDE.md's existing convention.
+`BusNavigate.Domain/ViewModels/<Feature>/` per BusNavigate/CLAUDE.md's existing convention.
 
 This completes the destination's "API contracts" piece. Feeds
 [T10](T10-module-boundaries.md) directly — the endpoint list above is what T10 uses to

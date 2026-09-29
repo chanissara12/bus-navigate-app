@@ -84,7 +84,7 @@ included; components are expected to emerge during implementation.
   `modules/<feature>/{components,models,pages,services}`) and `backend/` (.NET Core Web
   API + EF Core, layered `BusNavigate.Domain` → `BusNavigate.Service` →
   `BusNavigate.Server`, feature code under `<Feature>/` subfolders). See
-  `frontend/CLAUDE.md` and `backend/CLAUDE.md`.
+  `BusNavigate/BusNavigate.WebApi/ClientApp/CLAUDE.md` and `BusNavigate/CLAUDE.md`.
 - Decisions are recorded directly in ticket bodies/resolutions and gisted here — no
   separate ADR docs for this effort.
 - No UI/wireframe design in scope for this map — data/API/module boundaries only.

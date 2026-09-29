@@ -25,7 +25,7 @@ Used standing at a real bus stop or mid-trip on a phone, often while deciding qu
 ## Capabilities and Constraints
 
 - Phase 1 is scheduled-data only (no real-time vehicle position); real-time vehicle tracking, dynamic route-change detection, and proactive notifications are Phase 2.
-- Backend already imports real GTFS transit data (see `backend/BusNavigate.Service/Implements/GtfsImport/`) — some real data is in place, not solely mock/sample data.
+- Backend already imports real GTFS transit data (see `BusNavigate/BusNavigate.Service/Implements/GtfsImport/`) — some real data is in place, not solely mock/sample data.
 - Domain terminology (BusRoute, Direction, Trip, RouteStop, BusStop, TravelOption, RecoveryOption, RecoveryPoint, Data Confidence, TransitAlert, etc.) is authoritative in [CONTEXT.md](CONTEXT.md) — use those terms, not synonyms it flags as avoid.
 - TransitAlert (service status) is human-curated only, never auto-derived from live vehicle data.
 - UserPreference re-ranks TravelOption/RecoveryOption ordering only; it never removes an option except for walk-budget reachability (a hard physical constraint).
@@ -33,7 +33,7 @@ Used standing at a real bus stop or mid-trip on a phone, often while deciding qu
 
 ## Evidence on Hand
 
-Real GTFS transit data is partially integrated (import pipeline exists in `backend/BusNavigate.Service/Implements/GtfsImport/`). Some routes/stops still rely on data still being backfilled — do not assume full national/citywide coverage without checking. No user testimonials, case studies, or press (not applicable — single-user personal tool).
+Real GTFS transit data is partially integrated (import pipeline exists in `BusNavigate/BusNavigate.Service/Implements/GtfsImport/`). Some routes/stops still rely on data still being backfilled — do not assume full national/citywide coverage without checking. No user testimonials, case studies, or press (not applicable — single-user personal tool).
 
 ## Product Principles
 

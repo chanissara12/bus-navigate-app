@@ -60,4 +60,4 @@ changed to Variant A for consistency — see T12's Resolution for the updated re
 
 **Not yet folded into production code** — same as T12, the prototype (all three
 variants + the shared `?variant=` switcher) still lives on the `test` branch under
-`frontend/src/app/modules/bus-stop/pages/bus-stop-home/prototype/`.
+`BusNavigate/BusNavigate.WebApi/ClientApp/src/app/modules/bus-stop/pages/bus-stop-home/prototype/`.

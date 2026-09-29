@@ -61,7 +61,7 @@ Rejected:
 
 **Not yet folded into production code.** The prototype (all three variants + the
 `?variant=` switcher) currently lives on the `test` branch at
-`frontend/src/app/modules/recovery/pages/recovery-home/prototype/`. Per the project's
+`BusNavigate/BusNavigate.WebApi/ClientApp/src/app/modules/recovery/pages/recovery-home/prototype/`. Per the project's
 prototype workflow, the next step is: fold variant C's markup into
 `recovery-home.component`, drop variants A/B and the switcher from the mainline, and
 move the full prototype set to a throwaway branch as the primary source. That

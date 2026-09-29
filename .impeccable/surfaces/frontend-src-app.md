@@ -1,8 +1,8 @@
 ---
 version: 1
 slug: "frontend-src-app"
-primary_target: "frontend/src/app"
-related_targets: ["frontend/src/app/modules/trip-planning","frontend/src/app/modules/bus-stop","frontend/src/app/modules/recovery","frontend/src/app/modules/travel-session","frontend/src/app/shared/components/bottom-nav","frontend/src/app/shared/components/route-map-card"]
+primary_target: "BusNavigate/BusNavigate.WebApi/ClientApp/src/app"
+related_targets: ["BusNavigate/BusNavigate.WebApi/ClientApp/src/app/modules/trip-planning","BusNavigate/BusNavigate.WebApi/ClientApp/src/app/modules/bus-stop","BusNavigate/BusNavigate.WebApi/ClientApp/src/app/modules/recovery","BusNavigate/BusNavigate.WebApi/ClientApp/src/app/modules/travel-session","BusNavigate/BusNavigate.WebApi/ClientApp/src/app/shared/components/bottom-nav","BusNavigate/BusNavigate.WebApi/ClientApp/src/app/shared/components/route-map-card"]
 ---
 
 ## Direction contract

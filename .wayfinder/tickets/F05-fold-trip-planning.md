@@ -95,7 +95,7 @@ blocked by the browser before reaching a controller; `Program.cs` also forced ev
 request onto HTTPS (`UseHttpsRedirection`), redirecting to `https://localhost:7057`,
 which the browser then also blocks (untrusted local dev certificate) — same symptom
 either way (`Http failure response ... 0 Unknown Error`). Fixed in
-`backend/BusNavigate.Server/Program.cs`: added a `Cors:AllowedOrigins`-driven CORS
+`BusNavigate/BusNavigate.WebApi/Program.cs`: added a `Cors:AllowedOrigins`-driven CORS
 policy (empty/closed by default, `http://localhost:4200` in local
 `appsettings.Development.json`, gitignored per repo convention — the tracked template
 is `appsettings.Example.json`, updated with the same key) and skip
@@ -121,7 +121,7 @@ nothing to fix. Standards axis found two real issues, both fixed:
 - `TransitAlertInfo.description`/`.effectiveTo` and the new `EvaluationReason.value`
   were typed `| undefined` instead of `| null` — these mirror genuinely nullable
   backend fields (`string?`/`decimal?`), which deserialize as JSON `null`, not an
-  absent key, so `frontend/CLAUDE.md`'s "`null` mirrors a nullable API field" rule
+  absent key, so `BusNavigate/BusNavigate.WebApi/ClientApp/CLAUDE.md`'s "`null` mirrors a nullable API field" rule
   applies. Fixed to `| null` (only the fields actually touched by this ticket — the
   pre-existing, unrelated `ServiceStatusResult.transitAlert: | undefined` was left
   alone, out of scope here).
