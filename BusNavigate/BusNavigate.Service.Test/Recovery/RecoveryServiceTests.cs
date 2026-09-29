@@ -6,6 +6,7 @@ using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
 using Microsoft.EntityFrameworkCore;
 using BusStopEntity = BusNavigate.Domain.Entities.BusStop;
 using TravelSessionEntity = BusNavigate.Domain.Entities.TravelSession;
+using UserPreferenceEntity = BusNavigate.Domain.Entities.UserPreference;
 
 namespace BusNavigate.Service.Test.Recovery;
 
@@ -27,8 +28,28 @@ public class RecoveryServiceTests
             .Options;
         var dbContext = new BusNavigateDbContext(options);
         var evaluationService = new Service.Implements.TravelOptionEvaluation.TravelOptionEvaluationService(dbContext, new Service.Implements.TravelOptionEvaluation.ReachabilityService(dbContext));
+        var userPreferenceService = new Service.Implements.UserPreference.UserPreferenceService(dbContext);
+        var preferenceRankingService = new Service.Implements.PreferenceRanking.PreferenceRankingService(dbContext);
 
-        return (dbContext, new Service.Implements.Recovery.RecoveryService(dbContext, evaluationService));
+        return (dbContext, new Service.Implements.Recovery.RecoveryService(
+            dbContext, evaluationService, userPreferenceService, preferenceRankingService));
+    }
+
+    private static async Task<int> SeedUserWithPreferenceAsync(BusNavigateDbContext dbContext, bool minimizeWalking)
+    {
+        var user = new User { ExternalDeviceId = Guid.NewGuid().ToString(), CreatedAt = DateTime.UtcNow };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+
+        dbContext.UserPreferences.Add(new UserPreferenceEntity
+        {
+            UserId = user.Id,
+            MinimizeWalking = minimizeWalking,
+            UpdatedAt = DateTime.UtcNow,
+        });
+        await dbContext.SaveChangesAsync();
+
+        return user.Id;
     }
 
     private static async Task<int> SeedTravelSessionAsync(BusNavigateDbContext dbContext)
@@ -269,6 +290,81 @@ public class RecoveryServiceTests
         Assert.Equal(2, result.LastResortOptions.Count);
         Assert.Equal("Closer → Closer", result.LastResortOptions[0].Label);
         Assert.Equal("Farther → Farther", result.LastResortOptions[1].Label);
+    }
+
+    [Fact]
+    public async Task GenerateRecoveryOptionsAsync_NoUserId_LeavesLastResortOrderUnchanged()
+    {
+        // Arrange — same setup as the "ordered by how close they got" test above,
+        // confirming that behavior is untouched when there's no preference to apply (04).
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedTravelSessionAsync(dbContext);
+        await SeedDirectionAsync(
+            dbContext, "Closer",
+            (CurrentLat + 0.0018m, CurrentLon),
+            (DestinationLat + 0.0075m, DestinationLon));
+        await SeedDirectionAsync(dbContext, "Farther", (CurrentLat + 0.002m, CurrentLon));
+
+        // Act
+        var result = await service.GenerateRecoveryOptionsAsync(sessionId, currentDirectionId: null, CurrentLat, CurrentLon);
+
+        // Assert
+        Assert.Equal("Closer → Closer", result.LastResortOptions[0].Label);
+        Assert.Equal("Farther → Farther", result.LastResortOptions[1].Label);
+    }
+
+    [Fact]
+    public async Task GenerateRecoveryOptionsAsync_MinimizeWalkingPreference_ReordersRecommendedTierAndTagsReason()
+    {
+        // Arrange — two accepted (recommended) candidates with different boarding
+        // walk distances.
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedTravelSessionAsync(dbContext);
+        await SeedDirectionAsync(
+            dbContext, "Far walk",
+            (CurrentLat + 0.006m, CurrentLon),
+            (DestinationLat + 0.0018m, DestinationLon));
+        await SeedDirectionAsync(
+            dbContext, "Near walk",
+            (CurrentLat + 0.0009m, CurrentLon),
+            (DestinationLat + 0.0018m, DestinationLon));
+        var userId = await SeedUserWithPreferenceAsync(dbContext, minimizeWalking: true);
+
+        // Act
+        var result = await service.GenerateRecoveryOptionsAsync(
+            sessionId, currentDirectionId: null, CurrentLat, CurrentLon, userId);
+
+        // Assert
+        Assert.Equal(2, result.RecommendedOptions.Count);
+        Assert.Equal("Near walk → Near walk", result.RecommendedOptions[0].Label);
+        Assert.Contains(result.RecommendedOptions[0].Reasons, r => r.Code == ReasonCode.MatchesMinimizeWalking);
+    }
+
+    [Fact]
+    public async Task GenerateRecoveryOptionsAsync_PreferenceSet_NeverPromotesLastResortAboveRecommended()
+    {
+        // Arrange — "Recommended" reaches the destination (far walk, so it would lose
+        // on MinimizeWalking within a single combined list); "LastResort" doesn't reach
+        // the destination but has a much shorter boarding walk. If preference ranking
+        // ran across tiers instead of within them, LastResort could outrank Recommended.
+        var (dbContext, service) = CreateSubject();
+        var sessionId = await SeedTravelSessionAsync(dbContext);
+        await SeedDirectionAsync(
+            dbContext, "Recommended",
+            (CurrentLat + 0.006m, CurrentLon),
+            (DestinationLat + 0.0018m, DestinationLon));
+        await SeedDirectionAsync(dbContext, "LastResort", (CurrentLat + 0.0009m, CurrentLon));
+        var userId = await SeedUserWithPreferenceAsync(dbContext, minimizeWalking: true);
+
+        // Act
+        var result = await service.GenerateRecoveryOptionsAsync(
+            sessionId, currentDirectionId: null, CurrentLat, CurrentLon, userId);
+
+        // Assert
+        var recommended = Assert.Single(result.RecommendedOptions);
+        var lastResort = Assert.Single(result.LastResortOptions);
+        Assert.Equal("Recommended → Recommended", recommended.Label);
+        Assert.Equal("LastResort → LastResort", lastResort.Label);
     }
 
     [Fact]

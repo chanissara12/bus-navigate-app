@@ -1,5 +1,6 @@
 using BusNavigate.Domain.Interfaces.Recovery;
 using BusNavigate.Domain.ViewModels.Recovery;
+using BusNavigate.WebApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BusNavigate.WebApi.Controllers.Recovery;
@@ -21,8 +22,10 @@ public class RecoveryController : ControllerBase
     public async Task<IActionResult> GenerateOptions(
         int travelSessionId, [FromBody] RecoveryRequest request, CancellationToken cancellationToken)
     {
+        var userId = HttpContext.GetUserId();
         var result = await _recoveryService.GenerateRecoveryOptionsAsync(
-            travelSessionId, request.CurrentDirectionId, request.CurrentLatitude, request.CurrentLongitude, cancellationToken);
+            travelSessionId, request.CurrentDirectionId, request.CurrentLatitude, request.CurrentLongitude,
+            userId, cancellationToken);
         return Ok(result);
     }
 }

@@ -13,7 +13,9 @@ public interface IRecoveryService
     // report which bus they're on (e.g. missed it entirely) — "continue on current
     // bus" is then simply not offered as a candidate, per T06 ("not special-cased,
     // just one more candidate").
+    // userId is optional (04, same as 03's trip-planning wiring) — a missing device
+    // identity just means each tier comes back in its existing, unreordered order.
     Task<RecoveryOptionsResult> GenerateRecoveryOptionsAsync(
         int travelSessionId, int? currentDirectionId, decimal currentLatitude, decimal currentLongitude,
-        CancellationToken cancellationToken = default);
+        int? userId = null, CancellationToken cancellationToken = default);
 }

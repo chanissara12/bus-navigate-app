@@ -3,11 +3,14 @@ using BusNavigate.Domain.Database;
 using BusNavigate.Domain.Entities;
 using BusNavigate.Domain.Exceptions;
 using BusNavigate.Domain.Helpers;
+using BusNavigate.Domain.Interfaces.PreferenceRanking;
 using BusNavigate.Domain.Interfaces.Recovery;
 using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
+using BusNavigate.Domain.Interfaces.UserPreference;
 using BusNavigate.Domain.ViewModels.Recovery;
 using Microsoft.EntityFrameworkCore;
 using BusStopEntity = BusNavigate.Domain.Entities.BusStop;
+using UserPreferenceEntity = BusNavigate.Domain.Entities.UserPreference;
 
 namespace BusNavigate.Service.Implements.Recovery;
 
@@ -15,11 +18,17 @@ public class RecoveryService : IRecoveryService
 {
     private readonly BusNavigateDbContext _dbContext;
     private readonly ITravelOptionEvaluationService _travelOptionEvaluationService;
+    private readonly IUserPreferenceService _userPreferenceService;
+    private readonly IPreferenceRankingService _preferenceRankingService;
 
-    public RecoveryService(BusNavigateDbContext dbContext, ITravelOptionEvaluationService travelOptionEvaluationService)
+    public RecoveryService(
+        BusNavigateDbContext dbContext, ITravelOptionEvaluationService travelOptionEvaluationService,
+        IUserPreferenceService userPreferenceService, IPreferenceRankingService preferenceRankingService)
     {
         _dbContext = dbContext;
         _travelOptionEvaluationService = travelOptionEvaluationService;
+        _userPreferenceService = userPreferenceService;
+        _preferenceRankingService = preferenceRankingService;
     }
 
     // Roughly constant everywhere on Earth — used only to size a coarse bounding-box
@@ -28,9 +37,12 @@ public class RecoveryService : IRecoveryService
     // stops" query from doing a full-table haversine scan.
     private const double MetersPerDegreeLatitude = 111_320;
 
+    // No multi-leg search yet (T11/03) — every recovery candidate ties at 0 transfers.
+    private const int TransferCount = 0;
+
     public async Task<RecoveryOptionsResult> GenerateRecoveryOptionsAsync(
         int travelSessionId, int? currentDirectionId, decimal currentLatitude, decimal currentLongitude,
-        CancellationToken cancellationToken = default)
+        int? userId = null, CancellationToken cancellationToken = default)
     {
         var sessionExists = await _dbContext.TravelSessions
             .AnyAsync(s => s.Id == travelSessionId, cancellationToken);
@@ -68,8 +80,32 @@ public class RecoveryService : IRecoveryService
 
         var railPointers = await FindNearbyRailPointersAsync(currentLatitude, currentLongitude, cancellationToken);
 
+        if (userId is int id)
+        {
+            var preference = await _userPreferenceService.GetAsync(id, cancellationToken);
+
+            // Independently per tier (04) — never moves a candidate across tiers,
+            // urgency (which tier) always outranks a rider's personal preference.
+            recommended = [.. await RankTierAsync(recommended, preference, cancellationToken)];
+            lastResort = [.. await RankTierAsync(lastResort, preference, cancellationToken)];
+            railPointers = [.. await RankTierAsync(railPointers, preference, cancellationToken)];
+        }
+
         return new RecoveryOptionsResult(recommended, lastResort, railPointers);
     }
+
+    private Task<IReadOnlyList<RecoveryOption>> RankTierAsync(
+        IReadOnlyList<RecoveryOption> tier, UserPreferenceEntity preference, CancellationToken cancellationToken) =>
+        _preferenceRankingService.RankAsync(
+            tier,
+            preference,
+            getWalkingDistanceMeters: o => o.DistanceMeters,
+            getTransferCount: _ => TransferCount,
+            getBoardingStopId: o => o.BoardingStopId,
+            getAlightingStopId: o => o.AlightingStopId,
+            getReasons: o => o.Reasons,
+            withReasons: (o, reasons) => o with { Reasons = reasons },
+            cancellationToken);
 
     // "Continue on current bus" is CONTEXT.md's CurrentRoute (currentDirectionId) —
     // not special-cased, just one more candidate with zero walk distance (T06). Every
