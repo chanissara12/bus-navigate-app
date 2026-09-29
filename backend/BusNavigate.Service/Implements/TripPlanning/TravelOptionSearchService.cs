@@ -3,9 +3,11 @@ using BusNavigate.Domain.Database;
 using BusNavigate.Domain.Entities;
 using BusNavigate.Domain.Exceptions;
 using BusNavigate.Domain.Helpers;
+using BusNavigate.Domain.Interfaces.PreferenceRanking;
 using BusNavigate.Domain.Interfaces.ServiceStatus;
 using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
 using BusNavigate.Domain.Interfaces.TripPlanning;
+using BusNavigate.Domain.Interfaces.UserPreference;
 using BusNavigate.Domain.ViewModels.TravelOptionEvaluation;
 using BusNavigate.Domain.ViewModels.TripPlanning;
 using Microsoft.EntityFrameworkCore;
@@ -18,21 +20,32 @@ public class TravelOptionSearchService : ITravelOptionSearchService
     // index in Phase 1's schema.
     private const double MetersPerDegreeLatitude = 111_320;
 
+    // No multi-leg search yet (T11) — every trip-planning candidate ties at 0
+    // transfers, same limitation already noted in TravelOptionEvaluationService. Kept
+    // as an explicit constant, not deleted, so MinimizeTransfers ranking activates for
+    // free once transfer modeling lands (03).
+    private const int TransferCount = 0;
+
     private readonly BusNavigateDbContext _dbContext;
     private readonly IReachabilityService _reachabilityService;
     private readonly IServiceStatusService _serviceStatusService;
+    private readonly IUserPreferenceService _userPreferenceService;
+    private readonly IPreferenceRankingService _preferenceRankingService;
 
     public TravelOptionSearchService(
-        BusNavigateDbContext dbContext, IReachabilityService reachabilityService, IServiceStatusService serviceStatusService)
+        BusNavigateDbContext dbContext, IReachabilityService reachabilityService, IServiceStatusService serviceStatusService,
+        IUserPreferenceService userPreferenceService, IPreferenceRankingService preferenceRankingService)
     {
         _dbContext = dbContext;
         _reachabilityService = reachabilityService;
         _serviceStatusService = serviceStatusService;
+        _userPreferenceService = userPreferenceService;
+        _preferenceRankingService = preferenceRankingService;
     }
 
     public async Task<IReadOnlyList<TravelOption>> SearchAsync(
         decimal currentLatitude, decimal currentLongitude, int destinationPlaceId, PlaceKind destinationType,
-        CancellationToken cancellationToken = default)
+        int? userId = null, CancellationToken cancellationToken = default)
     {
         var (destinationLatitude, destinationLongitude) = await ResolveDestinationAsync(
             destinationPlaceId, destinationType, cancellationToken);
@@ -91,6 +104,21 @@ public class TravelOptionSearchService : ITravelOptionSearchService
                     new EvaluationReason(ReasonCode.ReachesDestination),
                     new EvaluationReason(ReasonCode.WithinWalkBudget, (decimal)alightingWalkDistanceMeters),
                 ]));
+        }
+
+        if (userId is int id)
+        {
+            var preference = await _userPreferenceService.GetAsync(id, cancellationToken);
+            return await _preferenceRankingService.RankAsync(
+                options,
+                preference,
+                getWalkingDistanceMeters: o => o.WalkingDistanceMeters,
+                getTransferCount: _ => TransferCount,
+                getBoardingStopId: o => o.BoardingStopId,
+                getAlightingStopId: o => o.AlightingStopId,
+                getReasons: o => o.Reasons,
+                withReasons: (o, reasons) => o with { Reasons = reasons },
+                cancellationToken);
         }
 
         return options;

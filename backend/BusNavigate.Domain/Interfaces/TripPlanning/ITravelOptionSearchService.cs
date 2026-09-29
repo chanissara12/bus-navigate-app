@@ -8,7 +8,9 @@ namespace BusNavigate.Domain.Interfaces.TripPlanning;
 // TravelSession exists.
 public interface ITravelOptionSearchService
 {
+    // userId is optional (03) — a missing device identity just means the results come
+    // back unreordered, same as a rider who has no UserPreference saved yet.
     Task<IReadOnlyList<TravelOption>> SearchAsync(
         decimal currentLatitude, decimal currentLongitude, int destinationPlaceId, PlaceKind destinationType,
-        CancellationToken cancellationToken = default);
+        int? userId = null, CancellationToken cancellationToken = default);
 }

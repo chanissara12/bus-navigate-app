@@ -17,4 +17,10 @@ public enum ReasonCode
     ExtraWalkDistance,
     WithinWalkBudget,
     ExceedsWalkBudget,
+
+    // Preference-ranking match codes (03) — appended by IPreferenceRankingService when
+    // a candidate is favorable on that toggle, never emitted by anything else.
+    MatchesMinimizeWalking,
+    MatchesMinimizeTransfers,
+    MatchesAvoidStreetCrossing,
 }

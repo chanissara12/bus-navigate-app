@@ -2,6 +2,7 @@ using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
 using BusNavigate.Domain.Interfaces.TripPlanning;
 using BusNavigate.Domain.ViewModels.TravelOptionEvaluation;
 using BusNavigate.Domain.ViewModels.TripPlanning;
+using BusNavigate.Server.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BusNavigate.Server.Controllers.TripPlanning;
@@ -21,13 +22,15 @@ public class TravelOptionsController : ControllerBase
     }
 
     // POST /api/v1/travel-options — full search, direct-connections only (T11).
+    // userId is optional (03) — no X-Device-Id just means no preference to rank by.
     [HttpPost]
     public async Task<IActionResult> Search(
         [FromBody] SearchTravelOptionsRequest request, CancellationToken cancellationToken)
     {
+        var userId = HttpContext.GetUserId();
         var results = await _travelOptionSearchService.SearchAsync(
             request.CurrentLatitude, request.CurrentLongitude, request.DestinationPlaceId, request.DestinationType,
-            cancellationToken);
+            userId, cancellationToken);
         return Ok(results);
     }
 

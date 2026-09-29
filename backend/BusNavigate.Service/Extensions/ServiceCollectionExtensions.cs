@@ -1,5 +1,6 @@
 using BusNavigate.Domain.Interfaces.BusStop;
 using BusNavigate.Domain.Interfaces.GtfsImport;
+using BusNavigate.Domain.Interfaces.PreferenceRanking;
 using BusNavigate.Domain.Interfaces.Recovery;
 using BusNavigate.Domain.Interfaces.ServiceStatus;
 using BusNavigate.Domain.Interfaces.TravelOptionEvaluation;
@@ -8,6 +9,7 @@ using BusNavigate.Domain.Interfaces.TripPlanning;
 using BusNavigate.Domain.Interfaces.UserPreference;
 using BusNavigate.Service.Implements.BusStop;
 using BusNavigate.Service.Implements.GtfsImport;
+using BusNavigate.Service.Implements.PreferenceRanking;
 using BusNavigate.Service.Implements.Recovery;
 using BusNavigate.Service.Implements.ServiceStatus;
 using BusNavigate.Service.Implements.TravelOptionEvaluation;
@@ -84,6 +86,13 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddUserPreference(this IServiceCollection services)
     {
         services.AddScoped<IUserPreferenceService, UserPreferenceService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddPreferenceRanking(this IServiceCollection services)
+    {
+        services.AddScoped<IPreferenceRankingService, PreferenceRankingService>();
 
         return services;
     }
