@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
@@ -75,6 +76,8 @@ describe('TripPlanningHomeComponent', () => {
         TestBed.configureTestingModule({
             declarations: [TripPlanningHomeComponent],
             imports: [CommonModule, ConfirmDialogComponent, PreferencePanelComponent],
+            // Note: app-route-map-card is left unregistered so Leaflet is not loaded in jsdom
+            schemas: [NO_ERRORS_SCHEMA],
             providers: [
                 { provide: PlacesService, useValue: placesService },
                 { provide: TravelOptionsService, useValue: travelOptionsService },
@@ -113,6 +116,8 @@ describe('TripPlanningHomeComponent', () => {
         TestBed.configureTestingModule({
             declarations: [TripPlanningHomeComponent],
             imports: [CommonModule, ConfirmDialogComponent, PreferencePanelComponent],
+            // Note: app-route-map-card is left unregistered so Leaflet is not loaded in jsdom
+            schemas: [NO_ERRORS_SCHEMA],
             providers: [
                 { provide: PlacesService, useValue: placesService },
                 { provide: TravelOptionsService, useValue: travelOptionsService },
