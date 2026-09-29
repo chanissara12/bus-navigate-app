@@ -89,7 +89,10 @@ public class RouteShapeImportServiceTests
         dbContext.Directions.Add(new Direction { Id = 1, ExternalDirectionKey = "R45-0" });
         dbContext.RouteShapePoints.Add(new RouteShapePoint
         {
-            DirectionId = 1, Sequence = 1, Latitude = 13.7m, Longitude = 100.5m
+            DirectionId = 1,
+            Sequence = 1,
+            Latitude = 13.7m,
+            Longitude = 100.5m
         });
         await dbContext.SaveChangesAsync();
 
