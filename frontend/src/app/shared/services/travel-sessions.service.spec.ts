@@ -31,6 +31,10 @@ describe('TravelSessionsService', () => {
         boardingStopId: 10,
         alightingStopId: 20,
         walkingDistanceMeters: 210,
+        boardingStopNameTh: 'ป้ายขึ้นรถ',
+        boardingStopNameEn: 'Boarding stop',
+        alightingStopNameTh: 'ป้ายลงรถ',
+        alightingStopNameEn: 'Alighting stop',
         createdAt: '2026-09-24T00:00:00Z',
         lastActivityAt: '2026-09-24T00:00:00Z'
     };
