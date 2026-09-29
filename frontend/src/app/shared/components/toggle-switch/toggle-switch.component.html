@@ -1,17 +1,18 @@
-<div class="flex items-center justify-between p-3 border rounded-xl border-slate-200">
-  <span class="text-sm text-slate-900">{{ label }}</span>
+<div class="flex items-center justify-between p-3 border rounded-xl border-ink-200">
+  <span [id]="labelId" class="text-sm text-ink-900">{{ label }}</span>
   <button
     type="button"
     role="switch"
     [attr.aria-checked]="checked"
+    [attr.aria-labelledby]="labelId"
     [attr.data-testid]="testId"
-    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sky-400"
-    [class.bg-sky-600]="checked"
-    [class.bg-slate-300]="!checked"
+    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-accent-400"
+    [class.bg-accent-600]="checked"
+    [class.bg-ink-300]="!checked"
     (click)="onToggle()"
     >
     <span
-      class="inline-block w-5 h-5 mt-0.5 ml-0.5 transition-transform bg-white rounded-full shadow"
+      class="inline-block w-5 h-5 mt-0.5 ml-0.5 transition-transform motion-reduce:transition-none bg-white rounded-full shadow"
       [class.translate-x-5]="checked"
     ></span>
   </button>

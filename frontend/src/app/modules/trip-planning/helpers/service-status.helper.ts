@@ -25,20 +25,20 @@ export function serviceStatusLabel(status: ServiceStatusResult): string {
 
 export function serviceStatusClasses(status: ServiceStatusResult): string {
     if (status.notOperatingToday) {
-        return 'bg-slate-200 text-slate-600';
+        return 'bg-ink-200 text-ink-600';
     }
     if (!status.transitAlert) {
-        return 'bg-emerald-100 text-emerald-800';
+        return 'bg-success-100 text-success-800';
     }
 
     switch (status.transitAlert.status) {
         case TransitAlertStatus.Delayed:
-            return 'bg-amber-100 text-amber-800';
+            return 'bg-warning-100 text-warning-800';
         case TransitAlertStatus.TemporarilySuspended:
             return 'bg-orange-100 text-orange-800';
         case TransitAlertStatus.RouteChanged:
-            return 'bg-sky-100 text-sky-800';
+            return 'bg-accent-100 text-accent-800';
         case TransitAlertStatus.Cancelled:
-            return 'bg-red-100 text-red-800';
+            return 'bg-danger-100 text-danger-800';
     }
 }

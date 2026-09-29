@@ -54,7 +54,7 @@ describe('BottomNavComponent', () => {
         setup('/trip-planning');
 
         const tab = fixture.debugElement.query(By.css('[data-testid="nav-tab-trip-planning"]'));
-        expect(tab.classes['text-sky-600']).toBe(true);
+        expect(tab.classes['text-accent-600']).toBe(true);
     });
 
     it('updates the active tab after a NavigationEnd event', () => {
@@ -65,15 +65,15 @@ describe('BottomNavComponent', () => {
 
         const busStopTab = fixture.debugElement.query(By.css('[data-testid="nav-tab-bus-stop"]'));
         const tripPlanningTab = fixture.debugElement.query(By.css('[data-testid="nav-tab-trip-planning"]'));
-        expect(busStopTab.classes['text-sky-600']).toBe(true);
-        expect(tripPlanningTab.classes['text-sky-600']).toBeFalsy();
+        expect(busStopTab.classes['text-accent-600']).toBe(true);
+        expect(tripPlanningTab.classes['text-accent-600']).toBeFalsy();
     });
 
     it('treats a /travel-session/:id url as the travel-session tab being active', () => {
         setup('/travel-session/42');
 
         const tab = fixture.debugElement.query(By.css('[data-testid="nav-tab-travel-session"]'));
-        expect(tab.classes['text-sky-600']).toBe(true);
+        expect(tab.classes['text-accent-600']).toBe(true);
     });
 
     it('navigates to the persisted session when the travel-session tab is clicked and a session is active', () => {

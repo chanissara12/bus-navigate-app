@@ -4,6 +4,8 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 // immediately, it isn't a form selection) with aria-checked and CSS-only styling
 // (native checkboxes are hard to restyle consistently, see confirm-dialog/route-map-card
 // for the same standalone shared-component pattern).
+let nextInstanceId = 0;
+
 @Component({
     selector: 'app-toggle-switch',
     standalone: true,
@@ -17,6 +19,8 @@ export class ToggleSwitchComponent {
     @Input() testId: string | undefined;
 
     @Output() readonly checkedChange = new EventEmitter<boolean>();
+
+    readonly labelId = `toggle-switch-label-${nextInstanceId++}`;
 
     onToggle(): void {
         this.checkedChange.emit(!this.checked);

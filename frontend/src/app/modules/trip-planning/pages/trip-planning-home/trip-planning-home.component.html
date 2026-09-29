@@ -3,7 +3,7 @@
     <button
       type="button"
       data-testid="preferences-link"
-      class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full cursor-pointer text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-slate-200"
+      class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full cursor-pointer text-ink-600 hover:bg-ink-100 focus:outline-none focus:ring-2 focus:ring-accent-400 active:bg-ink-200"
       (click)="togglePrefsPanel()"
       >
       <span aria-hidden="true">⚙️</span>
@@ -11,21 +11,21 @@
     </button>
 
     @if (prefsPanelOpen()) {
-      <div class="absolute right-0 z-30 p-4 mt-2 bg-white border shadow-xl top-full w-80 rounded-2xl border-slate-200">
+      <div class="absolute right-0 z-30 p-4 mt-2 bg-white border shadow-xl top-full w-80 max-w-[calc(100vw-2rem)] rounded-2xl border-ink-200">
         <app-preference-panel (saved)="closePrefsPanel()"></app-preference-panel>
       </div>
     }
   </div>
 
-  <div class="p-4 mb-4 bg-white border shadow-sm rounded-2xl border-slate-200">
-    <label class="block mb-1 text-xs font-medium text-slate-500">ตำแหน่งปัจจุบัน</label>
+  <div class="p-4 mb-4 bg-white border shadow-sm rounded-2xl border-ink-200">
+    <label class="block mb-1 text-xs font-medium text-ink-500">ตำแหน่งปัจจุบัน</label>
 
     @if (!currentPosition() && !locationError()) {
-      <div class="w-full rounded-lg h-9 bg-slate-100 animate-pulse"></div>
+      <div class="w-full rounded-lg h-9 bg-ink-100 animate-pulse motion-reduce:animate-none"></div>
     }
 
     @if (currentPosition()) {
-      <div class="flex items-center gap-2 px-3 py-2 mb-3 text-sm rounded-lg bg-slate-50 text-slate-700">
+      <div class="flex items-center gap-2 px-3 py-2 mb-3 text-sm rounded-lg bg-ink-50 text-ink-700">
         <span>📍</span>
         <span>ตำแหน่งของฉัน</span>
       </div>
@@ -33,40 +33,40 @@
 
     @if (locationError(); as locErr) {
       <div
-        class="flex items-center justify-between gap-2 px-3 py-2 mb-3 text-sm text-red-700 rounded-lg bg-red-50"
+        class="flex items-center justify-between gap-2 px-3 py-2 mb-3 text-sm text-danger-700 rounded-lg bg-danger-50"
         >
         <span>⚠️ {{ locErr }}</span>
-        <button type="button" class="font-medium text-red-800 underline cursor-pointer" (click)="retryLocation()">ลองใหม่</button>
+        <button type="button" class="font-medium text-danger-800 underline cursor-pointer" (click)="retryLocation()">ลองใหม่</button>
       </div>
     }
 
-    <label class="block mb-1 text-xs font-medium text-slate-500">ปลายทาง</label>
+    <label class="block mb-1 text-xs font-medium text-ink-500">ปลายทาง</label>
     <input
       type="text"
       [value]="destinationQuery()"
       (input)="onDestinationInput($any($event.target).value)"
       [disabled]="!currentPosition()"
       placeholder="พิมพ์ชื่อสถานที่หรือป้ายรถ"
-      class="w-full px-3 py-2 text-sm border rounded-lg border-sky-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-slate-100 disabled:cursor-not-allowed"
+      class="w-full px-3 py-2 text-sm border rounded-lg border-accent-300 text-ink-900 focus:outline-none focus:ring-2 focus:ring-accent-400 disabled:bg-ink-100 disabled:cursor-not-allowed"
       />
 
       @if (destinationSearchLoading()) {
         <div class="flex flex-col gap-1 mt-2">
           @for (_ of [1, 2]; track _) {
-            <div class="h-8 rounded-lg bg-slate-100 animate-pulse"></div>
+            <div class="h-8 rounded-lg bg-ink-100 animate-pulse motion-reduce:animate-none"></div>
           }
         </div>
       }
 
       @if (!destinationSearchLoading() && destinationResults().length > 0) {
         <div
-          class="flex flex-col mt-2 overflow-hidden border divide-y rounded-lg divide-slate-100 border-slate-200"
+          class="flex flex-col mt-2 overflow-hidden border divide-y rounded-lg divide-ink-100 border-ink-200"
           >
           @for (place of destinationResults(); track place) {
             <button
               type="button"
               data-testid="destination-result"
-              class="flex items-center gap-2 px-3 py-2 text-sm text-left cursor-pointer hover:bg-slate-50"
+              class="flex items-center gap-2 px-3 py-2 text-sm text-left cursor-pointer hover:bg-ink-50"
               (click)="selectDestination(place)"
               >
               <span>{{ place.type === 0 ? '🚏' : '📍' }}</span>
@@ -81,23 +81,28 @@
     message, manual dismiss, brief slide-down entrance. -->
     @if (latestError(); as err) {
       <div
-        class="flex items-start gap-3 px-4 py-3 mb-4 transition-all duration-300 ease-out border-2 border-red-400 shadow-md rounded-xl bg-red-50"
+        class="flex items-start gap-3 px-4 py-3 mb-4 transition-all motion-reduce:transition-none duration-300 ease-out border-2 border-danger-400 shadow-md rounded-xl bg-danger-50"
         [class.opacity-0]="!errorSettled()"
         [class.-translate-y-2]="!errorSettled()"
         >
         <span class="text-2xl leading-none">🚫</span>
         <div class="flex-1">
-          <div class="text-sm font-bold text-red-800">เกิดข้อผิดพลาด</div>
-          <div class="text-sm text-red-700">{{ err }}</div>
+          <div class="text-sm font-bold text-danger-800">เกิดข้อผิดพลาด</div>
+          <div class="text-sm text-danger-700">{{ err }}</div>
         </div>
-        <button type="button" class="px-1 font-bold text-red-600 cursor-pointer" (click)="dismissError()" aria-label="Dismiss error">
+        <button
+          type="button"
+          class="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-xl font-bold text-danger-600 cursor-pointer hover:bg-danger-100 focus:outline-none focus:ring-2 focus:ring-danger-400 active:bg-danger-200"
+          (click)="dismissError()"
+          aria-label="ปิดข้อความแจ้งเตือน"
+          >
           ×
         </button>
       </div>
     }
 
     @if (selectedDestination()) {
-      <h2 class="mb-3 text-sm font-semibold text-slate-500">
+      <h2 class="mb-3 text-sm font-semibold text-ink-500">
         เส้นทางที่แนะนำ@if (travelOptions(); as options) {
         &nbsp;({{ options.length }})
       }
@@ -115,22 +120,22 @@
     @if (travelOptionsLoading()) {
       <div class="flex flex-col gap-3">
         @for (_ of [1, 2, 3]; track _) {
-          <div class="p-4 bg-white border shadow-sm rounded-2xl border-slate-200 animate-pulse">
+          <div class="p-4 bg-white border shadow-sm rounded-2xl border-ink-200 animate-pulse motion-reduce:animate-none">
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-slate-200"></div>
-                <div class="w-32 h-3 rounded bg-slate-200"></div>
+                <div class="w-8 h-8 rounded-full bg-ink-200"></div>
+                <div class="w-32 h-3 rounded bg-ink-200"></div>
               </div>
-              <div class="h-4 rounded-full w-14 bg-slate-200"></div>
+              <div class="h-4 rounded-full w-14 bg-ink-200"></div>
             </div>
-            <div class="w-40 h-3 rounded bg-slate-200"></div>
+            <div class="w-40 h-3 rounded bg-ink-200"></div>
           </div>
         }
       </div>
     }
     @if (!travelOptionsLoading() && travelOptions() && travelOptions()?.length === 0) {
       <div
-        class="py-8 text-sm text-center text-slate-500"
+        class="py-8 text-sm text-center text-ink-500"
         >
         ไม่พบเส้นทางไปยังจุดหมายนี้
       </div>
@@ -139,8 +144,8 @@
       <div class="flex flex-col gap-3">
         @for (option of travelOptions(); track option) {
           <article
-            class="p-4 bg-white border shadow-sm cursor-pointer rounded-2xl hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-sky-100"
-            [ngClass]="mapOption()?.directionId === option.directionId ? 'border-sky-500 ring-1 ring-sky-200' : 'border-slate-200'"
+            class="p-4 bg-white border shadow-sm cursor-pointer rounded-2xl hover:border-accent-300 hover:bg-accent-50 focus:outline-none focus:ring-2 focus:ring-accent-400 active:bg-accent-100"
+            [ngClass]="mapOption()?.directionId === option.directionId ? 'border-accent-500 ring-1 ring-accent-200' : 'border-ink-200'"
             role="button"
             tabindex="0"
             (click)="selectMapOption(option)"
@@ -149,16 +154,16 @@
             >
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-2">
-                <span class="flex items-center justify-center w-8 h-8 text-sm font-bold text-white rounded-full bg-sky-600">
+                <span class="flex items-center justify-center w-8 h-8 text-sm font-bold text-white rounded-full bg-accent-600">
                   {{ option.routeShortName }}
                 </span>
-                <span class="text-sm font-medium text-slate-900">{{ option.headsign }}</span>
+                <span class="text-sm font-medium text-ink-900">{{ option.headsign }}</span>
               </div>
               <span class="rounded-full px-2 py-0.5 text-xs font-medium" [ngClass]="statusClasses(option.serviceStatus)">
                 {{ statusLabel(option.serviceStatus) }}
               </span>
             </div>
-            <div class="mb-3 space-y-1 text-sm text-slate-600">
+            <div class="mb-3 space-y-1 text-sm text-ink-600">
               <div>🚏 ขึ้นที่ {{ option.boardingStopNameTh }}</div>
               <div>🏁 ลงที่ {{ option.alightingStopNameTh }}</div>
               <div>🚶 เดิน {{ option.walkingDistanceMeters | number:'1.0-0' }} ม.</div>
@@ -166,7 +171,7 @@
             <button
               type="button"
               data-testid="start-trip"
-              class="w-full py-2 text-sm font-medium text-white rounded-lg cursor-pointer bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-sky-800"
+              class="w-full py-2 text-sm font-medium text-white rounded-lg cursor-pointer bg-accent-600 hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-accent-400 active:bg-accent-800"
               (click)="$event.stopPropagation(); startTrip(option)"
               >
               เริ่มเดินทาง

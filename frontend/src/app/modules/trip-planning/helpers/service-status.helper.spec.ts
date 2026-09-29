@@ -34,19 +34,19 @@ describe('service-status helper', () => {
     });
 
     describe('serviceStatusClasses', () => {
-        it('returns the slate classes when not operating today', () => {
-            expect(serviceStatusClasses({ transitAlert: undefined, notOperatingToday: true })).toBe('bg-slate-200 text-slate-600');
+        it('returns the ink classes when not operating today', () => {
+            expect(serviceStatusClasses({ transitAlert: undefined, notOperatingToday: true })).toBe('bg-ink-200 text-ink-600');
         });
 
-        it('returns the emerald classes when normal', () => {
-            expect(serviceStatusClasses({ transitAlert: undefined, notOperatingToday: false })).toBe('bg-emerald-100 text-emerald-800');
+        it('returns the success classes when normal', () => {
+            expect(serviceStatusClasses({ transitAlert: undefined, notOperatingToday: false })).toBe('bg-success-100 text-success-800');
         });
 
         it.each([
-            [TransitAlertStatus.Delayed, 'bg-amber-100 text-amber-800'],
+            [TransitAlertStatus.Delayed, 'bg-warning-100 text-warning-800'],
             [TransitAlertStatus.TemporarilySuspended, 'bg-orange-100 text-orange-800'],
-            [TransitAlertStatus.RouteChanged, 'bg-sky-100 text-sky-800'],
-            [TransitAlertStatus.Cancelled, 'bg-red-100 text-red-800']
+            [TransitAlertStatus.RouteChanged, 'bg-accent-100 text-accent-800'],
+            [TransitAlertStatus.Cancelled, 'bg-danger-100 text-danger-800']
         ])('maps alert status %s to classes %s', (status, expectedClasses) => {
             const classes = serviceStatusClasses({
                 transitAlert: { status, description: null, effectiveFrom: '', effectiveTo: null },
