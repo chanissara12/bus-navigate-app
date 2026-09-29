@@ -22,6 +22,12 @@ import * as L from 'leaflet';
 import { BusStopContextResult } from '../../../modules/bus-stop/models/bus-stop.model';
 import { BusStopsService } from '../../../modules/bus-stop/services/bus-stops.service';
 import { GeoCoordinate } from '../../models/geo-coordinate.model';
+import {
+    calculateDistanceKm,
+    distanceBetweenKm,
+    findNearestRoutePointIndex,
+    findPlausibleCrossing
+} from '../../helpers/route-geometry.helper';
 import { GeolocationService } from '../../services/geolocation.service';
 import { RouteShapePoint, RouteShapesService } from '../../services/route-shapes.service';
 
@@ -166,7 +172,7 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
         }
 
         if (this.lastAcceptedPosition) {
-            const movementMeters = this.distanceBetweenKm(
+            const movementMeters = distanceBetweenKm(
                 [this.lastAcceptedPosition.coordinates.latitude, this.lastAcceptedPosition.coordinates.longitude],
                 [coordinates.latitude, coordinates.longitude]
             ) * 1000;
@@ -313,7 +319,7 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
             return;
         }
 
-        this.routeDistanceKm.set(this.calculateDistanceKm(routePoints));
+        this.routeDistanceKm.set(calculateDistanceKm(routePoints));
 
         // แสดงเฉพาะรถสายที่ผู้ใช้ต้องนั่ง: สีเทาคือทั้งสาย
         // และสีน้ำเงินคือช่วงที่ผู้ใช้ต้องนั่งจากป้ายขึ้นถึงป้ายลง
@@ -326,11 +332,11 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
         }).addTo(this.map);
 
         if (boarding && alighting) {
-            const boardingIndex = this.findNearestRoutePointIndex(
+            const boardingIndex = findNearestRoutePointIndex(
                 routePoints,
                 [boarding.latitude, boarding.longitude]
             );
-            const alightingIndex = this.findNearestRoutePointIndex(
+            const alightingIndex = findNearestRoutePointIndex(
                 routePoints,
                 [alighting.latitude, alighting.longitude]
             );
@@ -342,7 +348,7 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
             if (ridePoints.length >= 2) {
                 ridePoints[0] = [boarding.latitude, boarding.longitude];
                 ridePoints[ridePoints.length - 1] = [alighting.latitude, alighting.longitude];
-                this.routeDistanceKm.set(this.calculateDistanceKm(ridePoints));
+                this.routeDistanceKm.set(calculateDistanceKm(ridePoints));
 
                 const rideLine = L.polyline(ridePoints, {
                     color: '#178F79',
@@ -458,52 +464,6 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
         this.destinationMarker.bindPopup('<strong>จุดหมายของคุณ</strong>');
     }
 
-    private findNearestRoutePointIndex(
-        routePoints: L.LatLngTuple[],
-        target: L.LatLngTuple
-    ): number {
-        let nearestIndex = 0;
-        let nearestDistance = Number.POSITIVE_INFINITY;
-
-        routePoints.forEach((point, index) => {
-            const distance = this.distanceBetweenKm(point, target);
-            if (distance < nearestDistance) {
-                nearestDistance = distance;
-                nearestIndex = index;
-            }
-        });
-
-        return nearestIndex;
-    }
-
-    private calculateDistanceKm(points: L.LatLngTuple[]): number {
-        let distanceKm = 0;
-
-        for (let index = 1; index < points.length; index++) {
-            distanceKm += this.distanceBetweenKm(points[index - 1], points[index]);
-        }
-
-        return Math.round(distanceKm * 10) / 10;
-    }
-
-    private distanceBetweenKm(
-        first: L.LatLngTuple,
-        second: L.LatLngTuple
-    ): number {
-        const earthRadiusKm = 6371;
-        const latitude1 = first[0] * Math.PI / 180;
-        const latitude2 = second[0] * Math.PI / 180;
-        const deltaLatitude = (second[0] - first[0]) * Math.PI / 180;
-        const deltaLongitude = (second[1] - first[1]) * Math.PI / 180;
-
-        const a = Math.sin(deltaLatitude / 2) ** 2
-            + Math.cos(latitude1)
-            * Math.cos(latitude2)
-            * Math.sin(deltaLongitude / 2) ** 2;
-
-        return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
     private addWalkingLineToStop(stop: BusStopContextResult): void {
         const position = this.positionMarker?.getLatLng();
         if (!position) {
@@ -512,7 +472,7 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
 
         const start: L.LatLngTuple = [position.lat, position.lng];
         const end: L.LatLngTuple = [stop.latitude, stop.longitude];
-        const crossing = this.findPlausibleCrossing(start, end, stop);
+        const crossing = findPlausibleCrossing(start, end, stop.landmarks);
 
         if (crossing) {
             this.addWalkingLine(start, [crossing.latitude, crossing.longitude]);
@@ -521,79 +481,6 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
         }
 
         this.addWalkingLine(start, end);
-    }
-
-    private findPlausibleCrossing(
-        start: L.LatLngTuple,
-        end: L.LatLngTuple,
-        stop: BusStopContextResult
-    ): { latitude: number; longitude: number } | undefined {
-        const directDistanceKm = this.distanceBetweenKm(start, end);
-        if (directDistanceKm === 0) {
-            return undefined;
-        }
-
-        const candidates = stop.landmarks
-            .filter((landmark) => landmark.landmarkType === 0 || landmark.landmarkType === 1)
-            .map((landmark) => {
-                const point: L.LatLngTuple = [landmark.latitude, landmark.longitude];
-                const projection = this.projectPointOntoSegment(start, end, point);
-
-                return {
-                    ...landmark,
-                    point,
-                    projection,
-                    detourRatio:
-                        (this.distanceBetweenKm(start, point) + this.distanceBetweenKm(point, end))
-                        / directDistanceKm,
-                    perpendicularDistanceKm: this.perpendicularDistanceKm(start, end, point, projection)
-                };
-            })
-            .filter((landmark) => landmark.projection >= -0.15
-                && landmark.projection <= 1.15
-                && landmark.detourRatio <= 1.35)
-            // Prefer the candidate furthest off the direct line, not the one with the
-            // smallest detour: a crossing right next to the stop passes the detour-ratio
-            // check easily but the resulting dashed connector barely bends, so the user
-            // can't visually tell the walking path is avoiding the road.
-            .sort((first, second) => second.perpendicularDistanceKm - first.perpendicularDistanceKm);
-
-        return candidates[0];
-    }
-
-    // Distance from `point` to its projection onto the infinite line through start/end,
-    // found by walking `projection` (from projectPointOntoSegment) along that line.
-    private perpendicularDistanceKm(
-        start: L.LatLngTuple,
-        end: L.LatLngTuple,
-        point: L.LatLngTuple,
-        projection: number
-    ): number {
-        const footPoint: L.LatLngTuple = [
-            start[0] + (end[0] - start[0]) * projection,
-            start[1] + (end[1] - start[1]) * projection
-        ];
-
-        return this.distanceBetweenKm(point, footPoint);
-    }
-
-    private projectPointOntoSegment(
-        start: L.LatLngTuple,
-        end: L.LatLngTuple,
-        point: L.LatLngTuple
-    ): number {
-        const latitudeScale = Math.cos(((start[0] + end[0]) / 2) * Math.PI / 180);
-        const dx = (end[1] - start[1]) * latitudeScale;
-        const dy = end[0] - start[0];
-        const px = (point[1] - start[1]) * latitudeScale;
-        const py = point[0] - start[0];
-        const lengthSquared = dx * dx + dy * dy;
-
-        if (lengthSquared === 0) {
-            return 0;
-        }
-
-        return (px * dx + py * dy) / lengthSquared;
     }
 
     private addWalkingLine(start: L.LatLngExpression, end: L.LatLngExpression): void {
