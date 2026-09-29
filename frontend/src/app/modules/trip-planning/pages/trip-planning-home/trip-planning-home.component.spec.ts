@@ -5,11 +5,14 @@ import { Router } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 
 import { DataConfidence } from '../../../../shared/models/data-confidence.model';
+import { UserPreference } from '../../../../shared/models/user-preference.model';
 import { ActiveSessionService } from '../../../../shared/services/active-session.service';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { PreferencePanelComponent } from '../../../../shared/components/preference-panel/preference-panel.component';
 import { ErrorNotificationService } from '../../../../shared/services/error-notification.service';
 import { GeolocationService } from '../../../../shared/services/geolocation.service';
 import { TravelSessionsService } from '../../../../shared/services/travel-sessions.service';
+import { UserPreferenceService } from '../../../../shared/services/user-preference.service';
 import { PlaceKind, PlaceSearchResult } from '../../models/place.model';
 import { TravelOption } from '../../models/travel-option.model';
 import { PlacesService } from '../../services/places.service';
@@ -25,8 +28,15 @@ describe('TripPlanningHomeComponent', () => {
     let geolocationService: { getCurrentPosition: jest.Mock };
     let activeSessionService: { setActiveSessionId: jest.Mock };
     let router: { navigate: jest.Mock };
+    let userPreferenceService: { get: jest.Mock; save: jest.Mock };
     let errorsSubject: Subject<string>;
 
+    const preference: UserPreference = {
+        minimizeWalking: false,
+        minimizeTransfers: false,
+        avoidStreetCrossing: false,
+        updatedAt: null
+    };
     const coords = { latitude: 13.7, longitude: 100.5 } as GeolocationCoordinates;
     const place: PlaceSearchResult = {
         id: 42,
@@ -59,11 +69,12 @@ describe('TripPlanningHomeComponent', () => {
         geolocationService = { getCurrentPosition: jest.fn().mockReturnValue(of(coords)) };
         activeSessionService = { setActiveSessionId: jest.fn() };
         router = { navigate: jest.fn() };
+        userPreferenceService = { get: jest.fn().mockReturnValue(of(preference)), save: jest.fn() };
         errorsSubject = new Subject<string>();
 
         TestBed.configureTestingModule({
             declarations: [TripPlanningHomeComponent],
-            imports: [CommonModule, ConfirmDialogComponent],
+            imports: [CommonModule, ConfirmDialogComponent, PreferencePanelComponent],
             providers: [
                 { provide: PlacesService, useValue: placesService },
                 { provide: TravelOptionsService, useValue: travelOptionsService },
@@ -71,6 +82,7 @@ describe('TripPlanningHomeComponent', () => {
                 { provide: GeolocationService, useValue: geolocationService },
                 { provide: ActiveSessionService, useValue: activeSessionService },
                 { provide: Router, useValue: router },
+                { provide: UserPreferenceService, useValue: userPreferenceService },
                 {
                     provide: ErrorNotificationService,
                     useValue: { notify: (m: string) => errorsSubject.next(m), errors$: errorsSubject.asObservable() }
@@ -96,10 +108,11 @@ describe('TripPlanningHomeComponent', () => {
         travelSessionsService = { create: jest.fn() };
         activeSessionService = { setActiveSessionId: jest.fn() };
         router = { navigate: jest.fn() };
+        userPreferenceService = { get: jest.fn().mockReturnValue(of(preference)), save: jest.fn() };
         errorsSubject = new Subject<string>();
         TestBed.configureTestingModule({
             declarations: [TripPlanningHomeComponent],
-            imports: [CommonModule, ConfirmDialogComponent],
+            imports: [CommonModule, ConfirmDialogComponent, PreferencePanelComponent],
             providers: [
                 { provide: PlacesService, useValue: placesService },
                 { provide: TravelOptionsService, useValue: travelOptionsService },
@@ -107,6 +120,7 @@ describe('TripPlanningHomeComponent', () => {
                 { provide: GeolocationService, useValue: geolocationService },
                 { provide: ActiveSessionService, useValue: activeSessionService },
                 { provide: Router, useValue: router },
+                { provide: UserPreferenceService, useValue: userPreferenceService },
                 {
                     provide: ErrorNotificationService,
                     useValue: { notify: (m: string) => errorsSubject.next(m), errors$: errorsSubject.asObservable() }
@@ -238,6 +252,25 @@ describe('TripPlanningHomeComponent', () => {
         expect(component.confirmDialogOpen()).toBe(false);
         expect(component.pendingOption()).toBeUndefined();
         expect(travelSessionsService.create).not.toHaveBeenCalled();
+    });
+
+    it('opens the preferences popover on the settings button and closes it automatically once saved', () => {
+        setup();
+
+        expect(component.prefsPanelOpen()).toBe(false);
+
+        component.togglePrefsPanel();
+        fixture.detectChanges();
+        expect(component.prefsPanelOpen()).toBe(true);
+        expect(fixture.debugElement.query(By.directive(PreferencePanelComponent))).not.toBeNull();
+
+        const panel = fixture.debugElement.query(By.directive(PreferencePanelComponent))
+            .injector.get(PreferencePanelComponent);
+        panel.saved.emit();
+        fixture.detectChanges();
+
+        expect(component.prefsPanelOpen()).toBe(false);
+        expect(fixture.debugElement.query(By.directive(PreferencePanelComponent))).toBeNull();
     });
 
     it('renders and dismisses the contextual error banner reported via ErrorNotificationService', fakeAsync(() => {

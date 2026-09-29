@@ -1,0 +1,73 @@
+<p class="mb-3 text-sm font-semibold text-slate-900">การตั้งค่าการเดินทาง</p>
+
+@if (latestError(); as error) {
+  <div
+    class="flex items-start justify-between gap-2 px-3 py-2 mb-3 text-xs rounded-lg border border-red-200 bg-red-50 text-red-800"
+    role="alert"
+    >
+    <span>{{ error }}</span>
+    <button
+      type="button"
+      class="px-1 font-semibold rounded cursor-pointer hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300 active:bg-red-200"
+      (click)="latestError.set(undefined)"
+      >
+      ปิด
+    </button>
+  </div>
+}
+
+@if (loading()) {
+  <div class="flex flex-col gap-2" aria-label="กำลังโหลดการตั้งค่า">
+    <div class="h-12 rounded-xl bg-slate-100 animate-pulse"></div>
+    <div class="h-12 rounded-xl bg-slate-100 animate-pulse"></div>
+    <div class="h-12 rounded-xl bg-slate-100 animate-pulse"></div>
+  </div>
+}
+
+@if (!loading()) {
+  <div class="flex flex-col gap-2 mb-3">
+    <app-toggle-switch
+      label="ลดระยะเดิน"
+      testId="toggle-minimize-walking"
+      [checked]="minimizeWalking()"
+      (checkedChange)="minimizeWalking.set($event)"
+    ></app-toggle-switch>
+
+    <app-toggle-switch
+      label="ลดจำนวนต่อรถ"
+      testId="toggle-minimize-transfers"
+      [checked]="minimizeTransfers()"
+      (checkedChange)="minimizeTransfers.set($event)"
+    ></app-toggle-switch>
+
+    <app-toggle-switch
+      label="เลี่ยงการข้ามถนน"
+      testId="toggle-avoid-street-crossing"
+      [checked]="avoidStreetCrossing()"
+      (checkedChange)="avoidStreetCrossing.set($event)"
+    ></app-toggle-switch>
+  </div>
+
+  @if (justSaved()) {
+    <div class="px-3 py-2 mb-3 text-xs rounded-lg bg-emerald-50 text-emerald-800" role="status">
+      บันทึกการตั้งค่าแล้ว
+    </div>
+  }
+
+  <button
+    type="button"
+    data-testid="save-preferences"
+    class="w-full px-4 py-2 text-sm font-semibold text-white cursor-pointer rounded-xl bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+    [disabled]="saving()"
+    (click)="save()"
+    >
+    @if (saving()) {
+      <span class="inline-flex items-center gap-2">
+        <span class="w-4 h-4 border-2 border-white rounded-full animate-spin border-t-transparent"></span>
+        กำลังบันทึก...
+      </span>
+    } @else {
+      บันทึก
+    }
+  </button>
+}

@@ -1,4 +1,22 @@
 <div class="max-w-xl px-4 py-6 pb-24 mx-auto">
+  <div class="relative flex justify-end mb-2">
+    <button
+      type="button"
+      data-testid="preferences-link"
+      class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full cursor-pointer text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400 active:bg-slate-200"
+      (click)="togglePrefsPanel()"
+      >
+      <span aria-hidden="true">⚙️</span>
+      <span>ตั้งค่า</span>
+    </button>
+
+    @if (prefsPanelOpen()) {
+      <div class="absolute right-0 z-30 p-4 mt-2 bg-white border shadow-xl top-full w-80 rounded-2xl border-slate-200">
+        <app-preference-panel (saved)="closePrefsPanel()"></app-preference-panel>
+      </div>
+    }
+  </div>
+
   <div class="p-4 mb-4 bg-white border shadow-sm rounded-2xl border-slate-200">
     <label class="block mb-1 text-xs font-medium text-slate-500">ตำแหน่งปัจจุบัน</label>
 

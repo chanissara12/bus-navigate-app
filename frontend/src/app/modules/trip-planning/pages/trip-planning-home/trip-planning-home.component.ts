@@ -57,6 +57,11 @@ export class TripPlanningHomeComponent {
     readonly latestError = signal<string | undefined>(undefined);
     readonly errorSettled = signal(false);
 
+    // Settings popover anchored to the header's gear icon (02 — decided over a
+    // separate /preferences page after a throwaway UI comparison; see
+    // prototype/preferences-entry-point for the other variants considered).
+    readonly prefsPanelOpen = signal(false);
+
     constructor() {
         this.loadCurrentPosition();
 
@@ -157,6 +162,14 @@ export class TripPlanningHomeComponent {
 
     dismissError(): void {
         this.latestError.set(undefined);
+    }
+
+    togglePrefsPanel(): void {
+        this.prefsPanelOpen.update((open) => !open);
+    }
+
+    closePrefsPanel(): void {
+        this.prefsPanelOpen.set(false);
     }
 
     private loadCurrentPosition(): void {

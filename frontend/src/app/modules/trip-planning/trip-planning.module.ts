@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { TripPlanningRoutingModule } from './trip-planning-routing.module';
 import { TripPlanningHomeComponent } from './pages/trip-planning-home/trip-planning-home.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { PreferencePanelComponent } from '../../shared/components/preference-panel/preference-panel.component';
 import { RouteMapCardComponent } from '../../shared/components/route-map-card/route-map-card.component';
 
 
@@ -15,6 +16,7 @@ import { RouteMapCardComponent } from '../../shared/components/route-map-card/ro
         CommonModule,
         TripPlanningRoutingModule,
         ConfirmDialogComponent,
+        PreferencePanelComponent,
         RouteMapCardComponent
     ]
 })
