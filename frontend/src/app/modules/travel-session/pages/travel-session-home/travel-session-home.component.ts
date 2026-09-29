@@ -64,19 +64,6 @@ export class TravelSessionHomeComponent {
         }
     };
 
-    readonly stateIcon = (state: TravelSessionState): string => {
-        switch (state) {
-            case TravelSessionState.Planned: return '🗺️';
-            case TravelSessionState.WalkingToStop: return '🚶';
-            case TravelSessionState.Waiting: return '⏳';
-            case TravelSessionState.Riding: return '🚌';
-            case TravelSessionState.Misboarded: return '⚠️';
-            case TravelSessionState.Alighted: return '🏁';
-            case TravelSessionState.Completed: return '✅';
-            case TravelSessionState.Abandoned: return '⏹️';
-        }
-    };
-
     readonly actionLabel = (): string | undefined => {
         switch (this.state()) {
             case TravelSessionState.Planned: return 'เริ่มเดินไปป้าย';

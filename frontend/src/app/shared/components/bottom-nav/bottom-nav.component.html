@@ -1,37 +1,78 @@
 @if (activeTab$ | async; as activeTab) {
   <nav
-    class="fixed inset-x-0 bottom-0 z-40 flex border-t border-ink-200 bg-white"
+    class="fixed inset-x-0 bottom-0 z-40 flex border-t border-ink-200 bg-white py-1.5 dark:border-night-500 dark:bg-night-700"
     >
     <a
       routerLink="/trip-planning"
       data-testid="nav-tab-trip-planning"
-      class="flex flex-1 cursor-pointer flex-col items-center gap-1 py-2 text-xs font-medium hover:bg-ink-50 focus:outline-none focus:ring-2 focus:ring-accent-400 active:bg-ink-100"
+      class="flex min-h-14 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 text-xs focus:outline-none focus:ring-2 focus:ring-ink-900 dark:focus:ring-night-50"
+      [class.font-bold]="activeTab === 'trip-planning'"
+      [class.font-medium]="activeTab !== 'trip-planning'"
       [class.text-accent-600]="activeTab === 'trip-planning'"
-      [class.text-ink-500]="activeTab !== 'trip-planning'"
+      [class.dark:text-accent-300]="activeTab === 'trip-planning'"
+      [class.text-ink-400]="activeTab !== 'trip-planning'"
+      [class.dark:text-night-100]="activeTab !== 'trip-planning'"
       >
-      <span aria-hidden="true">🔍</span>
-      <span>ค้นหาเส้นทาง</span>
+      <span
+        class="flex h-[26px] w-10 items-center justify-center rounded-lg"
+        [class.bg-accent-50]="activeTab === 'trip-planning'"
+        [class.dark:bg-accent-900]="activeTab === 'trip-planning'"
+        >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+      </span>
+      ค้นหาเส้นทาง
     </a>
     <a
       routerLink="/bus-stop"
       data-testid="nav-tab-bus-stop"
-      class="flex flex-1 cursor-pointer flex-col items-center gap-1 py-2 text-xs font-medium hover:bg-ink-50 focus:outline-none focus:ring-2 focus:ring-accent-400 active:bg-ink-100"
+      class="flex min-h-14 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 text-xs focus:outline-none focus:ring-2 focus:ring-ink-900 dark:focus:ring-night-50"
+      [class.font-bold]="activeTab === 'bus-stop'"
+      [class.font-medium]="activeTab !== 'bus-stop'"
       [class.text-accent-600]="activeTab === 'bus-stop'"
-      [class.text-ink-500]="activeTab !== 'bus-stop'"
+      [class.dark:text-accent-300]="activeTab === 'bus-stop'"
+      [class.text-ink-400]="activeTab !== 'bus-stop'"
+      [class.dark:text-night-100]="activeTab !== 'bus-stop'"
       >
-      <span aria-hidden="true">🚏</span>
-      <span>ป้ายรถ</span>
+      <span
+        class="flex h-[26px] w-10 items-center justify-center rounded-lg"
+        [class.bg-accent-50]="activeTab === 'bus-stop'"
+        [class.dark:bg-accent-900]="activeTab === 'bus-stop'"
+        >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M12 21s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" />
+          <circle cx="12" cy="9" r="2.5" />
+        </svg>
+      </span>
+      ป้ายรถ
     </a>
     <button
       type="button"
       data-testid="nav-tab-travel-session"
-      class="flex flex-1 cursor-pointer flex-col items-center gap-1 py-2 text-xs font-medium hover:bg-ink-50 focus:outline-none focus:ring-2 focus:ring-accent-400 active:bg-ink-100"
+      class="flex min-h-14 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 text-xs focus:outline-none focus:ring-2 focus:ring-ink-900 dark:focus:ring-night-50"
+      [class.font-bold]="activeTab === 'travel-session'"
+      [class.font-medium]="activeTab !== 'travel-session'"
       [class.text-accent-600]="activeTab === 'travel-session'"
-      [class.text-ink-500]="activeTab !== 'travel-session'"
+      [class.dark:text-accent-300]="activeTab === 'travel-session'"
+      [class.text-ink-400]="activeTab !== 'travel-session'"
+      [class.dark:text-night-100]="activeTab !== 'travel-session'"
       (click)="onTravelSessionTabClick()"
       >
-      <span aria-hidden="true">🚌</span>
-      <span>การเดินทางของฉัน</span>
+      <span
+        class="flex h-[26px] w-10 items-center justify-center rounded-lg"
+        [class.bg-accent-50]="activeTab === 'travel-session'"
+        [class.dark:bg-accent-900]="activeTab === 'travel-session'"
+        >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="4" y="5" width="16" height="12" rx="2" />
+          <path d="M4 12h16" />
+          <circle cx="8" cy="19.5" r="1.5" fill="currentColor" stroke="none" />
+          <circle cx="16" cy="19.5" r="1.5" fill="currentColor" stroke="none" />
+        </svg>
+      </span>
+      การเดินทางของฉัน
     </button>
   </nav>
 }

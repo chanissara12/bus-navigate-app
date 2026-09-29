@@ -33,16 +33,6 @@ export class BusStopHomeComponent {
     readonly latestError = signal<string | undefined>(undefined);
     readonly errorSettled = signal(false);
 
-    readonly landmarkIcon = (landmarkType: number): string => {
-        switch (landmarkType) {
-            case 0: return '🚶';
-            case 1: return '🌉';
-            case 2: return '🏬';
-            case 4: return '🚉';
-            default: return '📍';
-        }
-    };
-
     readonly landmarkLabel = (landmarkType: number): string => {
         switch (landmarkType) {
             case 0: return 'ทางข้าม';

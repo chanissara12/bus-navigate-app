@@ -1,20 +1,21 @@
-<div class="max-w-xl mx-auto px-4 py-6 pb-24">
-  <div class="flex items-center gap-2 mb-3">
-    <h2 class="text-sm font-semibold text-ink-500">
-      ป้ายรถใกล้เคียง@if (stops(); as nearbyStops) {
-      ({{ nearbyStops.length }})
-    }
-  </h2>
-</div>
+<div class="max-w-xl mx-auto px-4 py-6 pb-24 dark:bg-night-900 dark:min-h-screen">
+  <div class="flex items-center gap-2 mb-1">
+    <div class="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-night-200">ตำแหน่งปัจจุบัน</div>
+  </div>
+  <h2 class="mb-4 text-lg font-bold text-ink-900 dark:text-night-50">
+    ป้ายรถใกล้เคียง@if (stops(); as nearbyStops) {
+    ({{ nearbyStops.length }})
+  }
+</h2>
 
 @if (locationError(); as locErr) {
   <div
-    class="mb-4 flex items-center justify-between gap-2 rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700"
+    class="mb-4 flex items-center justify-between gap-2 rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700 dark:bg-danger-900 dark:text-danger-300"
     >
     <span>ไม่สามารถระบุตำแหน่งได้: {{ locErr }}</span>
     <button
       type="button"
-      class="cursor-pointer font-medium text-danger-800 underline focus:outline-none focus:ring-2 focus:ring-danger-400"
+      class="cursor-pointer font-medium text-danger-800 underline focus:outline-none focus:ring-2 focus:ring-danger-400 dark:text-danger-200"
       (click)="retryLocation()"
       >
       ลองใหม่
@@ -23,17 +24,17 @@
 }
 
 @if (stopsLoading()) {
-  <div class="flex flex-col gap-3">
+  <div class="flex flex-col gap-2.5">
     @for (_ of [1, 2, 3]; track _) {
       <div
-        class="rounded-2xl border border-ink-200 bg-white p-4 shadow-sm animate-pulse motion-reduce:animate-none"
+        class="rounded-xl border border-ink-200 bg-white p-3.5 shadow-sm animate-pulse motion-reduce:animate-none dark:border-none dark:bg-night-700"
         >
-        <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 shrink-0 rounded-xl bg-ink-200 dark:bg-night-500"></div>
           <div class="flex-1">
-            <div class="h-4 w-40 rounded bg-ink-200"></div>
-            <div class="h-3 w-28 rounded bg-ink-200 mt-2"></div>
+            <div class="h-4 w-40 rounded bg-ink-200 dark:bg-night-500"></div>
+            <div class="h-3 w-28 rounded bg-ink-200 mt-2 dark:bg-night-500"></div>
           </div>
-          <div class="h-4 w-4 rounded bg-ink-200"></div>
         </div>
       </div>
     }
@@ -42,7 +43,7 @@
 
 @if (!stopsLoading() && stops() && stops()?.length === 0) {
   <div
-    class="rounded-2xl border border-ink-200 bg-white p-6 text-center text-sm text-ink-500"
+    class="rounded-xl border border-ink-200 bg-white p-6 text-center text-sm text-ink-500 dark:border-none dark:bg-night-700 dark:text-night-200"
     >
     ไม่พบป้ายรถในบริเวณใกล้เคียง
   </div>
@@ -50,18 +51,18 @@
 
 @if (latestError(); as err) {
   <div
-    class="mb-4 flex items-start gap-3 rounded-xl border-2 border-danger-400 bg-danger-50 px-4 py-3 shadow-md transition-all motion-reduce:transition-none duration-300 ease-out"
+    class="mb-4 flex items-start gap-3 rounded-xl border-2 border-danger-400 bg-danger-50 px-4 py-3 shadow-md transition-all motion-reduce:transition-none duration-300 ease-out dark:border-danger-800 dark:bg-danger-900"
     [class.opacity-0]="!errorSettled()"
     [class.-translate-y-2]="!errorSettled()"
     >
     <span class="text-2xl leading-none">⚠</span>
     <div class="flex-1">
-      <div class="text-sm font-bold text-danger-800">เกิดข้อผิดพลาด</div>
-      <div class="text-sm text-danger-700">{{ err }}</div>
+      <div class="text-sm font-bold text-danger-800 dark:text-danger-200">เกิดข้อผิดพลาด</div>
+      <div class="text-sm text-danger-700 dark:text-danger-300">{{ err }}</div>
     </div>
     <button
       type="button"
-      class="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-xl font-bold text-danger-600 hover:bg-danger-100 focus:outline-none focus:ring-2 focus:ring-danger-400 active:bg-danger-200"
+      class="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-xl font-bold text-danger-600 hover:bg-danger-100 focus:outline-none focus:ring-2 focus:ring-danger-400 active:bg-danger-200 dark:text-danger-300 dark:hover:bg-danger-800"
       (click)="dismissError()"
       aria-label="ปิดข้อความแจ้งเตือน"
       >
@@ -71,40 +72,46 @@
 }
 
 @if (!stopsLoading() && stops(); as nearbyStops) {
-  <div class="flex flex-col gap-3">
+  <div class="flex flex-col gap-2.5">
     @for (stop of nearbyStops; track stop) {
       <article
-        class="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-sm"
+        class="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-sm dark:border-none dark:bg-night-700"
         >
         <button
           type="button"
-          class="w-full flex items-center justify-between gap-3 p-4 text-left cursor-pointer hover:bg-ink-50 focus:outline-none focus:ring-2 focus:ring-accent-400 active:bg-ink-100"
+          class="w-full flex items-center gap-3 p-3.5 text-left cursor-pointer hover:bg-ink-50 focus:outline-none focus:ring-2 focus:ring-ink-900 active:bg-ink-100 dark:hover:bg-night-600 dark:focus:ring-night-50"
           (click)="toggle(stop)"
           [attr.aria-expanded]="expandedId() === stop.id"
           >
-          <span>
-            <span class="block text-sm font-semibold text-ink-900">{{ stop.nameTh }}</span>
-            <span class="block text-xs text-ink-500">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-50 dark:bg-accent-900" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-accent-600 dark:text-accent-300">
+              <path d="M12 21s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" />
+              <circle cx="12" cy="9" r="2.5" />
+            </svg>
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-semibold text-ink-900 dark:text-night-50">{{ stop.nameTh }}</span>
+            <span class="block font-mono text-xs tabular-nums text-ink-500 dark:text-night-200">
               {{ stop.nameEn }} · {{ stop.distanceMeters | number:'1.0-0' }} ม.
               @if (stop.stopCode) {
                 · {{ stop.stopCode }}
               }
             </span>
           </span>
-          <span class="text-ink-400 text-sm" aria-hidden="true">
+          <span class="shrink-0 text-ink-400 text-sm dark:text-night-100" aria-hidden="true">
             {{ expandedId() === stop.id ? '▲' : '▼' }}
           </span>
         </button>
         @if (expandedId() === stop.id) {
-          <div class="border-t border-ink-100 bg-ink-50 px-4 py-3">
+          <div class="border-t border-ink-100 bg-ink-50 px-4 py-3 dark:border-night-500 dark:bg-night-800">
             @if (expandedLoading()) {
               <div class="flex flex-col gap-2 animate-pulse motion-reduce:animate-none">
                 @for (_ of [1, 2]; track _) {
                   <div class="flex items-start gap-2 py-1.5">
-                    <div class="h-4 w-4 rounded bg-ink-200"></div>
+                    <div class="h-4 w-4 rounded bg-ink-200 dark:bg-night-500"></div>
                     <div class="flex-1">
-                      <div class="h-3 w-44 rounded bg-ink-200"></div>
-                      <div class="h-2 w-28 rounded bg-ink-200 mt-2"></div>
+                      <div class="h-3 w-44 rounded bg-ink-200 dark:bg-night-500"></div>
+                      <div class="h-2 w-28 rounded bg-ink-200 mt-2 dark:bg-night-500"></div>
                     </div>
                   </div>
                 }
@@ -112,7 +119,7 @@
             }
             @if (!expandedLoading() && expandedContext(); as context) {
               @if (context.landmarks.length === 0) {
-                <div class="text-xs text-ink-500">
+                <div class="text-xs text-ink-500 dark:text-night-200">
                   ไม่มีข้อมูลจุดสังเกต
                 </div>
               }
@@ -120,14 +127,32 @@
                 <div
                   class="flex items-start gap-2 py-1.5 text-sm"
                   >
-                  <span aria-hidden="true">{{ landmarkIcon(landmark.landmarkType) }}</span>
+                  <span class="mt-0.5 shrink-0 text-ink-500 dark:text-night-200" aria-hidden="true">
+                    @switch (landmark.landmarkType) {
+                      @case (0) {
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v16M10 4v16M14 4v16M18 4v16" /></svg>
+                      }
+                      @case (1) {
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M4 6h16M4 18h16" /></svg>
+                      }
+                      @case (2) {
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>
+                      }
+                      @case (4) {
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="12" rx="2" /><path d="M4 12h16" /><circle cx="8" cy="19.5" r="1.5" fill="currentColor" stroke="none" /><circle cx="16" cy="19.5" r="1.5" fill="currentColor" stroke="none" /></svg>
+                      }
+                      @default {
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" /></svg>
+                      }
+                    }
+                  </span>
                   <span class="flex-1">
-                    <span class="block text-ink-900">{{ landmark.nameTh }}</span>
-                    <span class="block text-xs text-ink-500">
+                    <span class="block text-ink-900 dark:text-night-50">{{ landmark.nameTh }}</span>
+                    <span class="block font-mono text-xs tabular-nums text-ink-500 dark:text-night-200">
                       {{ landmarkLabel(landmark.landmarkType) }} · {{ landmark.distanceMeters }} ม.
                     </span>
                     @if (landmark.description) {
-                      <span class="block text-xs text-ink-500 mt-0.5">
+                      <span class="block text-xs text-ink-500 mt-0.5 dark:text-night-200">
                         {{ landmark.description }}
                       </span>
                     }

@@ -43,10 +43,14 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
 
     readonly loading = signal(true);
     readonly error = signal<string | undefined>(undefined);
-    readonly routePointCount = signal(0);
     readonly routeDistanceKm = signal(0);
     readonly gpsAccuracyMeters = signal<number | undefined>(undefined);
     readonly gpsStatus = signal('กำลังค้นหาตำแหน่ง…');
+    readonly legendExpanded = signal(false);
+
+    toggleLegend(): void {
+        this.legendExpanded.update((expanded) => !expanded);
+    }
 
     private readonly routeShapesService = inject(RouteShapesService);
     private readonly busStopsService = inject(BusStopsService);
@@ -192,8 +196,8 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
         if (!this.positionMarker) {
             this.positionMarker = L.circleMarker(latLng, {
                 radius: 8,
-                color: '#713f12',
-                fillColor: '#fde047',
+                color: '#8F6420',
+                fillColor: '#D9A441',
                 weight: 3,
                 fillOpacity: 1
             }).addTo(this.map);
@@ -205,9 +209,9 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
             if (!this.positionAccuracyCircle) {
                 this.positionAccuracyCircle = L.circle(latLng, {
                     radius: accuracy,
-                    color: '#ca8a04',
+                    color: '#B8842A',
                     weight: 1,
-                    fillColor: '#fde047',
+                    fillColor: '#D9A441',
                     fillOpacity: 0.12
                 }).addTo(this.map);
             } else {
@@ -304,13 +308,11 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
             .map((point) => [point.latitude, point.longitude] as L.LatLngTuple);
 
         if (routePoints.length === 0) {
-            this.routePointCount.set(0);
             this.routeDistanceKm.set(0);
             this.error.set('ยังไม่มีข้อมูลเส้นทางสำหรับสายนี้');
             return;
         }
 
-        this.routePointCount.set(routePoints.length);
         this.routeDistanceKm.set(this.calculateDistanceKm(routePoints));
 
         // แสดงเฉพาะรถสายที่ผู้ใช้ต้องนั่ง: สีเทาคือทั้งสาย
@@ -343,7 +345,7 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
                 this.routeDistanceKm.set(this.calculateDistanceKm(ridePoints));
 
                 const rideLine = L.polyline(ridePoints, {
-                    color: '#1d4ed8',
+                    color: '#178F79',
                     weight: 7,
                     opacity: 0.95,
                     lineCap: 'round',
@@ -397,8 +399,8 @@ export class RouteMapCardComponent implements AfterViewInit, OnChanges, OnDestro
         const isBoarding = label === 'จุดขึ้นรถ';
         const marker = L.circleMarker([stop.latitude, stop.longitude], {
             radius: 8,
-            color: isBoarding ? '#15803d' : '#c2410c',
-            fillColor: isBoarding ? '#4ade80' : '#fb923c',
+            color: isBoarding ? '#2E3D8F' : '#116054',
+            fillColor: isBoarding ? '#5566D6' : '#4FB3A9',
             weight: 3,
             fillOpacity: 0.95
         }).addTo(this.map);

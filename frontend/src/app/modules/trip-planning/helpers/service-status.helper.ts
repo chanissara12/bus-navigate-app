@@ -23,22 +23,25 @@ export function serviceStatusLabel(status: ServiceStatusResult): string {
     }
 }
 
+// Note: "normal" is deliberately neutral (ink), not `success` — `success` is reserved
+// exclusively for the "recommended route" signal (see the direction contract), so every
+// unremarkable "ปกติ" pill can't dilute that one rare, attention-getting color.
 export function serviceStatusClasses(status: ServiceStatusResult): string {
     if (status.notOperatingToday) {
-        return 'bg-ink-200 text-ink-600';
+        return 'bg-ink-200 text-ink-600 dark:bg-night-500 dark:text-night-100';
     }
     if (!status.transitAlert) {
-        return 'bg-success-100 text-success-800';
+        return 'bg-ink-100 text-ink-600 dark:bg-night-500 dark:text-night-100';
     }
 
     switch (status.transitAlert.status) {
         case TransitAlertStatus.Delayed:
-            return 'bg-warning-100 text-warning-800';
+            return 'bg-warning-100 text-warning-800 dark:bg-warning-900 dark:text-warning-200';
         case TransitAlertStatus.TemporarilySuspended:
-            return 'bg-orange-100 text-orange-800';
+            return 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200';
         case TransitAlertStatus.RouteChanged:
-            return 'bg-accent-100 text-accent-800';
+            return 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200';
         case TransitAlertStatus.Cancelled:
-            return 'bg-danger-100 text-danger-800';
+            return 'bg-danger-100 text-danger-800 dark:bg-danger-900 dark:text-danger-200';
     }
 }
