@@ -300,6 +300,27 @@ public class PreferenceRankingServiceTests
     }
 
     [Fact]
+    public async Task RankAsync_MultipleTogglesOn_TiedCriterionDoesNotDistortTheOthers()
+    {
+        // Arrange — every candidate ties on transfers (Phase 1 trip-planning), so
+        // MinimizeTransfers has nothing to act on and must not disturb the walking order.
+        var (_, service) = CreateSubject();
+        var candidates = new List<TestCandidate>
+        {
+            new("Far", 500, 0, null, null, []),
+            new("Near", 100, 0, null, null, []),
+            new("Mid", 300, 0, null, null, []),
+        };
+
+        // Act
+        var result = await RankAsync(
+            service, candidates, Preference(minimizeWalking: true, minimizeTransfers: true));
+
+        // Assert
+        Assert.Equal(["Near", "Mid", "Far"], result.Select(c => c.Name));
+    }
+
+    [Fact]
     public async Task RankAsync_NeverRemovesACandidate()
     {
         // Arrange

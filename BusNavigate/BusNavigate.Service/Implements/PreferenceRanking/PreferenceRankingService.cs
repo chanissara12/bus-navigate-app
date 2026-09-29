@@ -106,18 +106,17 @@ public class PreferenceRankingService : IPreferenceRankingService
             .Select(x => x.Candidate)];
     }
 
-    // Ordinal rank per value (0 = best/lowest) via a stable sort on original index —
-    // ties keep their original relative order, which is also what guarantees "no
-    // preference set -> exact same order" for the untouched criteria.
+    // Dense rank per value (0 = best/lowest); equal values share a rank. Tied values must
+    // not get distinct ranks, or a criterion nobody can discriminate on (e.g. every
+    // candidate at 0 transfers) would add original-order noise to the combined score and
+    // drown out the criteria that do discriminate. Ties then keep their original relative
+    // order via the final ThenBy(Index), which is also what guarantees "no preference set
+    // -> exact same order".
     private static int[] RankAscending(IReadOnlyList<double> values)
     {
-        var ranks = new int[values.Count];
-        var order = Enumerable.Range(0, values.Count).OrderBy(i => values[i]).ToList();
-        for (var rank = 0; rank < order.Count; rank++)
-        {
-            ranks[order[rank]] = rank;
-        }
-        return ranks;
+        var rankByValue = values.Distinct().Order().Select((value, rank) => (value, rank))
+            .ToDictionary(x => x.value, x => x.rank);
+        return [.. values.Select(v => rankByValue[v])];
     }
 
     private async Task<Dictionary<int, int>> BuildCrossingTierLookupAsync<T>(
