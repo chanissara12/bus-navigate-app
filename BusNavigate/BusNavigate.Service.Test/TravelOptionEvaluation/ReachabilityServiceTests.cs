@@ -88,4 +88,56 @@ public class ReachabilityServiceTests
         // Assert
         Assert.Null(result);
     }
+
+    [Fact]
+    public async Task FindNearestRouteStopAsync_StopSharedByTwoDirections_UsesEachDirectionsOwnShapeToDistinguishThem()
+    {
+        // Arrange — reproduces a real BRT station: one BusStop coordinate shared by two
+        // opposite directions, each running along a different side of the road. The
+        // target sits right next to direction A's shape but far from direction B's.
+        var (dbContext, service) = CreateSubject();
+        const decimal sharedStopLat = 13.6903m;
+        const decimal sharedStopLon = 100.5042m;
+        const decimal targetLat = 13.6903m;
+        const decimal targetLon = 100.5052m;
+
+        var directionAId = await SeedDirectionWithStopsAsync(dbContext, (sharedStopLat, sharedStopLon));
+        dbContext.RouteShapePoints.Add(
+            new RouteShapePoint { DirectionId = directionAId, Sequence = 1, Latitude = sharedStopLat, Longitude = 100.5052m });
+
+        var directionBId = await SeedDirectionWithStopsAsync(dbContext, (sharedStopLat, sharedStopLon));
+        dbContext.RouteShapePoints.Add(
+            new RouteShapePoint { DirectionId = directionBId, Sequence = 1, Latitude = sharedStopLat, Longitude = 100.4942m });
+
+        await dbContext.SaveChangesAsync();
+
+        // Act
+        var resultA = await service.FindNearestRouteStopAsync(directionAId, targetLat, targetLon);
+        var resultB = await service.FindNearestRouteStopAsync(directionBId, targetLat, targetLon);
+
+        // Assert — direction A's platform (snapped near the target) reports much closer
+        // than direction B's (snapped on the far side), even though both directions
+        // share the exact same raw BusStop coordinate.
+        Assert.NotNull(resultA);
+        Assert.NotNull(resultB);
+        Assert.True(resultA!.DistanceMeters < 50);
+        Assert.True(resultB!.DistanceMeters > 1000);
+    }
+
+    [Fact]
+    public async Task FindNearestRouteStopAsync_DirectionWithNoShapePoints_FallsBackToTheStopsOwnCoordinate()
+    {
+        // Arrange
+        var (dbContext, service) = CreateSubject();
+        const decimal targetLat = 13.75m;
+        const decimal targetLon = 100.53m;
+        var directionId = await SeedDirectionWithStopsAsync(dbContext, (targetLat + 0.0005m, targetLon));
+
+        // Act
+        var result = await service.FindNearestRouteStopAsync(directionId, targetLat, targetLon);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result!.DistanceMeters < 100);
+    }
 }
