@@ -77,13 +77,81 @@ export function findPlausibleCrossing(
         .filter((landmark) => landmark.projection >= -0.15
             && landmark.projection <= 1.15
             && landmark.detourRatio <= 1.35)
-        // Prefer the candidate furthest off the direct line, not the one with the
-        // smallest detour: a crossing right next to the stop passes the detour-ratio
-        // check easily but the resulting dashed connector barely bends, so the user
-        // can't visually tell the walking path is avoiding the road.
-        .sort((first, second) => second.perpendicularDistanceKm - first.perpendicularDistanceKm);
+        // A Skywalk (grade-separated, safer) always beats a Crossing (at-grade) when
+        // both are plausible — this connector exists to steer toward the safer
+        // option, not just the more visually obvious bend. OSM often splits one real
+        // structure into several disconnected way fragments (the road-spanning deck
+        // plus short stair/ramp stubs at each end) — all tagged Skywalk, all
+        // technically "plausible" — so within the same type, the longest geometry
+        // (the actual spanning deck, not a short stub) wins next. Only after that does
+        // "furthest off the direct line" decide: a crossing right next to the stop
+        // passes the detour-ratio check easily but the resulting dashed connector
+        // barely bends, so the user can't visually tell the walking path is avoiding
+        // the road.
+        .sort((first, second) => {
+            const typeRank = (landmark: typeof first) => landmark.landmarkType === 1 ? 0 : 1;
+            const typeDelta = typeRank(first) - typeRank(second);
+            if (typeDelta !== 0) {
+                return typeDelta;
+            }
+
+            const lengthDelta = geometryPathLengthKm(second.geometry) - geometryPathLengthKm(first.geometry);
+            return lengthDelta !== 0 ? lengthDelta : second.perpendicularDistanceKm - first.perpendicularDistanceKm;
+        });
 
     return candidates[0];
+}
+
+// Raw (unrounded) total length — calculateDistanceKm rounds to 0.1km, far too coarse
+// to tell apart a short stair stub (~0.01km) from a road-spanning deck (~0.04km).
+function geometryPathLengthKm(geometry?: { latitude: number; longitude: number }[]): number {
+    if (!geometry || geometry.length < 2) {
+        return 0;
+    }
+
+    let totalKm = 0;
+    for (let index = 1; index < geometry.length; index++) {
+        totalKm += distanceBetweenKm(
+            [geometry[index - 1].latitude, geometry[index - 1].longitude],
+            [geometry[index].latitude, geometry[index].longitude]
+        );
+    }
+
+    return totalKm;
+}
+
+// Orients a plausible-crossing landmark's real OSM way geometry (arbitrary node
+// order) so it runs from the `start` side toward the `end` side. Falls back to the
+// landmark's own point for a point landmark (Crossing) or one with no geometry.
+export function orientCrossingPath(
+    crossing: { latitude: number; longitude: number; geometry?: { latitude: number; longitude: number }[] },
+    start: LatLngTuple
+): LatLngTuple[] {
+    if (!crossing.geometry || crossing.geometry.length < 2) {
+        return [[crossing.latitude, crossing.longitude]];
+    }
+
+    const points: LatLngTuple[] = crossing.geometry.map((point) => [point.latitude, point.longitude]);
+    const first = points[0];
+    const last = points[points.length - 1];
+
+    return distanceBetweenKm(start, first) <= distanceBetweenKm(start, last) ? points : points.reverse();
+}
+
+const MALL_ENTRANCE_SNAP_METERS = 15;
+
+// A skywalk crossing often lands right at a building's mapped entrance (LandmarkType
+// MallEntrance) — e.g. a skywalk deck ending at a mall's upper-floor door. When it
+// does, that entrance IS the real arrival point: the walk should stop there rather
+// than continue on a straight line toward the destination's raw coordinate (which may
+// sit further inside the building, unreachable by any outdoor path).
+export function snapToNearbyEntrance(
+    point: LatLngTuple, landmarks: BusStopContextResult['landmarks']
+): LatLngTuple | undefined {
+    const entrance = landmarks.find((landmark) => landmark.landmarkType === 2
+        && distanceBetweenKm(point, [landmark.latitude, landmark.longitude]) * 1000 <= MALL_ENTRANCE_SNAP_METERS);
+
+    return entrance ? [entrance.latitude, entrance.longitude] : undefined;
 }
 
 // Distance from `point` to its projection onto the infinite line through start/end,

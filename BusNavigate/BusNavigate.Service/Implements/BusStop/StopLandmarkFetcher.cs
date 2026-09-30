@@ -50,8 +50,9 @@ public class StopLandmarkFetcher : IStopLandmarkFetcher
 
         // One query covering every known BusStop's area (see IStopLandmarkFetcher) —
         // a fixed tag list matching LandmarkType's cases, not exhaustive; extend as
-        // new LandmarkType values are added. Unverified against the real Overpass API
-        // (no network access in this session).
+        // new LandmarkType values are added. "out geom;" (rather than "out center;")
+        // so a way (e.g. a footbridge) carries its real path, not just a center point
+        // — the walking connector can then draw along the actual structure.
         var bbox = $"{minLat},{minLon},{maxLat},{maxLon}";
         var query = $"""
             [out:json][timeout:60];
@@ -62,7 +63,7 @@ public class StopLandmarkFetcher : IStopLandmarkFetcher
               node["railway"="station"]({bbox});
               way["railway"="station"]({bbox});
             );
-            out center;
+            out geom;
             """;
 
         _logger.LogInformation("Querying Overpass API for stop landmarks");

@@ -82,6 +82,30 @@ public class StopLandmarkSyncServiceTests
     }
 
     [Fact]
+    public async Task SyncAsync_WayWithGeometry_SavesItsPathOnTheEntity()
+    {
+        // Arrange — a footbridge way ~50m from the seeded stop, with a 2-point path.
+        var (dbContext, fetcher) = CreateSubject();
+        await SeedStopAsync(dbContext, StopLat, StopLon);
+        var lat1 = StopLat + 0.00045m;
+        var lat2 = StopLat + 0.00046m;
+        fetcher.Setup(f => f.FetchLandmarksAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync($$$"""
+                {"elements":[{"type":"way","id":1,"geometry":[{"lat":{{{lat1}}},"lon":{{{StopLon}}}},{"lat":{{{lat2}}},"lon":{{{StopLon}}}}],"tags":{"highway":"footway","bridge":"yes"}}]}
+                """);
+        var service = CreateService(dbContext, fetcher);
+
+        // Act
+        await service.SyncAsync();
+
+        // Assert
+        var landmark = Assert.Single(dbContext.StopLandmarks);
+        Assert.Equal(2, landmark.Geometry.Count);
+        Assert.Equal(lat1, landmark.Geometry[0].Latitude);
+        Assert.Equal(lat2, landmark.Geometry[1].Latitude);
+    }
+
+    [Fact]
     public async Task SyncAsync_RunTwice_UpsertsWithoutDuplicating()
     {
         // Arrange

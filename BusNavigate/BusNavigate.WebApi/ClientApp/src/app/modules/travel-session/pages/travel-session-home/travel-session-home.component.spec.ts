@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, of } from 'rxjs';
@@ -62,6 +64,8 @@ describe('TravelSessionHomeComponent', () => {
         await TestBed.configureTestingModule({
             imports: [TravelSessionHomeComponent],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { paramMap: new Map([['id', '42']]) } }

@@ -32,4 +32,8 @@ public class StopLandmark
     public string ExternalOsmId { get; set; } = string.Empty;
 
     public DateTime UpdatedAt { get; set; }
+
+    // The landmark's real path (e.g. a footbridge's actual OSM way geometry), ordered
+    // as returned by OSM (arbitrary direction) — empty for a point landmark.
+    public List<LandmarkGeometryPoint> Geometry { get; set; } = [];
 }

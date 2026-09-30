@@ -11,5 +11,6 @@ public record OverpassLandmark(
     LandmarkType LandmarkType,
     string NameTh,
     string NameEn,
-    string? Description
+    string? Description,
+    IReadOnlyList<LandmarkGeometryPoint> Geometry
 );

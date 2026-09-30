@@ -1,5 +1,7 @@
+using System.Text.Json;
 using BusNavigate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace BusNavigate.Domain.Database;
 
@@ -169,6 +171,15 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
                 .WithMany()
                 .HasForeignKey(e => e.BusStopId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.Geometry)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<List<LandmarkGeometryPoint>>(v, (JsonSerializerOptions?)null) ?? new List<LandmarkGeometryPoint>())
+                .Metadata.SetValueComparer(new ValueComparer<List<LandmarkGeometryPoint>>(
+                    (a, b) => (a ?? new List<LandmarkGeometryPoint>()).SequenceEqual(b ?? new List<LandmarkGeometryPoint>()),
+                    v => v.Aggregate(0, (hash, point) => HashCode.Combine(hash, point)),
+                    v => v.ToList()));
         });
 
         modelBuilder.Entity<RouteShapePoint>(entity =>

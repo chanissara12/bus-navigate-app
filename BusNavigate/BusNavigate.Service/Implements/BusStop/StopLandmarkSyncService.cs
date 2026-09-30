@@ -70,6 +70,7 @@ public class StopLandmarkSyncService : IStopLandmarkSyncService
             entity.DistanceMeters = (int)Math.Round(nearest.DistanceMeters);
             entity.Latitude = landmark.Latitude;
             entity.Longitude = landmark.Longitude;
+            entity.Geometry = landmark.Geometry.ToList();
             entity.UpdatedAt = now;
 
             associatedCount++;

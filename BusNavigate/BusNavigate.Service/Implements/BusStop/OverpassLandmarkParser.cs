@@ -18,7 +18,9 @@ public static class OverpassLandmarkParser
 
         foreach (var element in elements.EnumerateArray())
         {
-            if (!TryGetCoordinates(element, out var lat, out var lon))
+            var geometry = ReadGeometry(element);
+
+            if (!TryGetCoordinates(element, geometry, out var lat, out var lon))
             {
                 continue;
             }
@@ -36,20 +38,30 @@ public static class OverpassLandmarkParser
             var nameTh = tags.GetValueOrDefault("name:th") ?? tags.GetValueOrDefault("name") ?? string.Empty;
             var nameEn = tags.GetValueOrDefault("name:en") ?? tags.GetValueOrDefault("name") ?? string.Empty;
 
-            result.Add(new OverpassLandmark(externalOsmId, lat, lon, landmarkType, nameTh, nameEn, description));
+            result.Add(new OverpassLandmark(externalOsmId, lat, lon, landmarkType, nameTh, nameEn, description, geometry));
         }
 
         return result;
     }
 
-    // Nodes carry lat/lon directly; ways/relations only carry a "center" point
-    // (requires the Overpass query to include "out center;").
-    private static bool TryGetCoordinates(JsonElement element, out decimal latitude, out decimal longitude)
+    // Nodes carry lat/lon directly. A way/relation carries either its full path
+    // (requires the Overpass query's "out geom;" — used here to average into a
+    // center point) or, failing that, a Overpass-computed "center" point ("out
+    // center;").
+    private static bool TryGetCoordinates(
+        JsonElement element, IReadOnlyList<LandmarkGeometryPoint> geometry, out decimal latitude, out decimal longitude)
     {
         if (element.TryGetProperty("lat", out var latProperty) && element.TryGetProperty("lon", out var lonProperty))
         {
             latitude = latProperty.GetDecimal();
             longitude = lonProperty.GetDecimal();
+            return true;
+        }
+
+        if (geometry.Count > 0)
+        {
+            latitude = geometry.Average(point => point.Latitude);
+            longitude = geometry.Average(point => point.Longitude);
             return true;
         }
 
@@ -65,6 +77,21 @@ public static class OverpassLandmarkParser
         latitude = 0;
         longitude = 0;
         return false;
+    }
+
+    // A way's full path, present only when the Overpass query used "out geom;" —
+    // absent for a bare node (a point landmark has no path).
+    private static IReadOnlyList<LandmarkGeometryPoint> ReadGeometry(JsonElement element)
+    {
+        if (!element.TryGetProperty("geometry", out var geometryProperty))
+        {
+            return [];
+        }
+
+        return geometryProperty
+            .EnumerateArray()
+            .Select(point => new LandmarkGeometryPoint(point.GetProperty("lat").GetDecimal(), point.GetProperty("lon").GetDecimal()))
+            .ToList();
     }
 
     private static Dictionary<string, string> ReadTags(JsonElement element)

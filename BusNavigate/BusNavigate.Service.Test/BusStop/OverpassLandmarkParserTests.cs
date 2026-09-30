@@ -60,6 +60,43 @@ public class OverpassLandmarkParserTests
     }
 
     [Fact]
+    public void Parse_WayWithGeometry_PopulatesGeometryAndUsesItsAverageAsLatLon()
+    {
+        // Arrange — "out geom;" gives a way's full path instead of a single "center".
+        const string json = """
+            {"elements":[{"type":"way","id":321,"geometry":[{"lat":13.760,"lon":100.540},{"lat":13.762,"lon":100.542}],"tags":{"highway":"footway","bridge":"yes"}}]}
+            """;
+
+        // Act
+        var result = OverpassLandmarkParser.Parse(json);
+
+        // Assert
+        var landmark = Assert.Single(result);
+        Assert.Equal(LandmarkType.Skywalk, landmark.LandmarkType);
+        Assert.Equal(13.761m, landmark.Latitude);
+        Assert.Equal(100.541m, landmark.Longitude);
+        Assert.Equal(2, landmark.Geometry.Count);
+        Assert.Equal(new LandmarkGeometryPoint(13.760m, 100.540m), landmark.Geometry[0]);
+        Assert.Equal(new LandmarkGeometryPoint(13.762m, 100.542m), landmark.Geometry[1]);
+    }
+
+    [Fact]
+    public void Parse_NodeWithCrossingTag_HasNoGeometry()
+    {
+        // Arrange — a point landmark (bare OSM node) has no path to walk along.
+        const string json = """
+            {"elements":[{"type":"node","id":123,"lat":13.75,"lon":100.50,"tags":{"highway":"crossing"}}]}
+            """;
+
+        // Act
+        var result = OverpassLandmarkParser.Parse(json);
+
+        // Assert
+        var landmark = Assert.Single(result);
+        Assert.Empty(landmark.Geometry);
+    }
+
+    [Fact]
     public void Parse_UnmatchedTags_FallsBackToLandmarkWithDescription()
     {
         // Arrange — a tag combination that doesn't map to any specific LandmarkType.

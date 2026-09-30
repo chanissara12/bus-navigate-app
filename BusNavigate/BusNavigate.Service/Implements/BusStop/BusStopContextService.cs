@@ -26,7 +26,7 @@ public class BusStopContextService : IBusStopContextService
         var landmarks = await _dbContext.StopLandmarks
             .Where(l => l.BusStopId == busStopId)
             .OrderBy(l => l.DistanceMeters)
-            .Select(l => new StopLandmarkInfo(l.LandmarkType, l.NameTh, l.NameEn, l.Description, l.DistanceMeters, l.Latitude, l.Longitude))
+            .Select(l => new StopLandmarkInfo(l.LandmarkType, l.NameTh, l.NameEn, l.Description, l.DistanceMeters, l.Latitude, l.Longitude, l.Geometry))
             .ToListAsync(cancellationToken);
 
         return new BusStopContextResult(

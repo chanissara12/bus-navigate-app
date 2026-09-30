@@ -18,6 +18,11 @@ export interface BusStopContextResult {
     landmarks: StopLandmark[];
 }
 
+export interface StopLandmarkGeometryPoint {
+    latitude: number;
+    longitude: number;
+}
+
 export interface StopLandmark {
     landmarkType: number;
     nameTh: string;
@@ -26,4 +31,7 @@ export interface StopLandmark {
     distanceMeters: number;
     latitude: number;
     longitude: number;
+    // The landmark's real path (e.g. a footbridge's OSM way geometry) — empty for a
+    // point landmark (Crossing, MallEntrance).
+    geometry: StopLandmarkGeometryPoint[];
 }

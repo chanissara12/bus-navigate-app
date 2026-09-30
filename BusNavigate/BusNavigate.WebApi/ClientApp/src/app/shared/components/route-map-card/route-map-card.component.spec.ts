@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { RouteMapCardComponent } from './route-map-card.component';
@@ -9,7 +11,10 @@ describe('RouteMapCardComponent calculation logic', () => {
     let component: PrivateApi;
 
     beforeEach(() => {
-        TestBed.configureTestingModule({ imports: [RouteMapCardComponent] });
+        TestBed.configureTestingModule({
+            imports: [RouteMapCardComponent],
+            providers: [provideHttpClient(), provideHttpClientTesting()]
+        });
         // Never call fixture.detectChanges() here: ngAfterViewInit() would create a
         // real Leaflet map against the #mapHost div, which this suite doesn't need
         // since it only exercises the component's pure geometry/calculation methods.
