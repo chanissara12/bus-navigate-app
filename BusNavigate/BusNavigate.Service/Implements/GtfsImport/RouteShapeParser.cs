@@ -65,7 +65,13 @@ internal static class RouteShapeParser
         return pointsByShape;
     }
 
-    public static Dictionary<string, string?> GetMostCommonShapeIdByDirection(IReadOnlyList<GtfsTrip> trips)
+    // Every distinct shape_id a direction's trips use, most-common trip pattern first.
+    // A direction with a "short-turn"/detour trip variant can have RouteStops (built
+    // from ALL trips' stop_times, a superset) that the majority shape's geometry never
+    // passes near — the caller picks among these candidates using real stop coverage,
+    // falling back to this order (most common first) when there's no stop data to
+    // disambiguate with.
+    public static Dictionary<string, List<string>> GetShapeIdCandidatesByDirection(IReadOnlyList<GtfsTrip> trips)
     {
         return trips
             .GroupBy(trip => (trip.RouteId, trip.DirectionId))
@@ -76,7 +82,7 @@ internal static class RouteShapeParser
                     .GroupBy(trip => trip.ShapeId!, StringComparer.Ordinal)
                     .OrderByDescending(shape => shape.Count())
                     .Select(shape => shape.Key)
-                    .FirstOrDefault(),
+                    .ToList(),
                 StringComparer.Ordinal);
     }
 
