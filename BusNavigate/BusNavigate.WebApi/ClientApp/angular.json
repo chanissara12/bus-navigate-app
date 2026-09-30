@@ -69,7 +69,7 @@
                     "builder": "@angular-devkit/build-angular:dev-server",
                     "options": {
                         "allowedHosts": [
-                            "women-jesus-rapids-alloy.trycloudflare.com"
+                            "alan-seek-democracy-colleagues.trycloudflare.com"
                         ]
                     },
                     "configurations": {
