@@ -12,6 +12,8 @@ export interface TravelSessionResponse {
     boardingStopNameEn: string;
     alightingStopNameTh: string;
     alightingStopNameEn: string;
+    destinationLatitude: number;
+    destinationLongitude: number;
     createdAt: string;
     lastActivityAt: string;
 }

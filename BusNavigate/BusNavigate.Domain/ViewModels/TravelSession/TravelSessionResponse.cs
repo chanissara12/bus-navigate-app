@@ -15,6 +15,8 @@ public record TravelSessionResponse(
     string BoardingStopNameEn,
     string AlightingStopNameTh,
     string AlightingStopNameEn,
+    decimal DestinationLatitude,
+    decimal DestinationLongitude,
     DateTime CreatedAt,
     DateTime LastActivityAt
 );

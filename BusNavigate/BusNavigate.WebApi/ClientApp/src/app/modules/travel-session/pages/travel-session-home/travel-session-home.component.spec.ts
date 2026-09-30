@@ -40,6 +40,8 @@ describe('TravelSessionHomeComponent', () => {
                 boardingStopNameEn: 'Boarding Stop',
                 alightingStopNameTh: 'จุดหมายปลายทาง',
                 alightingStopNameEn: 'Destination',
+                destinationLatitude: 13.75,
+                destinationLongitude: 100.52,
                 createdAt: '',
                 lastActivityAt: ''
             })),
@@ -93,6 +95,10 @@ describe('TravelSessionHomeComponent', () => {
     it('reads the route id and persists it as the active session', () => {
         expect(component.sessionId()).toBe(42);
         expect(activeSessionService.setActiveSessionId).toHaveBeenCalledWith(42);
+    });
+
+    it('exposes the session\'s destination for the walking connector', () => {
+        expect(component.destination()).toEqual({ latitude: 13.75, longitude: 100.52 });
     });
 
     it('loads the persisted walking distance into the session summary', () => {

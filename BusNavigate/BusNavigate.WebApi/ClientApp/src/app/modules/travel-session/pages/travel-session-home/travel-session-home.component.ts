@@ -6,6 +6,7 @@ import { Subscription, switchMap, timer } from 'rxjs';
 
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { RouteMapCardComponent } from '../../../../shared/components/route-map-card/route-map-card.component';
+import { GeoCoordinate } from '../../../../shared/models/geo-coordinate.model';
 import { TravelSessionProgress } from '../../../../shared/models/travel-session-progress.model';
 import { TravelSessionResponse } from '../../../../shared/models/travel-session.model';
 import { TravelSessionState } from '../../../../shared/models/travel-session-state.model';
@@ -41,6 +42,7 @@ export class TravelSessionHomeComponent {
     readonly boardingStopId = signal<number | undefined>(undefined);
     readonly destinationNameTh = signal('');
     readonly destinationNameEn = signal('');
+    readonly destination = signal<GeoCoordinate | undefined>(undefined);
     readonly boardingStopNameTh = signal('');
     readonly boardingStopNameEn = signal('');
     readonly walkingDistanceMeters = signal(0);
@@ -189,6 +191,7 @@ export class TravelSessionHomeComponent {
         this.state.set(session.state);
         this.destinationNameTh.set(session.alightingStopNameTh);
         this.destinationNameEn.set(session.alightingStopNameEn);
+        this.destination.set({ latitude: session.destinationLatitude, longitude: session.destinationLongitude });
         this.boardingStopNameTh.set(session.boardingStopNameTh);
         this.boardingStopNameEn.set(session.boardingStopNameEn);
         this.walkingDistanceMeters.set(session.walkingDistanceMeters);

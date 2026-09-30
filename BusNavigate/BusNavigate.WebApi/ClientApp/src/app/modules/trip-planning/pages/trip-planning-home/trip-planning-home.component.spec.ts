@@ -215,10 +215,13 @@ describe('TripPlanningHomeComponent', () => {
                 directionId: option.directionId,
                 boardingStopId: option.boardingStopId,
                 alightingStopId: option.alightingStopId,
+                destinationLatitude: place.latitude,
+                destinationLongitude: place.longitude,
                 createdAt: '2026-09-24T00:00:00Z',
                 lastActivityAt: '2026-09-24T00:00:00Z'
             })
         );
+        component.selectedDestination.set(place);
         component.startTrip(option);
 
         component.onConfirmStartTrip();
@@ -227,7 +230,9 @@ describe('TripPlanningHomeComponent', () => {
             option.directionId,
             option.boardingStopId,
             option.alightingStopId,
-            option.walkingDistanceMeters
+            option.walkingDistanceMeters,
+            place.latitude,
+            place.longitude
         );
         expect(activeSessionService.setActiveSessionId).toHaveBeenCalledWith(99);
         expect(router.navigate).toHaveBeenCalledWith(['/travel-session', 99]);
@@ -239,6 +244,7 @@ describe('TripPlanningHomeComponent', () => {
         travelSessionsService.create.mockReturnValue(throwError(() => new Error('สร้างทริปไม่สำเร็จ')));
         const notified = jest.fn();
         errorsSubject.subscribe(notified);
+        component.selectedDestination.set(place);
         component.startTrip(option);
 
         component.onConfirmStartTrip();
@@ -246,6 +252,15 @@ describe('TripPlanningHomeComponent', () => {
         expect(component.confirmDialogOpen()).toBe(false);
         expect(router.navigate).not.toHaveBeenCalled();
         expect(notified).toHaveBeenCalledWith('สร้างทริปไม่สำเร็จ');
+    });
+
+    it('does not create a session when no destination is selected', () => {
+        setup();
+        component.startTrip(option);
+
+        component.onConfirmStartTrip();
+
+        expect(travelSessionsService.create).not.toHaveBeenCalled();
     });
 
     it('closes the dialog without creating a session when cancelled', () => {

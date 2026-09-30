@@ -32,7 +32,9 @@ public class TravelSessionServiceTests
         dbContext.AddRange(user, busRoute, direction, boardingStop, alightingStop);
         await dbContext.SaveChangesAsync();
 
-        var session = await service.CreateAsync(user.Id, direction.Id, boardingStop.Id, alightingStop.Id, walkingDistanceMeters: 210);
+        var session = await service.CreateAsync(
+            user.Id, direction.Id, boardingStop.Id, alightingStop.Id, walkingDistanceMeters: 210,
+            destinationLatitude: 13.75m, destinationLongitude: 100.5m);
         return session.Id;
     }
 

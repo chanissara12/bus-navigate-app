@@ -35,12 +35,14 @@ describe('TravelSessionsService', () => {
         boardingStopNameEn: 'Boarding stop',
         alightingStopNameTh: 'ป้ายลงรถ',
         alightingStopNameEn: 'Alighting stop',
+        destinationLatitude: 13.75,
+        destinationLongitude: 100.52,
         createdAt: '2026-09-24T00:00:00Z',
         lastActivityAt: '2026-09-24T00:00:00Z'
     };
 
     it('creates a travel session from a chosen direction/boarding/alighting stop', () => {
-        service.create(1, 10, 20, 210).subscribe((result) => {
+        service.create(1, 10, 20, 210, 13.75, 100.52).subscribe((result) => {
             expect(result).toEqual(session);
         });
 
@@ -50,7 +52,9 @@ describe('TravelSessionsService', () => {
             directionId: 1,
             boardingStopId: 10,
             alightingStopId: 20,
-            walkingDistanceMeters: 210
+            walkingDistanceMeters: 210,
+            destinationLatitude: 13.75,
+            destinationLongitude: 100.52
         });
         req.flush(session);
     });

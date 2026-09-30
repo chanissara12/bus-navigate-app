@@ -32,6 +32,14 @@ public class TravelSession
     // Persisted because the TravelOption is computed and is not available after session creation.
     public double WalkingDistanceMeters { get; set; }
 
+    // The place the user actually searched for (may be further than AlightingStop —
+    // e.g. a mall entrance across the road from where the bus stops). Persisted
+    // separately from AlightingStop so the post-alighting walking connector has a real
+    // target instead of collapsing onto the stop itself.
+    public decimal DestinationLatitude { get; set; }
+
+    public decimal DestinationLongitude { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     // Updated on every transition and progress poll — the stall sweep abandons any

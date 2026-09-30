@@ -15,14 +15,18 @@ export class TravelSessionsService {
         directionId: number,
         boardingStopId: number,
         alightingStopId: number,
-        walkingDistanceMeters: number
+        walkingDistanceMeters: number,
+        destinationLatitude: number,
+        destinationLongitude: number
     ): Observable<TravelSessionResponse> {
         return this.http
             .post<TravelSessionResponse>(API_BASE_URL + '/travel-sessions', {
                 directionId,
                 boardingStopId,
                 alightingStopId,
-                walkingDistanceMeters
+                walkingDistanceMeters,
+                destinationLatitude,
+                destinationLongitude
             })
             .pipe(this.handleError('Failed to create travel session'));
     }

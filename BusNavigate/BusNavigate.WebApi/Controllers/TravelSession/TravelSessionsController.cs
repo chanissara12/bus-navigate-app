@@ -25,7 +25,8 @@ public class TravelSessionsController : ControllerBase
         var userId = HttpContext.GetRequiredUserId();
         var session = await _travelSessionService.CreateAsync(
             userId, request.DirectionId, request.BoardingStopId, request.AlightingStopId,
-            request.WalkingDistanceMeters, cancellationToken);
+            request.WalkingDistanceMeters, request.DestinationLatitude, request.DestinationLongitude,
+            cancellationToken);
         return Ok(ToResponse(session));
     }
 
@@ -61,6 +62,7 @@ public class TravelSessionsController : ControllerBase
         session.Id, session.State, session.DirectionId, session.BoardingStopId, session.AlightingStopId,
         session.WalkingDistanceMeters, session.BoardingStop.NameTh, session.BoardingStop.NameEn,
         session.AlightingStop.NameTh, session.AlightingStop.NameEn,
+        session.DestinationLatitude, session.DestinationLongitude,
         session.CreatedAt, session.LastActivityAt);
 
     private static TravelSessionEventType ParseEventType(string type) => type switch

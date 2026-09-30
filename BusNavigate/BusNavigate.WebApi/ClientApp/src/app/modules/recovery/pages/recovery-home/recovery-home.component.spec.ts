@@ -65,6 +65,8 @@ describe('RecoveryHomeComponent', () => {
                 boardingStopNameEn: 'Boarding Stop',
                 alightingStopNameTh: 'ปลายทาง',
                 alightingStopNameEn: 'Destination',
+                destinationLatitude: 13.75,
+                destinationLongitude: 100.52,
                 createdAt: '2026-09-25T01:00:00Z',
                 lastActivityAt: '2026-09-25T01:10:00Z'
             })),
@@ -109,6 +111,10 @@ describe('RecoveryHomeComponent', () => {
         expect(recoveryService.getOptions).toHaveBeenCalledWith(42, 13.7563, 100.5018, 25);
         expect(component.recommendedOptions()).toHaveLength(1);
         expect(component.unconfirmedRailPointers()).toHaveLength(1);
+    });
+
+    it('exposes the session\'s destination for the walking connector', () => {
+        expect(component.destination()).toEqual({ latitude: 13.75, longitude: 100.52 });
     });
 
     it('should confirm a bus recovery option and navigate back to the travel session', () => {

@@ -9,4 +9,6 @@ public record CreateTravelSessionRequest(
     int DirectionId,
     int BoardingStopId,
     int AlightingStopId,
-    double WalkingDistanceMeters);
+    double WalkingDistanceMeters,
+    decimal DestinationLatitude,
+    decimal DestinationLongitude);

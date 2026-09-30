@@ -50,6 +50,7 @@ public class TravelSessionService : ITravelSessionService
 
     public async Task<TravelSessionEntity> CreateAsync(
         int userId, int directionId, int boardingStopId, int alightingStopId, double walkingDistanceMeters,
+        decimal destinationLatitude, decimal destinationLongitude,
         CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
@@ -64,6 +65,8 @@ public class TravelSessionService : ITravelSessionService
             BoardingStopId = boardingStopId,
             AlightingStopId = alightingStopId,
             WalkingDistanceMeters = walkingDistanceMeters,
+            DestinationLatitude = destinationLatitude,
+            DestinationLongitude = destinationLongitude,
             State = TravelSessionState.Planned,
             CreatedAt = now,
             LastActivityAt = now,

@@ -127,7 +127,8 @@ export class TripPlanningHomeComponent {
 
     onConfirmStartTrip(): void {
         const option = this.pendingOption();
-        if (!option) {
+        const destination = this.selectedDestination();
+        if (!option || !destination) {
             return;
         }
 
@@ -137,7 +138,9 @@ export class TripPlanningHomeComponent {
                 option.directionId,
                 option.boardingStopId,
                 option.alightingStopId,
-                option.walkingDistanceMeters
+                option.walkingDistanceMeters,
+                destination.latitude,
+                destination.longitude
             )
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({

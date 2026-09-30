@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmedRecoverySelection } from '../../../../shared/models/confirmed-recovery-selection.model';
+import { GeoCoordinate } from '../../../../shared/models/geo-coordinate.model';
 import { TravelSessionResponse } from '../../../../shared/models/travel-session.model';
 import { ErrorNotificationService } from '../../../../shared/services/error-notification.service';
 import { GeolocationService } from '../../../../shared/services/geolocation.service';
@@ -43,6 +44,7 @@ export class RecoveryHomeComponent {
     readonly dialogOpen = signal(false);
     readonly selectedOption = signal<RecoveryOption | undefined>(undefined);
     readonly mapOption = signal<RecoveryOption | undefined>(undefined);
+    readonly destination = signal<GeoCoordinate | undefined>(undefined);
     readonly lastResortExpanded = signal(false);
     readonly latestError = signal<string | undefined>(undefined);
 
@@ -159,8 +161,13 @@ export class RecoveryHomeComponent {
         this.travelSessionsService
             .get(id)
             .pipe(
-                switchMap((session) =>
-                    this.geolocationService
+                switchMap((session) => {
+                    this.destination.set({
+                        latitude: session.destinationLatitude,
+                        longitude: session.destinationLongitude
+                    });
+
+                    return this.geolocationService
                         .getCurrentPosition()
                         .pipe(
                             switchMap((coordinates) =>
@@ -171,8 +178,8 @@ export class RecoveryHomeComponent {
                                     session.directionId
                                 )
                             )
-                        )
-                ),
+                        );
+                }),
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe({

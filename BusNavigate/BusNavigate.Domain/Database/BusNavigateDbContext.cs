@@ -142,6 +142,8 @@ public class BusNavigateDbContext(DbContextOptions<BusNavigateDbContext> options
                 .WithMany()
                 .HasForeignKey(e => e.AlightingStopId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(e => e.DestinationLatitude).HasPrecision(9, 6);
+            entity.Property(e => e.DestinationLongitude).HasPrecision(9, 6);
         });
 
         modelBuilder.Entity<Place>(entity =>
